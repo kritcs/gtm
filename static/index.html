@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
-  <link rel="stylesheet" href="/static/styles.css?v=33">
+  <link rel="stylesheet" href="/static/styles.css?v=34">
 </head>
 <body class="hero-on">
   <div id="hero-bg" aria-hidden="true"></div>
@@ -128,7 +128,7 @@
         <button data-tab="overview" class="on"><i class="i" style="--i:url(/static/vendor/icons/map.svg)"></i>Overview</button>
         <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Your intuition</button>
         <button data-tab="accounts"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Top accounts</button>
-        <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/mail.svg)"></i>Email</button>
+        <button data-tab="voice"><i class="i" style="--i:url(/static/vendor/icons/mic-vocal.svg)"></i>Your voice</button>
         <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Deal stages</button>
         <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/bot.svg)"></i>AI agents</button>
         <button data-tab="system"><i class="i" style="--i:url(/static/vendor/icons/workflow.svg)"></i>Architecture</button>
@@ -145,7 +145,7 @@
         </div>
         <div id="account-list" class="accounts"></div>
       </div>
-      <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="muted small">Pick an account to draft an email.</p></div></div>
+      <div class="tab" id="voice"><div id="voice-root"></div></div>
       <div class="tab" id="pipeline"><div class="graph-wrap"><canvas id="pgraph"></canvas>
         <div class="group-by" id="groupby"><span>Group by</span><button data-g="industry" class="on">Industry</button><button data-g="signal">Signal</button><button data-g="stage">Stage</button></div>
         <div class="graph-legend" id="glegend"></div></div></div>
@@ -155,6 +155,9 @@
       <div class="tab" id="proof"><div id="proof-area"></div></div>
     </main>
   </section>
+  <div class="dmodal" id="draft-modal" hidden><div class="dcard">
+    <button class="btn dclose" id="draft-close" aria-label="Close"><i class="i" style="--i:url(/static/vendor/icons/x.svg)"></i></button>
+    <div id="draft-area" class="draft-area"></div></div></div>
 
   <script src="/static/problem-diagram.js?v=33"></script>
   <script src="/static/explainers.js?v=23"></script>
@@ -162,7 +165,8 @@
   <script src="/static/pipeline-graph.js?v=23"></script>
   <script src="/static/system-view.js?v=27"></script>
   <script src="/static/agents-view.js?v=27"></script>
-  <script src="/static/app.js?v=33"></script>
+  <script src="/static/voice-view.js?v=1"></script>
+  <script src="/static/app.js?v=34"></script>
   <script type="module" src="/static/map3d.js?v=23"></script>
   <script type="module" src="/static/hero3d.js?v=25"></script>
   <script type="module" src="/static/dome3d.js?v=24"></script>
