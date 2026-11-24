@@ -52,7 +52,8 @@ async function show(id) {
   window.MarketMap?.mode(MAP_MODE[id]);
   const heroOn = id === "enter" || id === "intro" || id === "problem";
   document.body.classList.toggle("hero-on", heroOn);
-  if (!heroOn) setTimeout(() => window.HeroBG?.stop(), 400); else window.HeroBG?.start();
+  if (!heroOn) setTimeout(() => window.HeroBG?.stop(), 400);
+  else { window.HeroBG?.start(); window.HeroBG?.scene(id === "enter" ? "bottleneck" : "fan"); }
   if (from && from !== to && !RM) {
     await anim(from, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 320 })?.finished;
   }

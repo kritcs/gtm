@@ -66,7 +66,8 @@ Motion must explain something: a reply moving a card, a belief curve shifting, a
 
 ## 6. 3D and backgrounds
 
-- `hero3d.js` draws the front-page arc dome: every streak starts at one point (the founder's intuition) and lands on one of the 900 companies. It renders only while `body.hero-on` is set.
+- `hero3d.js` draws the front-flow backgrounds in canvas 2D, and each scene carries a meaning. The **bottleneck** (front page) shows market signals funneling through one glowing neck, the founder's instinct, then fanning out to customers. The **fan** (Problem and How it works) shows rays from one founder to companies across the market. Switch scenes with `HeroBG.scene(name)`; they crossfade. The scenes render only while `body.hero-on` is set.
+- These scenes take inspiration from Stripe's line art, but they must stay our own: our indigo palette, our meanings, our motion. Never trace or re-create another site's graphic.
 - `map3d.js` draws the market point cloud behind the interview and reading. Each card lights up its evidence through `MarketMap.show(card.map)`.
 - Both use the vendored three.js r170. Don't load anything from a CDN at runtime.
 

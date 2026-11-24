@@ -1,130 +1,130 @@
-// Front-page background: a dome of light streaks. Every arc starts at one point (your intuition)
-// and lands on one company in the market. Comet heads run along the arcs; additive blending; slow drift.
-import * as THREE from "./vendor/three.module.min.js";
-
+// Front-flow backgrounds, drawn with canvas 2D. Two scenes, each with a meaning:
+//   bottleneck: market signals on the left funnel through one glowing neck (your instinct) and fan out
+//               to customers on the right; comets flow left to right through the neck.
+//   fan:        rays burst up from one point (the founder) to companies across the market; pulses travel out.
+// API: window.HeroBG.scene("bottleneck" | "fan"), .stop(), .start()
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const host = document.getElementById("hero-bg");
+
 if (host) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(2, devicePixelRatio));
-  host.appendChild(renderer.domElement);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(0, 1.6, 11);
-  camera.lookAt(0, 1.4, 0);
-  const group = new THREE.Group();
-  group.position.y = -2.6;
-  scene.add(group);
-
-  const R = 4.2, N = 900, SEG = 64;
-  // origin on the dome, upper left: the founder's intuition
-  const origin = new THREE.Vector3(-0.72, 0.42, 0.55).normalize().multiplyScalar(R);
-  // endpoints: Fibonacci points on the upper hemisphere, one per company
-  const ends = [];
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < N * 2 && ends.length < N; i++) {
-    const y = 1 - (i / (N * 2 - 1)) * 2, r = Math.sqrt(1 - y * y), th = golden * i;
-    if (y < 0.02) continue;
-    ends.push(new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r).multiplyScalar(R));
-  }
-
-  // arcs: slerp on the sphere, lifted slightly mid-way
-  const pos = new Float32Array(ends.length * SEG * 2 * 3), aT = new Float32Array(ends.length * SEG * 2), aSeed = new Float32Array(ends.length * SEG * 2);
-  const o = origin.clone().normalize();
-  let k = 0;
-  ends.forEach((e, idx) => {
-    const n = e.clone().normalize(), seed = Math.random();
-    const ang = o.angleTo(n), axis = new THREE.Vector3().crossVectors(o, n).normalize();
-    const pt = (t) => {
-      const v = o.clone().applyAxisAngle(axis, ang * t);
-      return v.multiplyScalar(R * (1 + 0.06 * Math.sin(Math.PI * t)));
-    };
-    let prev = pt(0);
-    for (let s = 1; s <= SEG; s++) {
-      const t0 = (s - 1) / SEG, t1 = s / SEG, cur = pt(t1);
-      pos.set([prev.x, prev.y, prev.z, cur.x, cur.y, cur.z], k * 3);
-      aT[k] = t0; aT[k + 1] = t1; aSeed[k] = aSeed[k + 1] = seed;
-      k += 2; prev = cur;
-    }
-  });
-  const lg = new THREE.BufferGeometry();
-  lg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  lg.setAttribute("aT", new THREE.BufferAttribute(aT, 1));
-  lg.setAttribute("aSeed", new THREE.BufferAttribute(aSeed, 1));
-  const lm = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { uTime: { value: 0 }, uReveal: { value: 0 } },
-    vertexShader: `attribute float aT; attribute float aSeed; varying float vT; varying float vSeed;
-      void main() { vT = aT; vSeed = aSeed; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `uniform float uTime; uniform float uReveal; varying float vT; varying float vSeed;
-      void main() {
-        if (vT > uReveal + vSeed * 0.15) discard;
-        float head = fract(uTime * (0.08 + vSeed * 0.07) + vSeed);
-        float d = head - vT;
-        float comet = d > 0.0 ? exp(-d * 9.0) : 0.0;
-        float base = 0.025 + 0.025 * (1.0 - vT);
-        vec3 col = mix(vec3(0.75, 0.78, 1.0), vec3(0.75, 0.98, 1.0), vT);
-        gl_FragColor = vec4(col, base + comet * 0.55);
-      }`,
-  });
-  group.add(new THREE.LineSegments(lg, lm));
-
-  // endpoint dots that light up when a comet arrives
-  const pg = new THREE.BufferGeometry();
-  pg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ends.flatMap((e) => [e.x, e.y, e.z])), 3));
-  pg.setAttribute("aSeed", new THREE.BufferAttribute(aSeed.filter((_, i) => i % (SEG * 2) === 0), 1));
-  const pm = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { uTime: { value: 0 }, uReveal: { value: 0 }, uDpr: { value: renderer.getPixelRatio() } },
-    vertexShader: `attribute float aSeed; uniform float uTime; uniform float uDpr; varying float vA;
-      void main() {
-        float head = fract(uTime * (0.08 + aSeed * 0.07) + aSeed);
-        vA = 0.25 + 0.75 * smoothstep(0.9, 1.0, head);
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = (2.0 + 3.0 * vA) * uDpr;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `uniform float uReveal; varying float vA;
-      void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5 || uReveal < 0.9) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, vA * (1.0 - d * 2.0)); }`,
-  });
-  group.add(new THREE.Points(pg, pm));
-
-  // the origin: a soft bright core
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.035, 24, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  core.position.copy(origin);
-  group.add(core);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
-      const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, "rgba(255,255,255,.55)"); g.addColorStop(.4, "rgba(200,220,255,.18)"); g.addColorStop(1, "rgba(255,255,255,0)");
-      x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(),
-    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-  halo.position.copy(origin); halo.scale.set(0.5, 0.5, 1);
-  group.add(halo);
+  const cv = document.createElement("canvas");
+  host.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  let W = 0, H = 0, dpr = 1, running = true, scene = "bottleneck", mix = 1, prev = null;
+  const rnd = (i, k = 1) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
 
   const resize = () => {
-    const w = host.clientWidth, h = host.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.position.z = w / h < 1 ? 16 : 11;
-    camera.updateProjectionMatrix();
+    dpr = Math.min(2, devicePixelRatio);
+    W = host.clientWidth; H = host.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
+    build();
   };
+
+  // --------------------------------------------------------------- geometry
+  let funnel = [], rays = [];
+  function build() {
+    const neck = { x: W * 0.5, y: H * 0.74 };
+    const NL = W < 700 ? 34 : 56, NR = W < 700 ? 28 : 46;
+    const left = Array.from({ length: NL }, (_, i) => ({ x: W * (0.04 + rnd(i, 1) * 0.03), y: H * (0.38 + (i / (NL - 1)) * 0.6) + (rnd(i, 2) - .5) * 8 }));
+    const right = Array.from({ length: NR }, (_, i) => ({ x: W * (0.93 + rnd(i, 3) * 0.03), y: H * (0.5 + (i / (NR - 1)) * 0.48) + (rnd(i, 4) - .5) * 8 }));
+    funnel = { neck, left, right };
+    const NRAY = W < 700 ? 110 : 190, o = { x: W * 0.5, y: H * 1.02 };
+    rays = Array.from({ length: NRAY }, (_, i) => {
+      const a = Math.PI + (0.04 + rnd(i, 5) * 0.92) * Math.PI; // upper half
+      const len = Math.min(W, H * 1.6) * (0.28 + Math.pow(rnd(i, 6), 0.7) * 0.55);
+      return { o, a, len, dot: 1 + rnd(i, 7) * 2.4, phase: rnd(i, 8), speed: 0.12 + rnd(i, 9) * 0.18, alpha: 0.25 + rnd(i, 10) * 0.55 };
+    });
+  }
+
+  // cubic bezier point
+  const bz = (p0, c1, c2, p1, t) => {
+    const u = 1 - t;
+    return { x: u * u * u * p0.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * p1.x,
+             y: u * u * u * p0.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * p1.y };
+  };
+  const lineL = (p, n) => [p, { x: W * 0.32, y: p.y }, { x: W * 0.42, y: n.y }, n];
+  const lineR = (p, n) => [n, { x: W * 0.58, y: n.y }, { x: W * 0.68, y: p.y }, p];
+
+  // --------------------------------------------------------------- draw
+  function drawBottleneck(t, alpha) {
+    const { neck, left, right } = funnel;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = 1;
+    const strokeCurve = (pts, a) => {
+      ctx.strokeStyle = `rgba(190,200,255,${a})`;
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.bezierCurveTo(pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[3].x, pts[3].y); ctx.stroke();
+    };
+    left.forEach((p, i) => strokeCurve(lineL(p, neck), 0.16 + 0.12 * rnd(i, 11)));
+    right.forEach((p, i) => strokeCurve(lineR(p, neck), 0.16 + 0.12 * rnd(i, 12)));
+    // endpoint dots
+    ctx.fillStyle = "rgba(220,228,255,.85)";
+    [...left, ...right].forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x, p.y, 1.6 + rnd(i, 13) * 1.4, 0, 6.283); ctx.fill(); });
+    // the neck: your instinct
+    const g = ctx.createRadialGradient(neck.x, neck.y, 0, neck.x, neck.y, 60);
+    g.addColorStop(0, "rgba(255,255,255,.9)"); g.addColorStop(.25, "rgba(190,230,255,.35)"); g.addColorStop(1, "rgba(155,231,240,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(neck.x, neck.y, 60 + (REDUCED ? 0 : 4 * Math.sin(t * 2)), 0, 6.283); ctx.fill();
+    // comets: travel a left curve into the neck, then out along a right curve
+    if (!REDUCED) for (let k = 0; k < 26; k++) {
+      const s = (t * (0.12 + rnd(k, 14) * 0.08) + rnd(k, 15)) % 1;
+      const li = Math.floor(rnd(k, 16) * left.length), ri = Math.floor(rnd(k, 17) * right.length);
+      const pts = s < 0.5 ? lineL(left[li], neck) : lineR(right[ri], neck);
+      const u = s < 0.5 ? s * 2 : (s - 0.5) * 2;
+      for (let j = 0; j < 7; j++) {
+        const uu = Math.max(0, u - j * 0.012), p = bz(pts[0], pts[1], pts[2], pts[3], uu);
+        ctx.fillStyle = `rgba(255,255,255,${(1 - j / 7) * 0.9})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 1.8 - j * 0.18, 0, 6.283); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFan(t, alpha) {
+    ctx.globalAlpha = alpha;
+    rays.forEach((r) => {
+      const grow = REDUCED ? 1 : 0.92 + 0.08 * Math.sin(t * 0.6 + r.phase * 6.28);
+      const ex = r.o.x + Math.cos(r.a) * r.len * grow, ey = r.o.y + Math.sin(r.a) * r.len * grow;
+      const lg = ctx.createLinearGradient(r.o.x, r.o.y, ex, ey);
+      lg.addColorStop(0, `rgba(155,231,240,${r.alpha * 0.9})`); lg.addColorStop(1, `rgba(190,200,255,${r.alpha * 0.35})`);
+      ctx.strokeStyle = lg; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(r.o.x, r.o.y); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.fillStyle = `rgba(225,232,255,${0.4 + r.alpha * 0.6})`;
+      ctx.beginPath(); ctx.arc(ex, ey, r.dot, 0, 6.283); ctx.fill();
+      if (!REDUCED) { // a pulse travelling outward
+        const s = (t * r.speed + r.phase) % 1;
+        const px = r.o.x + Math.cos(r.a) * r.len * grow * s, py = r.o.y + Math.sin(r.a) * r.len * grow * s;
+        ctx.fillStyle = `rgba(255,255,255,${0.7 * (1 - s)})`;
+        ctx.beginPath(); ctx.arc(px, py, 1.4, 0, 6.283); ctx.fill();
+      }
+    });
+    const o = rays[0]?.o;
+    if (o) {
+      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, 140);
+      g.addColorStop(0, "rgba(255,255,255,.55)"); g.addColorStop(1, "rgba(155,231,240,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, 140, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  const DRAW = { bottleneck: drawBottleneck, fan: drawFan };
+  const t0 = performance.now();
+  function tick() {
+    if (!running) return;
+    const t = (performance.now() - t0) / 1000;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    mix = Math.min(1, mix + (REDUCED ? 1 : 0.04));
+    if (prev && mix < 1) DRAW[prev](t, 1 - mix);
+    DRAW[scene](t, mix);
+    requestAnimationFrame(tick);
+  }
+
   addEventListener("resize", resize);
   resize();
-
-  const clock = new THREE.Clock();
-  let reveal = REDUCED ? 1 : 0, running = true;
-  const tick = () => {
-    if (!running) return;
-    const t = clock.getElapsedTime();
-    reveal = Math.min(1.2, reveal + (REDUCED ? 1 : 0.008));
-    lm.uniforms.uTime.value = pm.uniforms.uTime.value = REDUCED ? 3 : t;
-    lm.uniforms.uReveal.value = pm.uniforms.uReveal.value = reveal;
-    if (!REDUCED) group.rotation.y = Math.sin(t * 0.06) * 0.18;
-    halo.scale.setScalar(0.5 + 0.06 * Math.sin(t * 2));
-    renderer.render(scene, camera);
-    requestAnimationFrame(tick);
-  };
   requestAnimationFrame(tick);
-  // stop rendering once the hero is gone
-  window.HeroBG = { stop() { running = false; }, start() { if (!running) { running = true; requestAnimationFrame(tick); } } };
+  window.HeroBG = {
+    scene(name) { if (name !== scene && DRAW[name]) { prev = scene; scene = name; mix = 0; } },
+    stop() { running = false; },
+    start() { if (!running) { running = true; requestAnimationFrame(tick); } },
+  };
 }
