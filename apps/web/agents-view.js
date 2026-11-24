@@ -36,6 +36,7 @@
         <div class="ag-top">
           <div class="ag-title"><span class="ag-live"><i></i>Live</span><span class="muted" id="ag-count"></span>
             <div class="ag-total"><i id="ag-total"></i></div></div>
+          <a class="powered" href="https://www.band.ai" target="_blank" rel="noopener">Powered by <img src="/static/vendor/band-logo.png" alt="Band"></a>
           <button class="btn" id="ag-replay"><i class="i" style="--i:url(/static/vendor/icons/play.svg)"></i>Replay</button>
         </div>
         <svg viewBox="0 0 ${W} ${H}" class="relay">

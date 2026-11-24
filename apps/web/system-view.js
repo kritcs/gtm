@@ -53,7 +53,7 @@
           <span class="sys-legend">${Object.values(STATUS).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join("")}</span>
         </div>
         <div class="sys-body"><div class="sys-stage" id="sys-stage"></div><aside class="sys-drawer" id="sys-drawer"></aside></div>
-        <p class="sys-credit">Architecture by Peem Puangmaha</p>`;
+        <p class="sys-credit">Based on research by Jure Leskovec and colleagues (relational deep learning), Xiangnan He et al. (LightGCN), and Daniel Kahneman and Gary Klein (when expert intuition can be trusted).</p>`;
       root.querySelectorAll("#sys-seg button").forEach((b) => b.onclick = () => {
         root.querySelectorAll("#sys-seg button").forEach((x) => x.classList.toggle("on", x === b));
         this.show(b.dataset.p);

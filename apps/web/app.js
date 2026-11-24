@@ -322,7 +322,7 @@ async function loadOverview() {
     <p class="ov-behind-h">Behind the scenes</p>
     <div class="ov-behind">
       ${tile("agents", "feed", "bot", "", "AI agents", `${agents} agents`, `${S.events.length} steps this session`)}
-      ${tile("arch", "system", "workflow", "", "Architecture", "8-step loop", "Peem's design, live")}
+      ${tile("arch", "system", "workflow", "", "Architecture", "8-step loop", "Built on graph-learning research")}
       ${tile("results", "proof", "chart-no-axes-column", "", "Results", res ? `${Math.round(res.methods["market + founder"].recall * 100)}% vs ${Math.round(res.methods["random (expected)"].recall * 100)}%` : "—", "Found vs random, synthetic backtest")}
     </div></div>`;
   document.querySelectorAll(".ov-tile").forEach((t) => t.onclick = () => {

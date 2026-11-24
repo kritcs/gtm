@@ -80,7 +80,7 @@ The Fablesync card slides into **replied**.
 
 **7. The architecture (20 s).** *Open the **System** tab and press **Run the loop**.*
 
-> "This is Peem's architecture. Eight steps: the forward pass finds and contacts the right accounts."
+> "This is the architecture, built on graph-learning research. Eight steps: the forward pass finds and contacts the right accounts."
 
 When the green token takes the shortcut from Learn back to Score:
 
