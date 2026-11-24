@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reply</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="phone">
+    <p class="eyebrow">Demo inbox — reply as the prospect</p>
+    <h2>Re: your email</h2>
+    <textarea id="t">Yes, this is exactly our close. Thursday works.</textarea>
+    <p><button class="primary" id="go">Reply</button></p>
+    <p class="fine" id="out"></p>
+  </div>
+  <script>
+    document.getElementById("go").onclick = async () => {
+      const r = await fetch("/api/webhooks/reply", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft_id: "{{DRAFT_ID}}", text: document.getElementById("t").value, sender: "phone" }) });
+      document.getElementById("out").textContent = r.ok ? "Sent. Watch the pipeline move." : "Error " + r.status + ": " + (await r.text());
+    };
+  </script>
+</body>
+</html>

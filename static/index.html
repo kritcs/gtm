@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intuition in a bottle</title>
+  <link rel="stylesheet" href="/static/styles.css?v=33">
+</head>
+<body class="hero-on">
+  <div id="hero-bg" aria-hidden="true"></div>
+  <div id="dome-bg" aria-hidden="true"></div>
+  <section id="enter" class="stage active hero">
+    <div class="hero-copy">
+      <p class="hero-eyebrow">A go-to-market engine for founders</p>
+      <h1 class="display hero-title">Intuition <em>in a bottle.</em></h1>
+      <p class="hero-sub">Your gut feeling is the ultimate GTM.</p>
+      <button id="begin" class="btn primary lg" aria-label="Begin">Begin <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+    </div>
+  </section>
+
+  <!-- PLACEHOLDER PAGE for the next agent. Core message: founders lack data, but their instinct is their
+       greatest advantage. Rewrite freely within docs/design-guide.md; add numbers only once they are sourced. -->
+  <section id="problem" class="stage hero">
+    <div class="intro">
+      <p class="hero-eyebrow">The problem</p>
+      <h2 class="display intro-title">Startups have too little data. The market has too much noise.</h2>
+      <div class="pcards">
+        <div class="pcard"><b>Your data is too thin.</b><span class="ptag">Cold start: five customers can't train a model.</span></div>
+        <div class="pcard"><b>Public data is noisy.</b><span class="ptag">A tool named in a job post isn't a purchase.</span></div>
+        <div class="pcard"><b>Traditional knowledge graphs need volume.</b><span class="ptag">Link prediction learns from thousands of edges.</span></div>
+      </div>
+      <p class="hero-eyebrow diff-h">Our approach</p>
+      <div class="approach">
+        <ol class="apoints" id="apoints">
+          <li data-p="0"><b>The founder is the prior.</b><span>Your instinct seeds the model as Beta priors, and the graph corrects it where the data is strong.</span></li>
+          <li data-p="1"><b>A heterogeneous graph.</b><span>Typed nodes and edges, so a reply credits the exact signal that found it.</span></li>
+          <li data-p="2"><b>It re-fits as feedback arrives.</b><span>Bayesian updates and fold-in, rather than a full retrain.</span></li>
+        </ol>
+        <div class="adiagram" id="adiagram"></div>
+      </div>
+      <button id="to-how" class="btn primary lg">See how it works <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+    </div>
+  </section>
+
+  <section id="intro" class="stage hero">
+    <div class="intro">
+      <p class="hero-eyebrow">How it works</p>
+      <h2 class="display intro-title">We turn your instinct into your next customer.</h2>
+      <ol class="intro-steps">
+        <li><button class="icard" data-x="bottle">
+          <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/mic.svg)"></i><em>1</em></span>
+          <b>Talk us through your instinct.</b>
+          <span class="ifront">Tell us about the customers you won and the deal you lost.</span>
+          <span class="itoggle">See how it works</span></button></li>
+        <li><button class="icard" data-x="engine">
+          <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/network.svg)"></i><em>2</em></span>
+          <b>We test your instinct against the market.</b>
+          <span class="ifront">We check it against what already happened and against companies today.</span>
+          <span class="itoggle">See how it works</span></button></li>
+        <li><button class="icard" data-x="voice">
+          <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/send.svg)"></i><em>3</em></span>
+          <b>Unmistakably yours.</b>
+          <span class="ifront">A model fine-tuned on your emails writes in your voice.</span>
+          <span class="itoggle">See how it works</span></button></li>
+      </ol>
+      <button id="start-interview" class="btn primary lg">Start the interview <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+    </div>
+  </section>
+
+  <section id="talk" class="stage">
+    <div class="talk-grid">
+      <div class="talk-main">
+        <p class="eyebrow-s" id="q-count"></p>
+        <h2 class="question" id="question"></h2>
+        <div class="phrases" id="phrases"></div>
+        <div class="field">
+          <textarea id="answer" rows="3" aria-label="Your answer"></textarea>
+          <div class="field-bar">
+            <button id="mic" class="btn icon" title="Speak" aria-label="Speak"><i class="i" style="--i:url(/static/vendor/icons/mic.svg)"></i></button>
+            <button id="demo-answer" class="btn icon" title="Fill demo answer" aria-label="Fill demo answer"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i></button>
+            <span class="grow"></span>
+            <button id="send" class="btn primary icon" title="Next" aria-label="Next"><i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+          </div>
+        </div>
+      </div>
+      <aside class="bottle" id="bottle">
+        <div class="bottle-glass"><div class="bottle-fill" id="bottle-fill"></div></div>
+        <dl id="bottle-list"></dl>
+      </aside>
+    </div>
+  </section>
+
+  <section id="pause" class="stage">
+    <div class="center">
+      <p class="count"><span id="scored">0</span></p>
+      <p class="eyebrow-s">Companies scored</p>
+      <div class="deck" id="shuffle"></div>
+      <div class="kitchen mono" id="kitchen"></div>
+    </div>
+  </section>
+
+  <section id="reading" class="stage">
+    <div class="reading-wrap">
+      <p class="eyebrow-s" id="card-eyebrow"></p>
+      <div class="card-scene">
+        <div class="card" id="card">
+          <div class="face front" id="card-front"></div>
+          <div class="face back" id="card-back"></div>
+        </div>
+      </div>
+      <div class="diff small" id="card-diff"></div>
+      <div class="card-actions" id="card-actions">
+        <button class="btn icon" id="flip" title="Evidence" aria-label="Evidence"><i class="i" style="--i:url(/static/vendor/icons/scan-eye.svg)"></i></button>
+        <span class="grow"></span>
+        <button class="btn icon" id="yes" title="Right" aria-label="Right"><i class="i" style="--i:url(/static/vendor/icons/check.svg)"></i></button>
+        <input id="no-text" class="input" placeholder="What's off?" aria-label="Correction">
+        <button class="btn icon" id="no" title="Wrong" aria-label="Wrong"><i class="i" style="--i:url(/static/vendor/icons/x.svg)"></i></button>
+        <button class="btn primary icon" id="next-card" title="Next" aria-label="Next"><i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+  </section>
+
+  <section id="dash" class="stage">
+    <header class="dash-head">
+      <button class="btn ghost icon" id="reread" title="Back to the reading" aria-label="Back to the reading"><i class="i flip-x" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+      <nav id="tabs">
+        <button data-tab="overview" class="on"><i class="i" style="--i:url(/static/vendor/icons/map.svg)"></i>Overview</button>
+        <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Your intuition</button>
+        <button data-tab="accounts"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Top accounts</button>
+        <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/mail.svg)"></i>Email</button>
+        <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Deal stages</button>
+        <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/bot.svg)"></i>AI agents</button>
+        <button data-tab="system"><i class="i" style="--i:url(/static/vendor/icons/workflow.svg)"></i>Architecture</button>
+        <button data-tab="proof"><i class="i" style="--i:url(/static/vendor/icons/chart-no-axes-column.svg)"></i>Results</button>
+      </nav>
+    </header>
+    <main>
+      <div class="tab on" id="overview"><div id="overview-root"></div></div>
+      <div class="tab" id="accounts">
+        <div class="meter">
+          <div class="meter-bar"><div id="meter-fill"></div></div>
+          <span class="mono small" id="meter-text"></span>
+          <button class="btn" id="enrich"><i class="i" style="--i:url(/static/vendor/icons/coins.svg)"></i>Enrich</button>
+        </div>
+        <div id="account-list" class="accounts"></div>
+      </div>
+      <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="muted small">Pick an account to draft an email.</p></div></div>
+      <div class="tab" id="pipeline"><div class="graph-wrap"><canvas id="pgraph"></canvas>
+        <div class="group-by" id="groupby"><span>Group by</span><button data-g="industry" class="on">Industry</button><button data-g="signal">Signal</button><button data-g="stage">Stage</button></div>
+        <div class="graph-legend" id="glegend"></div></div></div>
+      <div class="tab" id="system"><div class="sys" id="system-root"></div></div>
+      <div class="tab" id="bottle-tab"><div id="bottle-inspect"></div></div>
+      <div class="tab" id="feed"><div class="agents" id="agents-root"></div></div>
+      <div class="tab" id="proof"><div id="proof-area"></div></div>
+    </main>
+  </section>
+
+  <script src="/static/problem-diagram.js?v=33"></script>
+  <script src="/static/explainers.js?v=23"></script>
+  <script src="/static/text.js?v=23"></script>
+  <script src="/static/pipeline-graph.js?v=23"></script>
+  <script src="/static/system-view.js?v=27"></script>
+  <script src="/static/agents-view.js?v=27"></script>
+  <script src="/static/app.js?v=33"></script>
+  <script type="module" src="/static/map3d.js?v=23"></script>
+  <script type="module" src="/static/hero3d.js?v=25"></script>
+  <script type="module" src="/static/dome3d.js?v=24"></script>
+</body>
+</html>
