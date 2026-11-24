@@ -98,7 +98,7 @@ The dots on each step are honest about status: green is running in this demo, am
 
 Say this line as written:
 
-> "This panel is the roadmap. The training ran on synthetic data, the voice fine-tune is simulated, and there are no measured numbers yet."
+> "Everything here is trained on synthetic data. The voice model is a mock-up, and nothing is measured yet."
 
 Then, pointing at the top table:
 

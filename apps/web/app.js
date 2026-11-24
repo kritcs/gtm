@@ -429,7 +429,7 @@ function renderFeed() {
 
 // ---------------------------------------------------------------- model & proof
 const SERIES = ["#3987e5", "#d95926", "#199e70"]; // categorical slots 1-3, dark-surface steps, fixed order
-const BADGE_NAME = { synthetic: "Synthetic data", simulated: "Simulated", measured: "Measured" };
+const BADGE_NAME = { synthetic: "Synthetic", simulated: "Simulated", measured: "Measured" };
 const badge = (b, caption) => `<span class="badge ${b}">${BADGE_NAME[b]}</span>` +
   (caption ? `<div class="badge-caption ${b}">${esc(caption)}</div>` : "");
 
@@ -483,94 +483,71 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
     });
     sv.addEventListener("mouseleave", () => { tip.style.display = "none"; xh.style.display = "none"; });
   });
-  return `<div class="viz" id="${id}"><h4>${esc(title)}</h4>${legend}${svg}<div class="tip"></div><p class="fine" style="margin:4px 0 0">${esc(yLabel)}</p></div>`;
+  return `<div class="viz" id="${id}"><h4>${esc(title)}</h4>${legend}${svg}<div class="tip"></div>${yLabel ? `<p class="fine" style="margin:4px 0 0">${esc(yLabel)}</p>` : ""}</div>`;
 }
 
-const recallTable = (methods, k) => `<table><tr><th>Method</th><th>Recall@${k}</th><th>95% CI</th></tr>` +
-  Object.entries(methods).map(([m, v]) => `<tr><td>${esc(m)}</td><td>${v.recall.toFixed(3)}</td><td>${v.ci95[0].toFixed(3)} to ${v.ci95[1].toFixed(3)}</td></tr>`).join("") + `</table>`;
+const recallTable = (methods, k) => `<table><tr><th></th><th>Recall@${k}</th><th>95% CI</th></tr>` +
+  Object.entries(methods).map(([m, v]) => `<tr><td>${esc(m)}</td><td>${v.recall.toFixed(2)}</td><td class="muted">${v.ci95[0].toFixed(2)}–${v.ci95[1].toFixed(2)}</td></tr>`).join("") + `</table>`;
 
 async function loadProof() {
   $("#proof-area").innerHTML = `<p class="fine">Loading…</p>`;
   let d;
   try { d = await api("/api/model-proof"); } catch (e) { $("#proof-area").innerHTML = `<p class="flag">Run <code>make sim</code> first.</p>`; return; }
-  const mm = d.market_model, pr = d.prior_residual, ts = d.thompson, bt = d.backtest, ab = d.ablation, vo = d.voice_dpo;
-  const pol = ts.policies;
+  const mm = d.market_model, pr = d.prior_residual, ts = d.thompson, bt = d.backtest, vo = d.voice_dpo, pol = ts.policies;
   const rounds = (arr) => arr.map((v, i) => [i + 1, v]);
+  const head = (title, b) => `<div class="mp-head"><h3>${esc(title)}</h3>${b === "synthetic" ? "" : `<span class="badge ${b}">${BADGE_NAME[b]}</span>`}</div>`;
+  const planted = d.planted.items;
+  const short = [
+    ["RevOps trigger, tested", `q ${Number(planted[0].evidence.match(/q = ([^,]+)/)?.[1]).toExponential(0)}`],
+    ["RevOps trigger, learned", `w ${pr.weights["RevOps hire, last 6 months"].toFixed(2)}`],
+    ["Logistics segment", (planted[2].evidence.match(/^(\d+ of \d+)/)?.[1] || "").replace(" of ", "/")],
+    ["Bad extractions caught", planted[3].evidence.match(/rejected (\d+)/)?.[1] || ""],
+  ];
+  const ws = Object.entries(pr.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 5);
+  const wmax = Math.max(...ws.map((w) => Math.abs(w[1])));
+  const keep = ["popularity", "description match (LLM stand-in)", "market model alone", "founder alone", "market + founder"];
   $("#proof-area").innerHTML = `<div class="mp">
-  <div class="say">This panel is the roadmap. Training ran on synthetic data; the voice fine-tune is simulated; there are no measured numbers yet.</div>
-  <p class="lede">${badge("synthetic")} real training code ran on the seeded synthetic market (<code>make sim</code>, seed ${d.seed}, ${d.built_seconds}s on a laptop CPU). &nbsp; ${badge("simulated")} a mock-up of a step that was not run. &nbsp; ${badge("measured")} real public data. Badges are never mixed in one chart or table.</p>
+  <p class="mp-top">Trained on synthetic data, unless marked.</p>
 
-  <section>${badge("synthetic", d.planted.caption)}
-    <h3>Recovered the planted patterns</h3>
-    <p class="lede">The generator plants known structure. These checks ask whether the pipeline finds it without being told.</p>
-    <table><tr><th>Planted in the generator</th><th>Recovered</th><th>Evidence</th></tr>
-    ${d.planted.items.map((i) => `<tr><td>${esc(i.planted)}</td><td class="ok">${i.recovered ? "✓ yes" : "✗ no"}</td><td>${esc(i.evidence)}</td></tr>`).join("")}</table>
+  <section>${head("Planted patterns recovered", "synthetic")}
+    <div class="kpis">${short.map(([l, v], i) => `<div class="kpi"><span class="kpi-v">${planted[i].recovered ? "✓" : "✗"} ${esc(v)}</span><span class="kpi-l">${esc(l)}</span></div>`).join("")}</div>
   </section>
 
-  <section>${badge("synthetic", mm.caption)}
-    <h3>Market model training</h3>
-    <p class="lede">${esc(mm.task)}. ${mm.train_edges.toLocaleString()} adoption edges, ${mm.companies} companies, ${mm.tools} tools, ${mm.eval_companies} companies in validation.</p>
+  <section>${head("Market model", "synthetic")}
     <div class="grid2">
-      ${lineChart({ title: `LightGCN BPR training loss (${mm.lightgcn.seconds}s)`, xLabel: "epoch", yLabel: "BPR loss, mean of the last 5 epochs",
-        series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.loss]) }] })}
-      ${lineChart({ title: "LightGCN validation Recall@10", xLabel: "epoch", yLabel: "dashed: popularity baseline",
-        series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.val_recall]) }],
+      ${lineChart({ title: "BPR loss", xLabel: "epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.loss]) }] })}
+      ${lineChart({ title: "Recall@10", xLabel: "epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.val_recall]) }],
         ref: { y: mm.popularity_recall, label: "popularity" } })}
     </div>
-    <p class="fine">ALS (implicit, dim ${mm.als.dim}): regularization chosen on this validation set (${Object.entries(mm.als.reg_sweep).map(([k, v]) => `reg ${k}: ${v.toFixed(3)}`).join(" · ")}); final Recall@10 ${mm.als.curve.at(-1).val_recall.toFixed(3)} in ${mm.als.seconds}s. LightGCN ${mm.lightgcn.curve.at(-1).val_recall.toFixed(3)}, popularity ${mm.popularity_recall.toFixed(3)}: on this synthetic market tool adoption is mostly popularity, and the graph model only matches it.</p>
   </section>
 
-  <section>${badge("synthetic", pr.caption)}
-    <h3>Founder prior + learned correction</h3>
-    <p class="lede"><code>${esc(pr.formula)}</code>. Train: features as of ${esc(pr.split.train_features_asof)} (${pr.train.n.toLocaleString()} rows, ${pr.train.positives} positives), labels ${esc(pr.split.train_labels)}. Test: features as of ${esc(pr.split.test_features_asof)}, ${esc(pr.split.test_labels)} (${pr.test.positives} of ${pr.test.n}). ${esc(pr.correction_model)}.</p>
-    <div class="grid2"><div>${recallTable(pr.methods, pr.test.k)}</div>
-      <div><table><tr><th>Largest correction weights</th><th>w</th></tr>${Object.entries(pr.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 6).map(([f, v]) => `<tr><td>${esc(f)}</td><td>${v >= 0 ? "+" : ""}${v.toFixed(2)}</td></tr>`).join("")}</table></div></div>
-    <p class="fine">The correction learns the planted RevOps trigger and moves weight toward logistics and away from saas-billing, against the founder's stated beliefs. Because those beliefs are miscalibrated, the correction alone still beats prior + correction here.</p>
-  </section>
-
-  <section>${badge("synthetic", ts.caption)}
-    <h3>Beta priors + Thompson sampling</h3>
-    <p class="lede">${esc(ts.setup)} Best planted segment: ${esc(ts.best_segment)}.</p>
+  <section>${head("Prior + correction", "synthetic")}
     <div class="grid2">
-      ${lineChart({ title: "Cumulative conversions", xLabel: "round", yLabel: "mean over runs", yFmt: (v) => v.toFixed(0),
-        series: [{ name: pol.ts_calibrated.label, short: "rescaled priors", points: rounds(pol.ts_calibrated.cum_conversions) },
-                 { name: pol.ts_flat.label, short: "flat priors", points: rounds(pol.ts_flat.cum_conversions) },
-                 { name: pol.ts_founder.label, short: "as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}
-      <div><table><tr><th>Segment</th><th>Planted rate</th><th>Founder said</th><th>Rescaled</th></tr>
-        ${Object.keys(ts.truth).map((s) => `<tr><td>${esc(s)}</td><td>${ts.truth[s].toFixed(3)}</td><td>${ts.founder_prior_mean[s].toFixed(2)}</td><td>${ts.calibrated_prior_mean[s].toFixed(3)}</td></tr>`).join("")}</table></div>
+      <div>${recallTable(pr.methods, pr.test.k)}</div>
+      <div>${ws.map(([f, v]) => `<div class="wbar"><span class="wl">${esc(f)}</span>
+        <span class="wtrack"><i style="--w:${(Math.abs(v) / wmax * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#d95926" : "#3987e5"}"></i></span>
+        <span class="wv">${v > 0 ? "+" : ""}${v.toFixed(2)}</span></div>`).join("")}</div>
     </div>
-    <table><tr><th>Policy, 40 rounds</th><th>Conversions</th><th>Regret vs always-best</th></tr>
-      ${Object.values(pol).map((p) => `<tr><td>${esc(p.label)}</td><td>${p.cum_conversions.at(-1).toFixed(1)}</td><td>${p.cum_regret.at(-1).toFixed(1)}</td></tr>`).join("")}</table>
-    <p class="fine">Stated founder beliefs are too high and miss logistics, so used as-is they cost conversions; rescaled to the base rate (same ranking and confidence) they finish best. Never updating the priors is worst after random.</p>
   </section>
 
-  <section>${badge("synthetic", bt.caption)}
-    <h3>Backtest, ${esc(bt.asof)} → after, and the ablation</h3>
-    <p class="lede">${bt.candidates} candidates, ${bt.positives} new adopters. Recall@${bt.k}, 95% bootstrap CI. "Description match" stands in for an LLM ranking; it is not an LLM.</p>
-    <div class="grid2"><div>${recallTable(bt.methods, bt.k)}</div><div><h4 style="margin:12px 0 0">Ablation</h4>${recallTable(ab.methods, ab.k)}</div></div>
-    <p class="fine">${bt.combination_beats_both_ci ? "Market + founder beats both parts outside the intervals." : bt.combination_beats_both_point ? "Market + founder beats both parts on the point estimate; the intervals overlap." : "The combination does not beat both parts."} Leakage checks: ${bt.leakage_checks.map(esc).join(" · ")}.</p>
+  <section>${head("Thompson sampling", "synthetic")}
+    ${lineChart({ title: "Conversions", xLabel: "round", yLabel: "", yFmt: (v) => v.toFixed(0),
+      series: [{ name: "rescaled priors", points: rounds(pol.ts_calibrated.cum_conversions) },
+               { name: "flat priors", points: rounds(pol.ts_flat.cum_conversions) },
+               { name: "priors as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}
   </section>
 
-  <section>${badge("synthetic", d.maturity.caption)}
-    <h3>Maturity stages</h3>
-    <div class="stage-cols">${d.maturity.stages.map((s) => `<div class="stage"><span class="badge ${s.badge}">${BADGE_NAME[s.badge]}</span><b>${esc(s.stage)}</b>${esc(s.method)}<p class="fine">${esc(s.evidence)}</p></div>`).join("")}</div>
+  <section>${head(`Backtest · ${bt.asof} → after`, "synthetic")}
+    ${recallTable(Object.fromEntries(keep.map((k) => [k.replace(" (LLM stand-in)", ""), bt.methods[k]])), bt.k)}
   </section>
 
-  <section>${badge("simulated", vo.caption)}
-    <h3>Voice model: LoRA + DPO on edit pairs</h3>
-    <p class="lede">${Object.entries(vo.config).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ")}</p>
+  <section>${head("Voice model · LoRA + DPO", "simulated")}
     <div class="grid2">
-      ${lineChart({ title: "DPO loss (simulated)", xLabel: "step", yLabel: "simulated values from a seeded generator",
-        series: [{ name: "DPO loss", points: vo.dpo_curve.map((r) => [r.step, r.loss]) }] })}
-      ${lineChart({ title: "Reward margin, chosen − rejected (simulated)", xLabel: "step", yLabel: "simulated values from a seeded generator",
-        series: [{ name: "reward margin", points: vo.dpo_curve.map((r) => [r.step, r.reward_margin]) }] })}
+      ${lineChart({ title: "DPO loss", xLabel: "step", yLabel: "", series: [{ name: "DPO loss", points: vo.dpo_curve.map((r) => [r.step, r.loss]) }] })}
+      <div class="kpis one"><div class="kpi"><span class="kpi-v">${vo.eval.win_rate_vs_base.toFixed(2)}</span><span class="kpi-l">win rate vs base</span></div></div>
     </div>
-    <p class="fine">Simulated eval: win rate vs base ${vo.eval.win_rate_vs_base.toFixed(2)} (95% CI ${vo.eval.ci95[0].toFixed(2)} to ${vo.eval.ci95[1].toFixed(2)}, n = ${vo.eval.n_judged}); AI-sounding flags per email ${vo.eval.ai_flags_per_email.base} → ${vo.eval.ai_flags_per_email.tuned}. Not run.</p>
   </section>
 
-  <section>${badge("measured", d.badges.measured)}
-    <h3>Measured on real public data</h3>
-    <div class="empty">${esc(d.measured.note)}</div>
-  </section>
+  <section>${head("Measured", "measured")}<p class="fine">None yet.</p></section>
   </div>`;
 }

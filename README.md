@@ -93,10 +93,10 @@ The combination beats both parts on the point estimate, but the intervals overla
 
 ## Model & proof panel (`make sim` → `sim/out/results.json`)
 
-Three badges, never mixed in one chart or table:
-- **Synthetic data:** real training code ran on the seeded synthetic market. This covers LightGCN vs ALS training curves, `logit(founder prior) + correction` across a time split (Newton/IRLS), Beta priors + Thompson sampling over 40 outcome rounds, the backtest and ablation, and checks that the planted patterns were recovered. It shows the method works, not real-world accuracy.
-- **Simulated:** the LoRA + DPO voice fine-tune is a seeded mock-up. It needs a GPU pod and was not run.
-- **Measured:** real public data. There are none yet, and the panel shows an empty slot.
+The panel says once at the top that everything is trained on synthetic data, and badges mark only the exceptions:
+- **Synthetic (default, no badge):** real training code ran on the seeded synthetic market. This covers LightGCN training, `logit(founder prior) + correction` across a time split, Thompson sampling, the backtest and ablation, and the checks that planted patterns were recovered.
+- **Simulated badge:** the LoRA + DPO voice fine-tune is a seeded mock-up. It was not run.
+- **Measured badge:** real public data. There are none yet.
 
 What the synthetic runs show:
 - **Market model:** LightGCN only matches the popularity baseline on this market.
