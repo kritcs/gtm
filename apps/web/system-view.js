@@ -86,7 +86,7 @@
         const anchor = Math.abs(out[0] - CX) < 20 ? "middle" : out[0] > CX ? "start" : "end";
         return `<g class="step" data-i="${i}" tabindex="0" transform="translate(${x},${y})">
           <circle class="halo" r="38"/><circle class="dot" r="26"/>${ICON(s.icon, 20)}
-          <circle cx="19" cy="-19" r="5" fill="${col}" stroke="#0e0e0f" stroke-width="2.5"/></g>
+          <circle cx="19" cy="-19" r="5" fill="${col}" stroke="#13112e" stroke-width="2.5"/></g>
           <text x="${out[0]}" y="${out[1] + 5}" text-anchor="${anchor}" class="lbl" data-i="${i}">${esc(s.title)}</text>`;
       }).join("");
       const [lx, ly] = pos(7, R - 28), [sx, sy] = pos(2, R - 28);
