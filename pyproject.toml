@@ -1,0 +1,21 @@
+[project]
+name = "gtm"
+version = "0.1.0"
+description = "Intuition in a bottle: founder intuition + market graph GTM engine (backend)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.165.0",
+    "numpy>=2.5.5",
+    "pydantic>=2.14.4",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+]

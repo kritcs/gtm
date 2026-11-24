@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intuition in a bottle</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- 1. Enter -->
+  <section id="enter" class="stage active">
+    <div class="center">
+      <p class="eyebrow">A reading for founders</p>
+      <h1 class="display">Tell me who got excited.<br>I'll show you who's next.</h1>
+      <button id="begin" class="primary">Begin</button>
+      <p class="fine" id="world-line">Loading the market…</p>
+    </div>
+  </section>
+
+  <!-- 2. Talk -->
+  <section id="talk" class="stage">
+    <div class="talk-grid">
+      <div class="talk-main">
+        <p class="eyebrow" id="q-count"></p>
+        <h2 class="question" id="question"></h2>
+        <div class="phrases" id="phrases"></div>
+        <div class="answer-box">
+          <textarea id="answer" rows="4" placeholder="Speak or type. Specific moments beat general rules."></textarea>
+          <div class="row">
+            <button id="mic" class="ghost" title="Speak (Web Speech API)">● Speak</button>
+            <button id="demo-answer" class="link">use the demo founder's answer</button>
+            <span class="grow"></span>
+            <button id="send" class="primary">Next</button>
+          </div>
+        </div>
+      </div>
+      <aside class="bottle" id="bottle">
+        <p class="eyebrow">The bottle</p>
+        <div class="bottle-glass"><div class="bottle-fill" id="bottle-fill"></div></div>
+        <dl id="bottle-list"></dl>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 3. Pause -->
+  <section id="pause" class="stage">
+    <div class="center">
+      <h2 class="display small">Let me look.</h2>
+      <div class="shuffle" id="shuffle"></div>
+      <div class="kitchen" id="kitchen"></div>
+    </div>
+  </section>
+
+  <!-- 4-8. The reading -->
+  <section id="reading" class="stage">
+    <div class="reading-wrap">
+      <p class="eyebrow" id="card-eyebrow"></p>
+      <div class="card-scene">
+        <div class="card" id="card">
+          <div class="face front" id="card-front"></div>
+          <div class="face back" id="card-back"></div>
+        </div>
+      </div>
+      <div class="diff" id="card-diff"></div>
+      <div class="card-actions" id="card-actions">
+        <button class="ghost" id="flip">See the receipts</button>
+        <span class="grow"></span>
+        <button class="ghost" id="yes">Yes, exactly</button>
+        <input id="no-text" placeholder="No, because…">
+        <button class="ghost" id="no">Correct it</button>
+        <button class="primary" id="next-card">Next</button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dash" class="stage">
+    <header class="dash-head">
+      <h2>Ledgerlight · GTM engine</h2>
+      <nav id="tabs">
+        <button data-tab="accounts" class="on">Accounts</button>
+        <button data-tab="outreach">Outreach</button>
+        <button data-tab="pipeline">Pipeline</button>
+        <button data-tab="bottle-tab">Bottle</button>
+        <button data-tab="feed">Band feed</button>
+        <button data-tab="proof">Proof</button>
+      </nav>
+      <button class="link" id="reread">← the reading</button>
+    </header>
+    <main>
+      <div class="tab on" id="accounts">
+        <div class="meter">
+          <div><p class="eyebrow">Flexprice credits</p><div class="meter-bar"><div id="meter-fill"></div></div>
+            <p class="fine" id="meter-text"></p></div>
+          <button class="primary" id="enrich">Enrich top accounts</button>
+        </div>
+        <div id="account-list" class="accounts"></div>
+      </div>
+      <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="fine">Pick an account and press “Draft email”.</p></div></div>
+      <div class="tab" id="pipeline"><div class="kanban" id="kanban"></div></div>
+      <div class="tab" id="bottle-tab"><div id="bottle-inspect"></div></div>
+      <div class="tab" id="feed"><p class="fine" id="band-status"></p><ol class="feed" id="feed-list"></ol></div>
+      <div class="tab" id="proof"><div id="proof-area"></div></div>
+    </main>
+  </section>
+
+  <footer class="sim-note" id="sim-note">Simulated market data</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
