@@ -164,6 +164,7 @@ function listen() {
     anim(k, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 380 });
     while ($("#kitchen").children.length > 7) $("#kitchen").firstChild.remove();
     if (ev.meta?.candidates) countTo($("#scored"), ev.meta.candidates);
+    window.AV?.ingest(ev);
     renderFeed();
     if (ev.agent === "Webhook") onReply();
   };
@@ -275,7 +276,7 @@ function tab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === name));
   anim(document.getElementById(name), [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
-  ({ accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: renderFeed })[name]?.();
+  ({ accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: loadAgents })[name]?.();
 }
 async function openDash() { await show("dash"); tab("accounts"); }
 
@@ -412,9 +413,13 @@ async function loadBottle() {
     ${b.hit_features.map((f) => `<tr><td>${esc(f.label)}</td><td>${f.k}/${f.n}</td><td>${(f.base_rate * 100).toFixed(0)}%</td><td>${f.q_value.toExponential(0)}</td><td>${f.passes ? "✓" : ""}</td></tr>`).join("")}</table>`;
 }
 
+function loadAgents() {
+  if (!window.AV) { window.AV = new AgentsView($("#agents-root")); AV.load(S.events); }
+  renderFeed();
+}
+
 function renderFeed() {
-  if (!S.world) return;
-  $("#band-status").textContent = "";
+  if (!S.world || !$("#feed-list")) return;
   const had = $("#feed-list").children.length;
   $("#feed-list").innerHTML = S.events.slice().reverse().map((e) => `
     <li><span class="agent">${esc(e.agent)}</span><span class="type ${e.type === "error" ? "error" : ""}">${esc(e.type)}</span><span>${esc(e.content)}</span><span class="band">${esc(e.band)}</span></li>`).join("");
