@@ -279,7 +279,7 @@ function tab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === name));
   anim(document.getElementById(name), [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
-  ({ accounts: loadAccounts, pipeline: loadPipeline, "bottle-tab": loadBottle, proof: loadProof, feed: renderFeed })[name]?.();
+  ({ accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: renderFeed })[name]?.();
 }
 async function openDash() { await show("dash"); tab("accounts"); }
 
@@ -390,6 +390,13 @@ async function loadPipeline(highlight) {
     ["suggested", "drafted", "sent", "replied"].map((st) => `${dot(PIPELINE_STATUS[st].color)}${st} <b>${count(st)}</b>`).join("") +
     `${dot(PIPELINE_STATUS.segment.color)}new segment ${d.segment.length}</div>` +
     `<div>${["industry", "trigger", "tool", "pain"].map((k) => `<i class="ln" style="background:${PIPELINE_REL[k].color}"></i>${PIPELINE_REL[k].label}`).join("")}</div>`;
+}
+
+let SV = null;
+async function loadSystem() {
+  if (!SV) { SV = new SystemView($("#system-root")); }
+  SV.setLive(await api(`/api/sessions/${S.sid}/system`));
+  SV.show(SV.panel);
 }
 
 async function onReply() {

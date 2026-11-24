@@ -27,7 +27,7 @@ Buttons are icons now. This script names each one by its icon, and every icon sh
 
 > "Founders sell their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. Every dot here is a company. We take the founder's instinct and check it against all of them."
 
-**2. Interview (40 s).** *Click **Begin**.*
+**2. Interview (35 s).** *Click **Begin**.*
 
 Speak or type the first answer yourself. Use the wand for the other three and read them aloud quickly. Press → after each one.
 
@@ -41,7 +41,7 @@ Point at the right-hand column as it fills:
 
 > "It pulls out customers, the problem, who buys and the deal we lost. Each one becomes a rule with a trust score."
 
-**3. The reading (50 s).** *After the last answer, the count runs up while a wave passes through the dots, for about 3 seconds.*
+**3. The reading (45 s).** *After the last answer, the count runs up while a wave passes through the dots, for about 3 seconds.*
 
 > "Now it scores every company against what I said."
 
@@ -56,7 +56,7 @@ Press → to move between cards. Each card lights up its evidence on the map.
 - **05 · low data.** "It also says where it doesn't have enough data to rank."
 - **06 · start here.** A ring appears around one dot. "Start with Fablesync, the VP Finance." Press →, which opens Accounts.
 
-**4. The engine (25 s).**
+**4. The engine (20 s).**
 
 > "Five accounts, not five hundred. Every chip is evidence from a post, and a Reviewer agent checks each one before it shows up."
 
@@ -80,7 +80,21 @@ The Fablesync card slides into **replied**.
 
 > "The reply came back through the webhook, and it raised the trust score on the rules that picked this account."
 
-**7. Proof (20 s).** *Open the **Proof** tab.*
+**7. The architecture (20 s).** *Open the **System** tab and press **Run the loop**.*
+
+> "This is Peem's architecture. Eight steps: the forward pass finds and contacts the right accounts."
+
+When the green token takes the shortcut from Learn back to Score:
+
+> "Everyone builds the forward pass. We build the backward pass: outcomes rewrite who we target and what we say."
+
+Optional, only if there's time: switch to **learning** and press **+ churned (0)** once.
+
+> "A founder's belief is a prior, and every outcome moves it."
+
+The dots on each step are honest about status: green is running in this demo, amber is partly running, and grey is roadmap.
+
+**8. Proof (15 s).** *Open the **Proof** tab.*
 
 Say this line as written:
 
@@ -94,7 +108,7 @@ Pointing at the backtest table:
 
 > "In the backtest, market plus founder beats either one alone on the point estimate. The confidence intervals still overlap, so we don't claim more than that."
 
-**8. Close (5 s).**
+**9. Close (5 s).**
 
 > "The market's data plus one founder's instinct. Thanks."
 
@@ -113,6 +127,7 @@ Stop there.
 ## Questions judges will likely ask
 
 - **"Is this real data?"** No. It's a seeded synthetic market shaped like Hacker News "Who is hiring" posts. The extraction, the model, the statistics and the backtest are real code running on it. The next step is the real HN corpus.
+- **"Which parts of the architecture are built?"** The System tab marks each step. Intake, approval and the reply loop run in the demo. The market graph, scoring, enrichment, signal packets, drafting and learning run partly. Person, Competitor, Stripe outcomes and the GNN residual are roadmap.
 - **"What is the map?"** Each dot is a company, placed by the model's own embeddings, so companies that use similar tools and describe similar problems sit close together. That's why the logistics segment appears far from the founder's customers.
 - **"How do you know the RevOps pattern isn't chance?"** It's compared against companies of the same size and stage over the same months, and corrected for testing every feature. It's also one of the patterns we planted, and the pipeline found it.
 - **"Doesn't founder bias hurt?"** Sometimes it does. In the Thompson sampling run, the founder's beliefs used as stated did worse than no beliefs. Rescaled to the market base rate, they did best. The panel shows both.

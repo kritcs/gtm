@@ -78,6 +78,7 @@
         <button data-tab="accounts" class="on"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Accounts</button>
         <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/square-pen.svg)"></i>Draft</button>
         <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Pipeline</button>
+        <button data-tab="system"><i class="i" style="--i:url(/static/vendor/icons/workflow.svg)"></i>System</button>
         <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Bottle</button>
         <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/activity.svg)"></i>Agents</button>
         <button data-tab="proof"><i class="i" style="--i:url(/static/vendor/icons/flask-conical.svg)"></i>Proof</button>
@@ -96,6 +97,7 @@
       <div class="tab" id="pipeline"><div class="graph-wrap"><canvas id="pgraph"></canvas>
         <div class="group-by mono" id="groupby"><span>group by</span><button data-g="industry" class="on">industry</button><button data-g="signal">signal</button><button data-g="stage">stage</button></div>
         <div class="graph-legend mono" id="glegend"></div></div></div>
+      <div class="tab" id="system"><div class="sys" id="system-root"></div></div>
       <div class="tab" id="bottle-tab"><div id="bottle-inspect"></div></div>
       <div class="tab" id="feed"><p class="mono muted small" id="band-status"></p><ol class="feed" id="feed-list"></ol></div>
       <div class="tab" id="proof"><div id="proof-area"></div></div>
@@ -104,6 +106,7 @@
 
   <footer class="sim-note mono" id="sim-note">synthetic market</footer>
   <script src="/static/pipeline-graph.js"></script>
+  <script src="/static/system-view.js"></script>
   <script src="/static/app.js"></script>
   <script type="module" src="/static/map3d.js"></script>
 </body>

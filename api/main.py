@@ -264,6 +264,48 @@ def pipeline_graph(sid: str):
             "trait": feature_label(s.hit_feature) if s.hit_feature else None}
 
 
+@app.get("/api/sessions/{sid}/system")
+def system(sid: str):
+    """Live numbers for each block of the architecture diagram."""
+    s, e = sess(sid), eng()
+    g, m, w = e.graph, e.model, e.world
+    cards = s.cards
+    hit = cards.get("hit").stats if "hit" in cards else {}
+    disc = cards.get("discovery").stats if "discovery" in cards else {}
+    need = cards.get("needed").stats if "needed" in cards else {}
+    rules = s.bottle.rules
+    rk = getattr(s, "ranking", None)
+    top = s.accounts[0] if s.accounts else None
+    drafts = list(s.drafts.values())
+    llm = sum(1 for t in g.triples if t.extractor == "llm")
+    return {
+        "interview": {"answers": len(s.bottle.answers), "phrases": len(s.bottle.phrases)},
+        "posts": {"posts": len(w.posts), "companies": len(w.companies), "through": "2026-10", "synthetic": True},
+        "extract": {"triples": len(g.triples) + len(g.rejected), "dictionary": len(g.triples) - llm, "llm pass": llm + len(g.rejected)},
+        "review": {"kept": len(g.triples), "rejected": len(g.rejected)},
+        "graph": {"adoption edges": len(g.adopted), "tools": len(w.tools), "features": sum(len(v) for v in g.features.values())},
+        "bottle": {"rules": len(rules), "mean trust": round(sum(r.trust for r in rules) / len(rules), 2) if rules else None,
+                   "E": len(s.bottle.experience)},
+        "model": {"BPR loss": f"{m.info['loss_start']:.2f} → {m.info['loss_end']:.2f}", "pairs": m.info["pairs"],
+                  "fold-in shift": round(rk.meta["shift"], 2) if rk else None},
+        "hit": {"feature": hit.get("feature"), "q": f"{hit['q_value']:.1e}" if "q_value" in hit else None,
+                "tested": hit.get("features_tested"), "base rate": f"{hit['base_rate']:.1%}" if "base_rate" in hit else None},
+        "disc": {"segment": disc.get("segment_size"), "quoted": disc.get("quoted"),
+                 "distance": round(disc["distance"], 2) if "distance" in disc else None, "term": disc.get("phrase")},
+        "pain": {"best match": round(need["similarity"], 2) if "similarity" in need else None,
+                 "same month": need.get("moment_companies")},
+        "blind": cards.get("blindspot").stats if "blindspot" in cards else {},
+        "reading": {"cards": len(cards)},
+        "rank": {"ranked": rk.meta["candidates"] if rk else None, "top": top["name"] if top else None,
+                 "λ (top)": top["lambda"] if top else None, "filter": s._constraint_text()},
+        "credits": {"left": round(s.credits, 1), "spent on": len(s.ledger), "flexprice": e.flex.status.split(" ")[0]},
+        "draft": {"drafts": len(drafts), "AI flags": sum(len(d["flags"]) for d in drafts)},
+        "approve": {"approved": sum(d["status"] in ("approved", "sent", "replied") for d in drafts)},
+        "reply": {"replies": sum(d["status"] == "replied" for d in drafts)},
+        "band": e.band.status.split(" ")[0],
+    }
+
+
 @app.get("/api/sessions/{sid}/bottle")
 def bottle(sid: str):
     s = sess(sid)
