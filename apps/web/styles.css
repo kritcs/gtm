@@ -507,3 +507,38 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 .gkpis b { display: block; font: 400 32px/1 var(--serif); color: #fff; }
 .gkpis span { font-size: 12px; color: var(--muted-foreground); }
 @media (max-width: 860px) { .loop-wrap { grid-template-columns: 1fr; } .gkpis { grid-template-columns: 1fr 1fr; } }
+
+/* bottle: beliefs board + traits gap chart */
+.bsec { margin-bottom: 34px; }
+.bhead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.bhead h3 { margin: 0; font-size: 34px; }
+.blegend { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted-foreground); }
+.blegend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 10px; }
+.blegend i.you { background: #fff; } .blegend i.mk { background: #3987e5; }
+.blegend i.dot-c { background: #3987e5; } .blegend i.dot-b { border: 1.5px solid rgba(255,255,255,.6); }
+.rboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.rcol h4 { margin: 0 0 10px; font: italic 400 24px var(--serif); color: rgba(255,255,255,.7); text-transform: capitalize; }
+.rcard { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px 10px; margin-bottom: 10px; }
+.rcard.market { border-color: rgba(57,135,229,.5); background: rgba(57,135,229,.06); }
+.rcard p { margin: 0 0 10px; font-size: 15px; line-height: 1.35; }
+.rfoot { display: flex; align-items: center; gap: 8px; }
+.rfoot .src { font-size: 12px; color: var(--muted-foreground); flex: 1; }
+.rfoot b { font: 400 24px/1 var(--serif); }
+.gauge { width: 46px; height: 28px; }
+.g-bg { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 5; stroke-linecap: round; }
+.g-fg { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; }
+.g-fg.mk { stroke: #3987e5; }
+.traits { width: 100%; height: auto; display: block; }
+.ttick { fill: rgba(255,255,255,.35); font: 12px var(--sans); text-anchor: middle; }
+.tl { fill: rgba(255,255,255,.8); font: 15px var(--sans); }
+.trow.sig .tl { fill: #fff; font-weight: 600; }
+.tgrid { stroke: rgba(255,255,255,.07); }
+.tgap { stroke: rgba(255,255,255,.3); stroke-width: 2; }
+.trow.sig .tgap { stroke: #3987e5; stroke-width: 4; filter: drop-shadow(0 0 6px rgba(57,135,229,.6)); }
+.tbase { fill: #000; stroke: rgba(255,255,255,.6); stroke-width: 1.5; }
+.tshare { fill: rgba(255,255,255,.75); }
+.trow.sig .tshare { fill: #3987e5; }
+.tv { fill: #fff; font: 400 18px var(--serif); }
+.tv .muted { fill: rgba(255,255,255,.45); }
+.tbadge { fill: rgba(57,135,229,.15); stroke: #3987e5; }
+.tbadge-t { fill: #7fb0f0; font: 500 12px var(--sans); text-anchor: middle; }

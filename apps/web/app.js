@@ -404,13 +404,52 @@ async function onReply() {
 
 async function loadBottle() {
   const b = await api(`/api/sessions/${S.sid}/bottle`);
+  const KINDS = ["pain", "trigger", "buyer", "segment"];
+  const gauge = (t, market) => {
+    const a = Math.PI * (1 - t), x = 30 + 24 * Math.cos(a), y = 30 - 24 * Math.sin(a);
+    return `<svg viewBox="0 0 60 36" class="gauge"><path d="M6,30 A24,24 0 0 1 54,30" class="g-bg"/>
+      <path d="M6,30 A24,24 0 0 1 ${x.toFixed(1)},${y.toFixed(1)}" class="g-fg ${market ? "mk" : ""}" pathLength="1"/></svg>`;
+  };
+  const cols = KINDS.map((k) => {
+    const rs = b.rules.filter((r) => r.kind === k).sort((x, y) => y.trust - x.trust);
+    if (!rs.length) return "";
+    return `<div class="rcol"><h4>${k}</h4>${rs.map((r) => {
+      const market = (r.key || "").includes(":");
+      return `<div class="rcard ${market ? "market" : ""}"><p>${esc(r.text.replace(" (found in the market data)", ""))}</p>
+        <div class="rfoot"><span class="src">${market ? "found in data" : "you said"}</span>${gauge(r.trust, market)}<b>${r.trust.toFixed(2)}</b></div></div>`;
+    }).join("")}</div>`;
+  }).join("");
+
+  const tr = b.hit_features.slice(0, 8);
+  const RW = 900, L = 230, PW = 520, RH = 46, X = (v) => L + v * PW;
+  const rows = tr.map((f, i) => {
+    const y = 40 + i * RH, share = f.k / f.n, base = f.base_rate;
+    return `<g class="trow ${f.passes ? "sig" : ""}" style="--d:${i * 90}ms">
+      <text x="0" y="${y + 5}" class="tl">${esc(f.label)}</text>
+      <line x1="${X(0)}" x2="${X(1)}" y1="${y}" y2="${y}" class="tgrid"/>
+      <line x1="${X(base)}" x2="${X(share)}" y1="${y}" y2="${y}" class="tgap" pathLength="1"/>
+      <circle cx="${X(base)}" cy="${y}" r="6" class="tbase"/>
+      <circle cx="${X(share)}" cy="${y}" r="7" class="tshare" style="--from:${X(base) - X(share)}px"/>
+      <text x="${X(1) + 24}" y="${y + 5}" class="tv">${f.k}/${f.n} <tspan class="muted">vs ${(base * 100).toFixed(0)}%</tspan></text>
+      ${f.passes ? `<g transform="translate(${X(1) + 120},${y})"><rect x="0" y="-12" width="84" height="24" rx="12" class="tbadge"/><text x="42" y="4" class="tbadge-t">q ${f.q_value.toExponential(0).replace("e-", "e-")}</text></g>` : ""}
+    </g>`;
+  }).join("");
+  const ticks = [0, .25, .5, .75, 1].map((t) => `<text x="${X(t)}" y="18" class="ttick">${t * 100}%</text>`).join("");
   $("#bottle-inspect").innerHTML = `
-    <h3>Rules</h3>
-    <table><tr><th></th><th></th><th>trust</th></tr>
-    ${b.rules.map((r) => `<tr><td class="muted">${esc(r.kind)}</td><td>${esc(r.text)}</td><td><span class="trust" style="width:${r.trust * 80}px"></span>${r.trust.toFixed(2)}</td></tr>`).join("")}</table>
-    <h3>Traits tested</h3>
-    <table><tr><th></th><th>customers</th><th>base</th><th>q</th><th></th></tr>
-    ${b.hit_features.map((f) => `<tr><td>${esc(f.label)}</td><td>${f.k}/${f.n}</td><td>${(f.base_rate * 100).toFixed(0)}%</td><td>${f.q_value.toExponential(0)}</td><td>${f.passes ? "✓" : ""}</td></tr>`).join("")}</table>`;
+    <section class="bsec"><div class="bhead"><h3>What you believe</h3>
+      <span class="blegend"><i class="you"></i>you said <i class="mk"></i>found in data</span></div>
+      <div class="rboard">${cols}</div></section>
+    <section class="bsec"><div class="bhead"><h3>Your customers vs similar companies</h3>
+      <span class="blegend"><i class="dot-c"></i>your customers <i class="dot-b"></i>similar companies</span></div>
+      <svg viewBox="0 0 ${RW + 60} ${60 + tr.length * RH}" class="traits">${ticks}${rows}</svg></section>`;
+  if (!RM) {
+    document.querySelectorAll(".rcard").forEach((c, i) => anim(c, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { delay: i * 50 }));
+    document.querySelectorAll(".g-fg").forEach((g, i) => anim(g, [{ strokeDasharray: "0 1" }, { strokeDasharray: "1 0" }], { duration: 900, delay: 200 + i * 50 }));
+    document.querySelectorAll(".trow").forEach((r, i) => {
+      anim(r.querySelector(".tgap"), [{ strokeDasharray: "0 1" }, { strokeDasharray: "1 0" }], { duration: 900, delay: 300 + i * 90 });
+      anim(r.querySelector(".tshare"), [{ transform: `translateX(${r.querySelector(".tshare").style.getPropertyValue("--from")})`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 900, delay: 300 + i * 90 });
+    });
+  }
 }
 
 function loadAgents() {
