@@ -191,7 +191,7 @@ class Session:
         who = ", ".join(names[:-1]) + f" and {names[-1]}" if len(names) > 1 else (names[0] if names else "No customers named")
         pain = self.bottle.phrases[0] if self.bottle.phrases else "none recorded"
         return Card(id="reflection", kind="reflection", front_text=f"Customers: {who}. Problem: {pain}.",
-                    back_text="Extracted from the interview. Each item is stored as a rule; replies change its trust score.",
+                    back_text="",
                     clarity=0.9, revisable=False, map={"customers": list(self.bottle.customers)},
                     stats={"rules": [r.to_dict() for r in self.bottle.rules]})
 
@@ -203,8 +203,7 @@ class Session:
         from .cards import Receipt
         return Card(id="next_step", kind="next_step",
                     front_text=f"Start with {a['name']} ({a['contact']['role']}).",
-                    back_text=f"Top evidence: {ch['label']}. Score {a['score']} = market {a['market']} + "
-                              f"founder {a['founder']} weighted {a['lambda']}.",
+                    back_text=f"Score {a['score']}",
                     clarity=0.85, receipts=[Receipt(**c["receipt"]) for c in a["chips"]],
                     companies=[{"id": a["id"], "name": a["name"]}], stats={"account": a["id"]},
                     map={"customers": list(self.bottle.customers), "accounts": [x["id"] for x in self.accounts[:5]],

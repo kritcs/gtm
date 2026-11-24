@@ -116,10 +116,8 @@
         <p class="mono small"><i class="sdot" style="background:${col}"></i>${lab}</p>
         <h3>${s.n} · ${esc(s.title)}</h3>
         <p class="q">${esc(s.q)}</p>
-        <p class="small">${esc(s.what)}</p>
         <p class="math mono">${esc(s.math)}</p>
-        ${s.layers.length ? `<p class="mono small muted">${s.layers.map(esc).join(" · ")}</p>` : ""}
-        ${live ? `<p class="mono small muted" style="margin-top:14px">live in this demo</p><table class="mini">${live}</table>` : ""}`;
+        ${live ? `<table class="mini">${live}</table>` : ""}`;
       const d = this.root.querySelector("#sys-drawer");
       d.animate?.([{ opacity: 0, transform: "translateX(8px)" }, { opacity: 1, transform: "none" }], { duration: 300 });
     }
@@ -210,9 +208,7 @@
       </svg>`;
       this.root.querySelector("#sys-drawer").innerHTML = `
         <h3>The graph</h3>
-        <p class="small">Kùzu for serving: cited facts, warm-intro paths, explanations. Relational deep learning on the same data, with time splits, for learning.</p>
-        <p class="small">Use the graph only where tables fail: multi-hop paths, and linking outcomes back to the signals that caused them.</p>
-        <p class="mono small muted" style="margin-top:14px">in this demo</p>
+        <p class="q">Public market, private outcomes.</p>
         <table class="mini"><tr><td>companies</td><td>${esc(live.posts?.companies)}</td></tr><tr><td>adoption edges</td><td>${esc(live.graph?.["adoption edges"])}</td></tr>
         <tr><td>triples kept</td><td>${esc(live.review?.kept)}</td></tr><tr><td>rejected by Reviewer</td><td>${esc(live.review?.rejected)}</td></tr></table>`;
       // a cited fact travels the multi-hop path: outcome -> signal -> company -> product
@@ -239,7 +235,7 @@
         <div class="learn">
           <div class="learn-top">
             ${segs.map((s, i) => `<div class="beta-card" id="bc${i}">
-              <p class="mono small muted">founder says</p>
+
               <p class="say">“${s.name}, ${Math.round(s.belief * 100)}%, ${s.conf}”</p>
               <svg viewBox="0 0 300 120" class="beta"><path class="bfill"/><path class="bline"/><line class="bmean" y1="8" y2="104"/>
                 <line x1="10" x2="290" y1="104" y2="104" stroke="rgba(255,255,255,.15)"/></svg>
@@ -254,7 +250,7 @@
           <div class="residual">
             <p class="math mono">score(account) = logit(prior) + correction(graph features)</p>
             <div id="wbars"></div>
-            <p class="mono small muted">correction weights learned on the synthetic market (Proof tab) · a full GNN residual is the roadmap</p>
+
           </div>
           <div class="maturity mono">
             <span>0 customers<br><b>priors + graph similarity</b></span><span>tens<br><b>Beta updates</b></span>
@@ -314,10 +310,8 @@
         st.querySelectorAll(".wtrack i").forEach((el, i) => el.animate?.([{ width: "0%" }, { width: el.style.getPropertyValue("--w") }], { duration: 800, delay: i * 80, fill: "both", easing: "cubic-bezier(.2,.8,.2,1)" }));
       });
       this.root.querySelector("#sys-drawer").innerHTML = `
-        <h3>Learning from outcomes</h3>
-        <p class="small">A founder's belief is a Beta prior. Confidence sets its weight: “quite sure” counts like 20 past deals, “a hunch” like 4.</p>
-        <p class="small">Each outcome adds to the counts: retained adds 1 success, a trial 0.3, churn a failure. Try the buttons.</p>
-        <p class="small">No reply is not a no: uncontacted accounts stay unlabeled, and Thompson sampling keeps an exploration budget so the model doesn't only confirm itself.</p>`;
+        <h3>Learning</h3>
+        <p class="q">A belief is a prior. Every outcome moves it.</p>`;
     }
   }
 

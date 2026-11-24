@@ -108,9 +108,11 @@ a { color: inherit; }
   background: transparent; text-decoration: none; transition: opacity .5s, color .5s; }
 .chip.trigger { border-color: var(--c1); }
 .chip.struck { color: var(--muted-foreground); opacity: .35; text-decoration: line-through; }
-.receipt { border-top: 1px solid var(--border); padding: 10px 0; }
-.receipt q { font-style: normal; color: var(--foreground); }
-.receipt .meta { font: 11px var(--mono); color: var(--muted-foreground); margin-top: 3px; }
+.back-line { font: italic 400 20px/1.3 var(--serif); color: var(--foreground); margin: 0 0 12px; }
+.receipt { display: block; border-top: 1px solid var(--border); padding: 10px 0; text-decoration: none; }
+.receipt:hover q { text-decoration: underline; text-underline-offset: 3px; }
+.receipt q { font-style: normal; color: var(--foreground); display: block; }
+.receipt .meta { font-size: 12px; color: var(--muted-foreground); margin-top: 3px; display: block; }
 .stats { font: 11px/1.6 var(--mono); color: var(--muted-foreground); margin-top: 12px; white-space: pre-wrap; }
 .card-actions { display: flex; gap: 6px; align-items: center; margin-top: 14px; }
 .diff { min-height: 20px; margin-top: 12px; font-family: var(--sans); color: var(--muted-foreground); }

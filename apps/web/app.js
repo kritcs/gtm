@@ -216,15 +216,12 @@ function playFront(c, delay = 0) {
 }
 
 function cardBack(c) {
-  let html = `<p>${esc(c.back_text)}</p>`;
-  for (const r of c.receipts) {
-    html += `<div class="receipt"><q>${esc(r.quote)}</q><div class="meta">${r.company ? esc(r.company) + " · " : ""}${esc(r.date)} · ` +
-      `<a href="${esc(r.url)}" target="_blank">post ${r.post_id}</a>${r.verified ? " · verified" : " · <span class=flag>unverified</span>"}</div></div>`;
+  let html = c.back_text ? `<p class="back-line">${esc(c.back_text)}</p>` : "";
+  for (const r of c.receipts.slice(0, 5)) {
+    const q = r.quote.length > 90 ? r.quote.slice(0, 88).replace(/\s+\S*$/, "") + " …" : r.quote;
+    html += `<a class="receipt" href="${esc(r.url)}" target="_blank"><q>${esc(q)}</q>` +
+      `<span class="meta">${r.company ? esc(r.company) + " · " : ""}${esc(r.date)}${r.verified ? " ✓" : ""}</span></a>`;
   }
-  const st = { ...c.stats }; delete st.rules;
-  const fmt = (v) => typeof v === "number" ? (Math.abs(v) < 0.001 && v !== 0 ? v.toExponential(1) : +v.toPrecision(3))
-    : Array.isArray(v) ? v.map(fmt).join(", ") : typeof v === "object" && v ? Object.entries(v).map(([a, b]) => `${a} ${fmt(b)}`).join(", ") : v;
-  if (Object.keys(st).length) html += `<div class="stats">${Object.entries(st).map(([k, v]) => `${esc(k.replaceAll("_", " "))}: ${esc(fmt(v))}`).join("\n")}</div>`;
   return html;
 }
 
@@ -240,7 +237,7 @@ async function renderCard(dir = 1, { swapOnly = false } = {}) {
   $("#card-front").innerHTML = cardFront(c);
   $("#card-back").innerHTML = cardBack(c);
   $("#card-diff").textContent = c.diff || "";
-  $("#flip").style.display = c.receipts.length || Object.keys(c.stats).length ? "" : "none";
+  $("#flip").style.display = c.receipts.length || c.back_text ? "" : "none";
   for (const id of ["#yes", "#no", "#no-text"]) $(id).style.display = c.revisable ? "" : "none";
   $("#next-card").title = S.cardIdx === S.cards.length - 1 ? "Accounts" : "Next";
   $("#dots").innerHTML = S.cards.map((_, i) => `<span class="${i === S.cardIdx ? "on" : ""}"></span>`).join("");
@@ -337,8 +334,7 @@ window.draftFor = async (id) => {
 
 function renderDraft(d) {
   $("#draft-area").innerHTML = `
-    <p class="weight">${esc(d.why)}</p>
-    <p class="mono small muted">${esc(d.to)} · ${esc(d.subject)}</p>
+    <p class="weight">${esc(d.to_name)}, ${esc(d.to_role)} · ${esc(d.account)}</p>
     <div class="draft-wrap"><textarea id="draft-body"></textarea><div class="sweep"></div></div>
     <div id="flags"></div>
     <div class="row" style="display:flex;margin-top:10px"><span class="grow"></span><button class="btn primary" id="approve"><i class="i" style="--i:url(/static/vendor/icons/send.svg)"></i>Approve & send</button></div>
@@ -349,7 +345,7 @@ function renderDraft(d) {
     S.drafts[d.id] = r;
     $("#approve").disabled = true;
     const link = `${location.origin}/reply/${d.id}`;
-    $("#sent-line").innerHTML = `<span class="mono small">sent · reply as ${esc(d.to_name)}: <a href="${link}" target="_blank">${link}</a></span>`;
+    $("#sent-line").innerHTML = `<span class="small">Sent · reply at <a href="${link}" target="_blank">${esc(location.host)}/reply/${esc(d.id)}</a></span>`;
     anim($("#sent-line"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }]);
     await sleep(1400);
     tab("pipeline");
@@ -364,7 +360,7 @@ async function typeDraft(d) {
   ta.value = d.body;
   const sw = document.querySelector(".sweep");
   await anim(sw, [{ transform: "translateY(0)", opacity: 0.9 }, { transform: `translateY(${ta.offsetHeight - 4}px)`, opacity: 0.9 }, { opacity: 0 }], { duration: 900, easing: "linear" })?.finished;
-  $("#flags").innerHTML = d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">AI-sounding check: nothing found.</p>`;
+  $("#flags").innerHTML = d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">✓ no AI tells</p>`;
   anim($("#flags"), [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
   btn.disabled = false;
 }
@@ -408,18 +404,17 @@ async function onReply() {
 async function loadBottle() {
   const b = await api(`/api/sessions/${S.sid}/bottle`);
   $("#bottle-inspect").innerHTML = `
-    <h3>Rules · trust ~ Beta(α, β)</h3>
-    <table><tr><th>Kind</th><th>Rule</th><th>Trust</th><th>α</th><th>β</th></tr>
-    ${b.rules.map((r) => `<tr><td>${esc(r.kind)}</td><td>${esc(r.text)}</td><td><span class="trust" style="width:${r.trust * 80}px"></span>${r.trust.toFixed(2)}</td><td>${r.alpha}</td><td>${r.beta}</td></tr>`).join("")}</table>
-    <p class="mono small muted">E = ${[...b.customers, ...b.lost].map(esc).join(", ")} · filter: ${esc(b.constraints)}</p>
-    <h3>Features tested</h3>
-    <table><tr><th>Feature</th><th>k/n</th><th>base rate</th><th>p</th><th>BH q</th><th>shrunk lift</th><th>said it?</th><th>shown</th></tr>
-    ${b.hit_features.map((f) => `<tr><td>${esc(f.label)}</td><td>${f.k}/${f.n}</td><td>${(f.base_rate * 100).toFixed(1)}%</td><td>${f.p_chance.toExponential(1)}</td><td>${f.q_value.toFixed(3)}</td><td>${f.shrunk_lift.toFixed(1)}</td><td>${f.mentioned ? "yes" : ""}</td><td>${f.passes ? "✓" : ""}</td></tr>`).join("")}</table>`;
+    <h3>Rules</h3>
+    <table><tr><th></th><th></th><th>trust</th></tr>
+    ${b.rules.map((r) => `<tr><td class="muted">${esc(r.kind)}</td><td>${esc(r.text)}</td><td><span class="trust" style="width:${r.trust * 80}px"></span>${r.trust.toFixed(2)}</td></tr>`).join("")}</table>
+    <h3>Traits tested</h3>
+    <table><tr><th></th><th>customers</th><th>base</th><th>q</th><th></th></tr>
+    ${b.hit_features.map((f) => `<tr><td>${esc(f.label)}</td><td>${f.k}/${f.n}</td><td>${(f.base_rate * 100).toFixed(0)}%</td><td>${f.q_value.toExponential(0)}</td><td>${f.passes ? "✓" : ""}</td></tr>`).join("")}</table>`;
 }
 
 function renderFeed() {
   if (!S.world) return;
-  $("#band-status").textContent = `band · ${S.world.integrations.band.split(" ")[0]}`;
+  $("#band-status").textContent = "";
   const had = $("#feed-list").children.length;
   $("#feed-list").innerHTML = S.events.slice().reverse().map((e) => `
     <li><span class="agent">${esc(e.agent)}</span><span class="type ${e.type === "error" ? "error" : ""}">${esc(e.type)}</span><span>${esc(e.content)}</span><span class="band">${esc(e.band)}</span></li>`).join("");

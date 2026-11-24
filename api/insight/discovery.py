@@ -110,8 +110,7 @@ def find_discovery(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, fou
     clarity = float(np.clip(0.4 + 0.6 * best["fit"], 0, 1)) if len(quoted) >= MIN_SEGMENT else 0.35
     return Card(
         id="discovery", kind="discovery", front_text=front,
-        back_text=(f"Segment of {len(best['members'])} companies, fit in the top fifth of {len(segs)} segments, "
-                   f"and the farthest of those from the companies you know (mean distance {best['d']:.2f})."),
+        back_text=f"Strong fit, farthest from your customers.",
         clarity=clarity, receipts=recs,
         stats={"fit": best["fit"], "distance": best["d"], "segment_size": int(len(best["members"])),
                "quoted": len(quoted), "segments_considered": len(segs), "fit_cut": float(cut), "phrase": phrase,
@@ -143,8 +142,7 @@ def find_needed(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, now: i
     recs += [receipt(q, pain_sentence(q.text, founder_vec, model), w.companies[c].name) for _, c, q in moment[:5]]
     return Card(id="needed", kind="needed",
                 front_text=f"“{p.title}” ({p.date})",
-                back_text=f"Closest public post to your problem. {len(moment)} companies posted about the same problem "
-                          f"within two months of it.",
+                back_text=f"{len(moment)} companies posted the same problem that month.",
                 clarity=float(np.clip(sims.max() * 1.6, 0.3, 1.0)), receipts=recs,
                 stats={"similarity": float(sims.max()), "author": p.author, "title": p.title,
                        "moment_companies": len(moment), "window": f"{month_label(p.month - 2)}..{month_label(p.month + 2)}"},
@@ -173,8 +171,7 @@ def find_blindspot(model: MarketModel, rk: Ranking, experience: list[int], now: 
     return Card(id="blindspot", kind="blindspot",
                 front_text=f"{r['industry'].capitalize()}: {r['companies']} companies, "
                            f"{r['recent_posts'] / r['companies']:.1f} posts each this year. Not enough data to rank.",
-                back_text="The market model scores this group above average, but none of your customers are in it "
-                          "and there is little recent data. Scores here are low-confidence.",
+                back_text="Scores well, but little data. Low confidence.",
                 clarity=0.3, stats=r, revisable=False,
                 map={"segment": [c.id for c in w.companies if c.industry == r["industry"] and rk.candidates[c.id]]})
 
