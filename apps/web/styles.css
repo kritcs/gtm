@@ -722,18 +722,24 @@ body:not(.hero-on) {
 .apoints span { font-size: 14px; line-height: 1.5; color: rgba(255,255,255,.75); }
 .adiagram { background: rgba(10,8,40,.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 10px; }
 .pd-svg { width: 100%; height: auto; display: block; }
-.pd-node, .pd-edge, .pd-elbl { opacity: 0; transition: opacity .6s; }
-.pd-node.vis, .pd-edge.vis, .pd-elbl.vis { opacity: 1; }
-.pd-edge { stroke: rgba(255,255,255,.35); stroke-width: 1.5; }
-.pd-edge.k-prior { stroke: #9085e9; stroke-dasharray: 5 6; animation: ovflow 1.2s linear infinite; }
-.pd-edge.k-feedback { stroke: #22c55e; }
+.pd-node, .pd-edge, .pd-chip { opacity: 0; transition: opacity .6s; }
+.pd-node.vis, .pd-edge.vis, .pd-chip.vis { opacity: 1; }
+.pd-halo { opacity: 0; transition: opacity .5s; }
+.pd-node.hot .pd-halo { opacity: .16; animation: pdpulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pdpulse { 50% { transform: scale(1.18); opacity: .06; } }
+.pd-i { background: #fff; -webkit-mask: var(--i) center / contain no-repeat; mask: var(--i) center / contain no-repeat; }
+.pd-node.tool .pd-i { background: #7fb0f0; } .pd-node.signal .pd-i { background: #f5c04a; } .pd-node.outcome .pd-i { background: #5fd38a; }
+.pd-edge { fill: none; stroke: rgba(255,255,255,.32); stroke-width: 1.5; }
+.pd-edge.k-prior { stroke: #9085e9; stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round; }
+.pd-edge.k-feedback { stroke: #22c55e; stroke-width: 2; }
 .pd-edge.credited { stroke: #eda100; stroke-width: 3; filter: drop-shadow(0 0 6px rgba(237,161,0,.7)); }
-.pd-elbl { fill: rgba(255,255,255,.55); font: 500 10px var(--sans); }
-.pd-lbl { fill: #fff; font: 600 11px var(--sans); }
-.pd-plbl { fill: #fff; font: 600 10px var(--sans); }
-.pd-type { fill: rgba(255,255,255,.45); font: italic 400 12px var(--serif); }
-.pd-node.credited circle, .pd-node.credited rect { filter: drop-shadow(0 0 10px rgba(237,161,0,.8)); }
-.pd-node.prior.credited circle { filter: drop-shadow(0 0 12px rgba(144,133,233,.9)); }
+.pd-chip rect { fill: #13112e; stroke: rgba(255,255,255,.16); }
+.pd-chip.k-prior rect { stroke: rgba(144,133,233,.55); }
+.pd-chip.k-feedback rect { stroke: rgba(34,197,94,.55); }
+.pd-chipt { fill: rgba(255,255,255,.75); font: 500 9.5px var(--sans); }
+.pd-lbl { fill: #fff; font: 600 11.5px var(--sans); }
+.pd-leg { fill: rgba(255,255,255,.55); font: 500 10px var(--sans); }
+.pd-part { fill: #c9c2ff; }
 .pd-tok { fill: #fff; filter: drop-shadow(0 0 6px #fff); }
 .pd-plus { fill: #eda100; font: 600 12px var(--sans); }
 @media (max-width: 860px) { .approach { grid-template-columns: 1fr; } }

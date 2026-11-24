@@ -1,6 +1,6 @@
 // Problem page diagram: a small heterogeneous graph that plays the three approach points in turn.
-//   0  the founder is the prior: beliefs flow into company nodes as prior edges
-//   1  heterogeneous graph: typed nodes (company, tool, signal, person, outcome) and typed edges
+//   0  the founder is the prior: beliefs flow into company nodes along prior edges
+//   1  heterogeneous graph: typed nodes (company, tool, signal, outcome) and typed edges appear
 //   2  re-fit on feedback: a reply arrives and credits the path back to the signal that found it
 (function () {
   const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -8,28 +8,55 @@
   const el = (tag, a, p) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a || {})) e.setAttribute(k, v); if (p) p.appendChild(e); return e; };
   const txt = (p, x, y, s, cls, anchor = "middle") => { const t = el("text", { x, y, class: cls, "text-anchor": anchor }, p); t.textContent = s; return t; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, RM ? 0 : ms));
+  const icon = (p, name, size = 16) => {
+    const fo = el("foreignObject", { x: -size / 2, y: -size / 2, width: size, height: size }, p);
+    fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" class="pd-i" style="width:${size}px;height:${size}px;--i:url(/static/vendor/icons/${name}.svg)"></div>`;
+  };
 
+  const TYPE = {
+    prior: { color: "#9085e9", icon: "wand-sparkles", label: "Prior" },
+    company: { color: "#e4e4e7", icon: "building-2", label: "Company" },
+    tool: { color: "#3987e5", icon: "package", label: "Tool" },
+    signal: { color: "#eda100", icon: "radar", label: "Signal" },
+    outcome: { color: "#22c55e", icon: "reply", label: "Outcome" },
+  };
   // id: [label, type, x, y]
   const N = {
-    prior: ["Your beliefs", "prior", 66, 175],
-    acme: ["Acme", "company", 220, 105], borg: ["Borg", "company", 220, 245],
-    stripe: ["Stripe", "tool", 380, 55], revops: ["RevOps hire", "signal", 395, 175], vp: ["VP Finance", "person", 380, 295],
-    reply: ["Reply", "outcome", 225, 340],
+    prior: ["Your beliefs", "prior", 78, 168],
+    acme: ["Acme", "company", 240, 92], borg: ["Borg", "company", 240, 244],
+    stripe: ["Stripe", "tool", 420, 58], revops: ["RevOps hire", "signal", 430, 168],
+    reply: ["Reply", "outcome", 420, 286],
   };
-  const E = [ // [from, to, label, kind]
-    ["prior", "acme", "prior", "prior"], ["prior", "borg", "prior", "prior"],
-    ["acme", "stripe", "uses", "typed"], ["acme", "revops", "hiring for", "typed"], ["borg", "revops", "hiring for", "typed"],
-    ["vp", "borg", "works at", "typed"], ["reply", "borg", "outcome of", "feedback"],
+  const E = [ // [from, to, label, kind, bend]
+    ["prior", "acme", "prior", "prior", -18], ["prior", "borg", "prior", "prior", 18],
+    ["acme", "stripe", "uses", "typed", -10], ["acme", "revops", "hiring for", "typed", 14], ["borg", "revops", "hiring for", "typed", -14],
+    ["reply", "borg", "outcome of", "feedback", 12],
   ];
-  const TYPE = { prior: "#9085e9", company: "#e4e4e7", tool: "#3987e5", signal: "#eda100", person: "#d55181", outcome: "#22c55e" };
 
-  function shape(g, type) {
-    const c = TYPE[type];
-    if (type === "company") return el("rect", { x: -34, y: -15, width: 68, height: 30, rx: 8, fill: "#1a1740", stroke: c, "stroke-width": 1.5 }, g);
-    if (type === "signal") return el("rect", { x: -13, y: -13, width: 26, height: 26, rx: 4, transform: "rotate(45)", fill: "#2b220f", stroke: c, "stroke-width": 1.5 }, g);
-    if (type === "outcome") return el("rect", { x: -26, y: -14, width: 52, height: 28, rx: 14, fill: "#0f2a1c", stroke: c, "stroke-width": 1.5 }, g);
-    if (type === "prior") return el("circle", { r: 36, fill: "rgba(144,133,233,.18)", stroke: c, "stroke-width": 1.5 }, g);
-    return el("circle", { r: 14, fill: "#1a1740", stroke: c, "stroke-width": 1.5 }, g);
+  const curve = (a, b, bend) => {
+    const [x1, y1, x2, y2] = [N[a][2], N[a][3], N[b][2], N[b][3]];
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 + bend;
+    return { d: `M${x1},${y1} Q${mx},${my} ${x2},${y2}`, mx, my: (y1 + y2) / 2 + bend / 2 };
+  };
+
+  function node(svg, id) {
+    const [label, type, x, y] = N[id], T = TYPE[type];
+    const g = el("g", { transform: `translate(${x},${y})`, class: `pd-node ${type}` }, svg);
+    el("circle", { r: type === "prior" ? 46 : 30, class: "pd-halo", fill: T.color }, g);
+    if (type === "prior") {
+      el("circle", { r: 34, fill: "url(#pd-orb)", stroke: T.color, "stroke-width": 1.5 }, g);
+      icon(g, T.icon, 18);
+      txt(g, 0, 56, label, "pd-lbl");
+    } else if (type === "company") {
+      el("rect", { x: -42, y: -18, width: 84, height: 36, rx: 12, fill: "#1a1740", stroke: "rgba(255,255,255,.55)", "stroke-width": 1.2 }, g);
+      const ig = el("g", { transform: "translate(-22,0)" }, g); icon(ig, T.icon, 15);
+      txt(g, 8, 5, label, "pd-lbl");
+    } else {
+      el("circle", { r: 20, fill: "#1a1740", stroke: T.color, "stroke-width": 1.6 }, g);
+      icon(g, T.icon, 16);
+      txt(g, 0, 38, label, "pd-lbl");
+    }
+    return g;
   }
 
   let token = 0;
@@ -38,57 +65,81 @@
     const items = document.querySelectorAll("#apoints li");
     while (my === token && document.querySelector("#problem.active")) {
       root.innerHTML = "";
-      const svg = el("svg", { viewBox: "0 0 500 380", class: "pd-svg" }, root);
-      const edges = {}, nodes = {};
-      for (const [a, b, label, kind] of E) {
-        const A = N[a], B = N[b];
-        const path = el("line", { x1: A[2], y1: A[3], x2: B[2], y2: B[3], class: `pd-edge k-${kind}` }, svg);
-        const lab = txt(svg, (A[2] + B[2]) / 2, (A[3] + B[3]) / 2 - 6, label, `pd-elbl k-${kind}`);
-        edges[a + ">" + b] = { path, lab };
+      const svg = el("svg", { viewBox: "0 0 500 360", class: "pd-svg" }, root);
+      const defs = el("defs", {}, svg);
+      const g = el("radialGradient", { id: "pd-orb", cx: "35%", cy: "30%" }, defs);
+      el("stop", { offset: "0%", "stop-color": "#e9e5ff" }, g); el("stop", { offset: "55%", "stop-color": "#7c6fe0" }, g); el("stop", { offset: "100%", "stop-color": "#2b2470" }, g);
+      for (let x = 20; x < 500; x += 28) for (let y = 20; y < 320; y += 28) el("circle", { cx: x, cy: y, r: 0.8, fill: "rgba(255,255,255,.08)" }, svg);
+
+      const edges = {};
+      for (const [a, b, label, kind, bend] of E) {
+        const c = curve(a, b, bend);
+        const path = el("path", { d: c.d, class: `pd-edge k-${kind}` }, svg);
+        const chip = el("g", { transform: `translate(${c.mx},${c.my})`, class: `pd-chip k-${kind}` }, svg);
+        const w = label.length * 5.6 + 14;
+        el("rect", { x: -w / 2, y: -9, width: w, height: 18, rx: 9 }, chip);
+        txt(chip, 0, 3.5, label, "pd-chipt");
+        edges[a + ">" + b] = path;
       }
-      for (const [id, [label, type, x, y]] of Object.entries(N)) {
-        const g = el("g", { transform: `translate(${x},${y})`, class: `pd-node ${type}` }, svg);
-        shape(g, type);
-        txt(g, 0, type === "company" || type === "outcome" ? 4 : type === "prior" ? 4 : 30, label, type === "prior" ? "pd-plbl" : "pd-lbl");
-        if (type !== "company" && type !== "prior" && type !== "outcome") txt(g, 0, -20, type, "pd-type");
-        nodes[id] = g;
-      }
+      const nodes = Object.fromEntries(Object.keys(N).map((id) => [id, node(svg, id)]));
+      const lg = el("g", { transform: "translate(250,342)" }, svg);
+      const types = Object.entries(TYPE);
+      types.forEach(([, T], i) => {
+        const x = (i - (types.length - 1) / 2) * 92;
+        el("circle", { cx: x - 30, cy: 0, r: 4, fill: T.color }, lg);
+        txt(lg, x - 22, 4, T.label, "pd-leg", "start");
+      });
+      const particles = [];
       const tok = el("circle", { r: 5, class: "pd-tok", opacity: 0 }, svg);
       const on = (i) => items.forEach((li) => li.classList.toggle("on", +li.dataset.p === i));
-      const show = (sel, v) => svg.querySelectorAll(sel).forEach((x) => x.classList.toggle("vis", v));
+      const show = (sel, v = true) => svg.querySelectorAll(sel).forEach((x) => x.classList.toggle("vis", v));
+      const focus = (ids) => Object.entries(nodes).forEach(([id, n]) => n.classList.toggle("hot", ids.includes(id)));
 
-      // 0: prior
-      on(0); svg.classList.add("p0");
-      show(".pd-node.prior, .pd-node.company", true); show(".k-prior", true);
-      await sleep(3200); if (my !== token) return;
-      // 1: heterogeneous
-      on(1); svg.classList.replace("p0", "p1");
-      show(".pd-node", true); nodes.reply.classList.remove("vis"); show(".k-typed", true);
+      // 0: the founder is the prior
+      on(0);
+      show(".pd-node.prior, .pd-node.company"); show(".k-prior"); focus(["prior"]);
+      if (!RM) for (const k of ["prior>acme", "prior>borg"]) for (let j = 0; j < 3; j++) { const dot = el("circle", { r: 2.4, class: "pd-part" }); svg.insertBefore(dot, svg.querySelector(".pd-chip")); particles.push({ p: edges[k], s: j / 3, dot }); }
+      let running = true;
+      const t0 = performance.now();
+      const flow = (now) => {
+        if (!running || my !== token) return;
+        for (const q of particles) {
+          const L = q.p.getTotalLength(), u = ((now - t0) / 1600 + q.s) % 1, pt = q.p.getPointAtLength(L * u);
+          q.dot.setAttribute("cx", pt.x); q.dot.setAttribute("cy", pt.y); q.dot.setAttribute("opacity", Math.sin(u * Math.PI));
+        }
+        requestAnimationFrame(flow);
+      };
+      requestAnimationFrame(flow);
       await sleep(3400); if (my !== token) return;
-      // 2: feedback credits the path back to its signal
-      on(2); svg.classList.replace("p1", "p2");
-      nodes.reply.classList.add("vis"); show(".k-feedback", true);
-      await sleep(600);
-      const path = [N.reply, N.borg, N.revops];
+
+      // 1: heterogeneous graph
+      on(1);
+      show(".pd-node"); nodes.reply.classList.remove("vis"); show(".k-typed"); focus(["stripe", "revops", "acme", "borg"]);
+      await sleep(3400); if (my !== token) return;
+
+      // 2: a reply credits the path back to its signal
+      on(2); focus(["reply"]);
+      nodes.reply.classList.add("vis"); show(".k-feedback");
+      await sleep(700);
       tok.setAttribute("opacity", 1);
-      for (let k = 0; k < path.length - 1 && my === token; k++) {
-        const [x1, y1] = [path[k][2], path[k][3]], [x2, y2] = [path[k + 1][2], path[k + 1][3]], t0 = performance.now();
+      for (const [key, reverse] of [["reply>borg", false], ["borg>revops", false]]) {
+        const p = edges[key], L = p.getTotalLength(), t1 = performance.now();
         await new Promise((res) => {
           const f = (now) => {
-            const t = RM ? 1 : Math.min(1, (now - t0) / 700);
-            tok.setAttribute("cx", x1 + (x2 - x1) * t); tok.setAttribute("cy", y1 + (y2 - y1) * t);
-            t < 1 ? requestAnimationFrame(f) : res();
+            const t = RM ? 1 : Math.min(1, (now - t1) / 750), pt = p.getPointAtLength(L * (reverse ? 1 - t : t));
+            tok.setAttribute("cx", pt.x); tok.setAttribute("cy", pt.y);
+            t < 1 && my === token ? requestAnimationFrame(f) : res();
           };
           requestAnimationFrame(f);
         });
       }
       tok.setAttribute("opacity", 0);
-      edges["borg>revops"].path.classList.add("credited");
-      nodes.revops.classList.add("credited");
-      const plus = txt(svg, 445, 160, "trust +1", "pd-plus", "start");
+      edges["borg>revops"].classList.add("credited");
+      focus(["revops", "prior"]);
+      const plus = txt(svg, 462, 140, "trust +1", "pd-plus", "middle");
       plus.animate?.([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 400, fill: "both" });
-      nodes.prior.classList.add("credited");
-      await sleep(3200);
+      await sleep(3300);
+      running = false;
     }
   }
 
