@@ -105,5 +105,13 @@ def test_full_flow_over_http(client, engine):
     client.post(f"/api/sessions/{sid}/drafts/{d['id']}/approve", json={})
     rep = client.post("/api/webhooks/reply", json={"text": f"Sounds good. ref {d['id']}"}).json()
     assert rep["draft"]["status"] == "replied"
+    # the reply credits only beliefs that found this account, and each credited trust goes up
+    assert rep["rules"] and all(u["trust"] > u["before"] for u in rep["rules"])
+    assert all(accts[0]["name"] in u["credits"] for u in rep["rules"])
+    if accts[0]["triggered"]:
+        assert any(u["key"] == "role:revops" for u in rep["rules"])
+    s = engine.sessions[sid]
+    assert s.outcomes and s.positives == [accts[0]["id"]]
+    assert s.ranking.meta["founder_weight"] > 0
     cols = client.get(f"/api/sessions/{sid}/pipeline").json()["columns"]
     assert [x["account"] for x in cols["Replied"]] == [accts[0]["name"]]

@@ -58,16 +58,16 @@ def pain_match(model: MarketModel, founder_vec: np.ndarray) -> tuple[np.ndarray,
 
 def rank(model: MarketModel, *, description: str, customers: list[int], experience: list[int],
          founder_text: str, exclude: set[int], constraints: Constraints,
-         lambda0: float = 1.0, tau: float = 0.25) -> Ranking:
+         lambda0: float = 1.0, tau: float = 0.25, founder_weight: float = 1.0) -> Ranking:
     w = model.graph.world
     y_hat, meta = model.market_scores(description, customers)
     fvec = model.text_vec(founder_text)
     pain, pain_post = pain_match(model, fvec)
     s_founder = 0.7 * pain + 0.3 * (model.company_text @ model.lsa.transform([founder_text])[0])
     dist = model.experience_distance(experience)
-    lam = lambda0 * np.exp(-dist / tau)
+    lam = lambda0 * founder_weight * np.exp(-dist / tau)  # trusted beliefs weigh more
     score = pct_rank(y_hat) + lam * pct_rank(s_founder)
     cand = np.array([c.id not in exclude and constraints.allows(c) and c.id in model.graph.posts_by_company
                      for c in w.companies])
-    meta |= {"lambda0": lambda0, "tau": tau, "candidates": int(cand.sum())}
+    meta |= {"lambda0": lambda0, "tau": tau, "founder_weight": round(founder_weight, 3), "candidates": int(cand.sum())}
     return Ranking(score, y_hat, s_founder, lam, dist, pain, pain_post, cand, meta)

@@ -29,7 +29,7 @@ def contact_for(company, buyer: str) -> dict:
 
 
 def build_accounts(model: MarketModel, rk: Ranking, *, hit_feature: str | None, buyer: str, now: int,
-                   founder_vec: np.ndarray, n: int = 5) -> tuple[list[dict], list[dict]]:
+                   founder_vec: np.ndarray, n: int = 5, trigger_weight: float = 0.5) -> tuple[list[dict], list[dict]]:
     """Returns (accounts, reviewer_log)."""
     g, w = model.graph, model.graph.world
     score = rk.score.copy()
@@ -39,7 +39,7 @@ def build_accounts(model: MarketModel, rk: Ranking, *, hit_feature: str | None, 
             win = g.feature_window(int(c), now - RECENT, now + 1)
             if hit_feature in win:
                 trig[int(c)] = win[hit_feature]
-                score[c] += TRIGGER_BOOST
+                score[c] += TRIGGER_BOOST * (trigger_weight / 0.5)  # 0.5 = an untested Beta(1, 1) belief
     order = [int(c) for c in np.argsort(-score) if rk.candidates[c]]
     accounts, log = [], []
     finance_cats = set(TOOLS["billing"][0]) | set(TOOLS["crm"][0]) | set(TOOLS["accounting"][0])

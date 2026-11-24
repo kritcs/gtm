@@ -484,8 +484,12 @@ async function loadBottle() {
     if (!rs.length) return "";
     return `<div class="rcol"><h4>${k}</h4>${rs.map((r) => {
       const market = (r.key || "").includes(":");
+      // mark only the exceptions: market-found rules, and confidence other than the default "fairly sure"
+      const tag = market ? "From market data" : r.conf && r.conf !== "fairly sure" ? cap(r.conf) : "";
+      const cr = (r.credits || []).map((n) => `<span class="credit">+1 ${esc(n)}</span>`).join("");
       return `<div class="rcard ${market ? "market" : ""}"><p>${esc(cap(r.text.replace(" (found in the market data)", "")))}</p>
-        <div class="rfoot"><span class="src">${market ? "from market data" : ""}</span>${gauge(r.trust, market)}<b>${r.trust.toFixed(2)}</b></div></div>`;
+        ${cr ? `<div class="credits">${cr}</div>` : ""}
+        <div class="rfoot"><span class="src">${tag}</span>${gauge(r.trust, market)}<b title="Beta(${r.alpha}, ${r.beta})">${r.trust.toFixed(2)}</b></div></div>`;
     }).join("")}</div>`;
   }).join("");
 

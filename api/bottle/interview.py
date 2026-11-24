@@ -29,14 +29,38 @@ BUYER_PAT = re.compile(r"\b(CFO|VP (?:of )?Finance|Head of Finance|[Cc]ontroller
 SIZE_PAT = re.compile(r"\b(too (?:big|large|enterprise)|too small|too early)\b", re.I)
 
 
+# How sure the founder sounded sets the prior's pseudo-counts (alpha + beta).
+CERTAIN = ("every", "always", "all of", "definitely", "the same story", "exactly", "never", "clearly", "each")
+HEDGED = ("maybe", "might", "i think", "probably", "sometimes", "not sure", "i guess", "kind of", "sort of", "hunch")
+CONFIDENCE = {"sure": (8.0, 2.0), "fairly sure": (4.0, 2.0), "hunch": (2.0, 2.0), "untested": (1.0, 1.0)}
+
+
+def confidence_of(sentence: str) -> str:
+    s = sentence.lower()
+    if any(h in s for h in HEDGED):
+        return "hunch"
+    if any(c in s for c in CERTAIN):
+        return "sure"
+    return "fairly sure"
+
+
+def sentence_with(text: str, phrase: str) -> str:
+    for sent in re.split(r"(?<=[.!?])\s+", text):
+        if phrase.lower()[:24] in sent.lower():
+            return sent
+    return text
+
+
 @dataclass
 class Rule:
     id: str
     kind: str  # pain | trigger | buyer | segment
     text: str
     quote: str
-    alpha: float = 2.0
-    beta: float = 1.0
+    alpha: float = 4.0
+    beta: float = 2.0
+    conf: str = "fairly sure"
+    credits: list = field(default_factory=list)  # accounts whose replies credited this belief
 
     @property
     def trust(self) -> float:
@@ -48,7 +72,8 @@ class Rule:
             from ..insight.hit import feature_label
             text = f"{feature_label(text)} (found in the market data)"
         return {"id": self.id, "kind": self.kind, "text": text, "key": self.text, "quote": self.quote,
-                "alpha": self.alpha, "beta": self.beta, "trust": round(self.trust, 3)}
+                "alpha": self.alpha, "beta": self.beta, "trust": round(self.trust, 3), "conf": self.conf,
+                "credits": list(self.credits)}
 
 
 @dataclass
@@ -156,7 +181,9 @@ def absorb(bottle: Bottle, text: str, names: dict[str, int]) -> dict:
     learned["phrases"] = ph
 
     def add(kind, txt, quote):
-        r = Rule(f"r{len(bottle.rules) + 1}", kind, txt, quote)
+        conf = confidence_of(sentence_with(quote, txt))
+        a, b = CONFIDENCE[conf]
+        r = Rule(f"r{len(bottle.rules) + 1}", kind, txt, quote, alpha=a, beta=b, conf=conf)
         bottle.rules.append(r)
         learned["rules"].append(r.to_dict())
 

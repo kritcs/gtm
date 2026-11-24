@@ -743,3 +743,7 @@ body:not(.hero-on) {
 .pd-tok { fill: #fff; filter: drop-shadow(0 0 6px #fff); }
 .pd-plus { fill: #eda100; font: 600 12px var(--sans); }
 @media (max-width: 860px) { .approach { grid-template-columns: 1fr; } }
+
+/* Your intuition: replies that credited a belief */
+.rcard .credits { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+.rcard .credit { font: 500 11px/1 var(--sans); color: #199e70; background: rgba(25,158,112,.12); border: 1px solid rgba(25,158,112,.35); border-radius: 999px; padding: 4px 8px; }

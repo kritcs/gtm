@@ -78,6 +78,8 @@ class Session:
     hit_rows: list[dict] = field(default_factory=list)
     hit_feature: str | None = None
     customers_signing: list[tuple[int, int]] = field(default_factory=list)
+    outcomes: list[dict] = field(default_factory=list)       # replies, recorded as outcome edges
+    positives: list[int] = field(default_factory=list)      # replied accounts, folded in as weak positives
 
     # ------------------------------------------------------------- feed
     async def emit(self, agent: str, kind: str, content: str, **meta):
@@ -140,7 +142,7 @@ class Session:
                         tested=len(rows))
         if self.hit_feature:
             b.rules.append(Rule(f"r{len(b.rules) + 1}", "trigger", self.hit_feature, "found in the market data",
-                                alpha=1.0, beta=1.0))
+                                alpha=1.0, beta=1.0, conf="untested"))
 
         fv = self._founder_vec()
         fwords = set(t for t in tokens(b.transcript) if "_" not in t)
@@ -153,8 +155,7 @@ class Session:
         await self.emit("Blind spot", "thought", blind.front_text)
 
         await self._review_graph_sample()
-        accounts, log = await asyncio.to_thread(build_accounts, e.model, rk, hit_feature=self.hit_feature,
-                                                buyer=self._buyer(), now=e.now, founder_vec=fv, n=8)
+        accounts, log = await asyncio.to_thread(self._accounts, rk, fv)
         self.accounts = accounts
         for item in log:
             self.reviewer_log.append(item)
@@ -172,13 +173,37 @@ class Session:
         await self.emit("Writer", "tool_result", "Reading ready.", cards=len(cards))
         return cards
 
+    def _founder_weight(self) -> float:
+        """How much the ranking leans on the founder: mean trust of pain beliefs, 1.0 at a 'fairly sure' prior."""
+        pains = [r.trust for r in self.bottle.rules if r.kind == "pain"]
+        return (sum(pains) / len(pains)) / (4 / 6) if pains else 1.0
+
+    def _trigger_rule(self):
+        return next((r for r in self.bottle.rules if r.kind == "trigger" and r.text == self.hit_feature), None)
+
     def _rank(self):
         e, b = self.engine, self.bottle
         ad = set(e.graph.adopters(e.world.product_tool_id))
-        rk = rank(e.model, description=demo.FOUNDER["description"], customers=b.customers, experience=b.experience,
-                  founder_text=b.founder_text(), exclude=set(b.experience) | ad, constraints=self.constraints)
+        # fold in named customers plus accounts that replied (weak positives)
+        rk = rank(e.model, description=demo.FOUNDER["description"], customers=b.customers + self.positives,
+                  experience=b.experience, founder_text=b.founder_text(), exclude=set(b.experience) | ad,
+                  constraints=self.constraints, founder_weight=self._founder_weight())
         self.ranking = rk
         return rk
+
+    def _accounts(self, rk, fv):
+        """Ranked accounts; trigger boost scales with the trigger belief's trust; drafted accounts stay listed."""
+        e = self.engine
+        tr = self._trigger_rule()
+        accts, log = build_accounts(e.model, rk, hit_feature=self.hit_feature, buyer=self._buyer(), now=e.now,
+                                    founder_vec=fv, n=8, trigger_weight=tr.trust if tr else 0.5)
+        keep = {d["account_id"] for d in self.drafts.values()}
+        have = {a["id"] for a in accts}
+        old = {a["id"]: a for a in self.accounts}
+        for aid in keep - have:
+            if aid in old:
+                accts.append(old[aid])
+        return accts, log
 
     def _buyer(self) -> str:
         """Prefer who the founder said *signs* (question 4) over anyone named in passing."""
@@ -277,8 +302,7 @@ class Session:
         elif card_id == "needed":
             new = await asyncio.to_thread(find_needed, e.model, rk, fv, e.now)
         else:
-            self.accounts, _ = await asyncio.to_thread(build_accounts, e.model, rk, hit_feature=self.hit_feature,
-                                                       buyer=self._buyer(), now=e.now, founder_vec=fv, n=8)
+            self.accounts, _ = await asyncio.to_thread(self._accounts, rk, fv)
             new = self._next_step()
         removed = [c for c in before if not self.constraints.allows(e.world.companies[c])]
         seg_before = card.map.get("segment", [])
@@ -290,8 +314,7 @@ class Session:
         self._verify_receipts(new)
         self.cards[card_id] = new
         if card_id != "next_step":
-            self.accounts, _ = await asyncio.to_thread(build_accounts, e.model, rk, hit_feature=self.hit_feature,
-                                                       buyer=self._buyer(), now=e.now, founder_vec=fv, n=8)
+            self.accounts, _ = await asyncio.to_thread(self._accounts, rk, fv)
         await self.emit("Writer", "tool_result", new.diff or "")
         return new
 
@@ -354,18 +377,36 @@ class Session:
         return d
 
     async def reply(self, draft_id: str, text: str, sender: str = "") -> dict:
+        e = self.engine
         d = self.drafts[draft_id]
         d["status"], d["reply"] = "replied", {"text": text, "from": sender, "ts": time.time()}
         acct = next((a for a in self.accounts if a["id"] == d["account_id"]), None)
+        kinds = {ch["kind"] for ch in (acct or {}).get("chips", [])}
+        # credit only the beliefs that found this account (Bayesian update: a reply is a success, alpha + 1)
         updated = []
         for r in self.bottle.rules:
-            used = r.kind in ("pain", "buyer") or (r.kind == "trigger" and acct and acct.get("triggered")
-                                                   and r.text == self.hit_feature)
-            if used:
+            found_it = ((r.kind == "trigger" and r.text == self.hit_feature and acct and acct.get("triggered"))
+                        or (r.kind == "pain" and "pain" in kinds)
+                        or (r.kind == "buyer" and r.text == d.get("to_role")))
+            if found_it:
+                before = r.trust
                 r.alpha += 1
-                updated.append(r.to_dict())
-        await self.emit("Webhook", "tool_result", f"{d['account']} replied. Card moved to Replied.",
-                        rules_updated=len(updated))
+                r.credits.append(d["account"])
+                updated.append(r.to_dict() | {"before": round(before, 3)})
+        self.outcomes.append({"account_id": d["account_id"], "account": d["account"], "edge": "OUTCOME_OF",
+                              "credited": [u["text"] for u in updated], "ts": time.time()})
+        await self.emit("Webhook", "tool_result", f"{d['account']} replied. Recorded as an outcome.", rules_updated=len(updated))
+        for u in updated:
+            await self.emit("Bottle", "tool_result", f"Credited “{u['text']}”: trust {u['before']:.2f} → {u['trust']:.2f}.")
+        # re-fit: fold the replied account in as a weak positive, then re-rank with the updated trust
+        if d["account_id"] not in self.positives:
+            self.positives.append(d["account_id"])
+        rk = await asyncio.to_thread(self._rank)
+        self.accounts, _ = await asyncio.to_thread(self._accounts, rk, self._founder_vec())
+        await self.emit("Market model", "tool_result",
+                        f"Re-fit with {len(self.positives)} new outcome(s): fold-in moved the product vector by "
+                        f"{rk.meta['shift']:.2f}, re-ranked {rk.meta['candidates']} companies.",
+                        founder_weight=rk.meta.get("founder_weight"))
         return {"draft": d, "rules": updated}
 
     def pipeline(self) -> dict:
