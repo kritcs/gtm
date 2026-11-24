@@ -23,23 +23,21 @@ Buttons are icons now. This script names each one by its icon, and every icon sh
 
 ## The run
 
-**1. Open (15 s).** *Front page: "Intuition in a bottle." Every light streak starts at one point and lands on one company. Don't click yet.*
+**1. Open (15 s).** *Front page: "Intuition in a bottle. Your gut feeling is the ultimate GTM." Don't click yet.*
 
-> "Founders sell their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. That bright point is a founder's intuition. Each streak is a company it could reach. We bottle the instinct and test it against all of them."
+> "Founders win their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. That bright point is a founder's intuition. Each streak is a company it could reach."
 
-**2. Interview (35 s).** *Click **Begin**. The how-it-works page shows three steps. Let the room read it for two seconds, then click **Start the interview**.*
+**2. Interview (35 s).** *Click **Begin**. On "We turn your instinct into your next customer", click card 2 once.*
 
-Speak or type the first answer yourself. Use the wand for the other three and read them aloud quickly. Press → after each one.
+> "We score your instinct in both directions. Backward, we replay the past and throw out anything that could be luck. Forward, we scan the market for companies that show the same signals, even when they use different words."
 
-> "I'm playing the founder of Ledgerlight. It reconciles billing, CRM and the ledger. My customers are Dapplenest, Pebblepath and Lumen Mutual. They were all reconciling Stripe against Salesforce in spreadsheets."
+*Click **Start the interview**.* Speak or type the first answer yourself. Use the wand for the other three and read them aloud quickly. Press → after each one.
+
+> "I'm playing the founder of Ledgerlight. My customers are Dapplenest, Pebblepath and Lumen Mutual. They were all reconciling Stripe against Salesforce in spreadsheets."
 
 As each customer's dot lights up blue:
 
 > "As I name customers, it finds them in the market."
-
-Point at the right-hand column as it fills:
-
-> "It pulls out customers, the problem, who buys and the deal we lost. Each one becomes a rule with a trust score."
 
 **3. The reading (45 s).** *After the last answer, the count runs up while a wave passes through the dots, for about 3 seconds.*
 

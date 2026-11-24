@@ -77,6 +77,11 @@ $("#begin").onclick = async () => {
   await show("intro");
   stagger(document.querySelectorAll("#intro .intro > *, .intro-steps li"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 110, duration: 700 });
 };
+document.querySelectorAll(".icard").forEach((c) => c.onclick = () => {
+  const open = c.getAttribute("aria-expanded") !== "true";
+  document.querySelectorAll(".icard").forEach((x) => x.setAttribute("aria-expanded", "false"));
+  c.setAttribute("aria-expanded", String(open));
+});
 $("#start-interview").onclick = async () => {
   const r = await api("/api/sessions", { method: "POST" });
   S.sid = r.id;
