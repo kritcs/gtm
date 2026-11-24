@@ -27,7 +27,7 @@ Buttons are icons now. This script names each one by its icon, and every icon sh
 
 > "Founders sell their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. That bright point is a founder's intuition. Each streak is a company it could reach. We bottle the instinct and test it against all of them."
 
-**2. Interview (35 s).** *Click **Begin**.*
+**2. Interview (35 s).** *Click **Begin**. The how-it-works page shows three steps. Let the room read it for two seconds, then click **Start the interview**.*
 
 Speak or type the first answer yourself. Use the wand for the other three and read them aloud quickly. Press → after each one.
 

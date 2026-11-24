@@ -62,9 +62,9 @@ if (host) {
         float head = fract(uTime * (0.08 + vSeed * 0.07) + vSeed);
         float d = head - vT;
         float comet = d > 0.0 ? exp(-d * 9.0) : 0.0;
-        float base = 0.035 + 0.035 * (1.0 - vT);
+        float base = 0.025 + 0.025 * (1.0 - vT);
         vec3 col = mix(vec3(0.75, 0.78, 1.0), vec3(0.75, 0.98, 1.0), vT);
-        gl_FragColor = vec4(col, base + comet * 0.7);
+        gl_FragColor = vec4(col, base + comet * 0.55);
       }`,
   });
   group.add(new THREE.LineSegments(lg, lm));
@@ -90,15 +90,15 @@ if (host) {
   group.add(new THREE.Points(pg, pm));
 
   // the origin: a soft bright core
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.07, 24, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.035, 24, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
   core.position.copy(origin);
   group.add(core);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({
     map: (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
-      const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, "rgba(255,255,255,.9)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, "rgba(255,255,255,.55)"); g.addColorStop(.4, "rgba(200,220,255,.18)"); g.addColorStop(1, "rgba(255,255,255,0)");
       x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(),
     blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-  halo.position.copy(origin); halo.scale.set(0.8, 0.8, 1);
+  halo.position.copy(origin); halo.scale.set(0.5, 0.5, 1);
   group.add(halo);
 
   const resize = () => {
@@ -120,7 +120,7 @@ if (host) {
     lm.uniforms.uTime.value = pm.uniforms.uTime.value = REDUCED ? 3 : t;
     lm.uniforms.uReveal.value = pm.uniforms.uReveal.value = reveal;
     if (!REDUCED) group.rotation.y = Math.sin(t * 0.06) * 0.18;
-    halo.scale.setScalar(0.8 + 0.12 * Math.sin(t * 2));
+    halo.scale.setScalar(0.5 + 0.06 * Math.sin(t * 2));
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
   };

@@ -5,17 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
   <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/styles.css?v=10">
+  <link rel="stylesheet" href="/static/styles.css?v=11">
 </head>
-<body>
+<body class="hero-on">
+  <div id="hero-bg" aria-hidden="true"></div>
   <section id="enter" class="stage active hero">
-    <div id="hero-bg" aria-hidden="true"></div>
     <div class="hero-copy">
       <p class="hero-eyebrow">A go-to-market engine for founders</p>
       <h1 class="display hero-title">Intuition <em>in a bottle.</em></h1>
       <p class="hero-sub">Your instinct about who buys, tested against 900 companies.</p>
       <button id="begin" class="btn primary lg" aria-label="Begin">Begin <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
-      <p class="eyebrow-s" id="world-line"></p>
+    </div>
+  </section>
+
+  <section id="intro" class="stage hero">
+    <div class="intro">
+      <p class="hero-eyebrow">How it works</p>
+      <h2 class="display intro-title">We turn your instinct into a list of who to call.</h2>
+      <ol class="intro-steps">
+        <li><span class="istep"><i class="i" style="--i:url(/static/vendor/icons/mic.svg)"></i><em>1</em></span><b>You tell us about your best customers.</b><span>Answer four questions out loud or by typing. It takes about two minutes.</span></li>
+        <li><span class="istep"><i class="i" style="--i:url(/static/vendor/icons/network.svg)"></i><em>2</em></span><b>We test your instinct against the market.</b><span>We compare what you said with 900 companies and throw out anything that could be luck.</span></li>
+        <li><span class="istep"><i class="i" style="--i:url(/static/vendor/icons/send.svg)"></i><em>3</em></span><b>You get the companies to contact first.</b><span>Each one comes with its evidence and an email in your voice that you approve.</span></li>
+      </ol>
+      <button id="start-interview" class="btn primary lg">Start the interview <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
     </div>
   </section>
 
@@ -108,12 +120,12 @@
     </main>
   </section>
 
-  <script src="/static/text.js?v=10"></script>
-  <script src="/static/pipeline-graph.js?v=10"></script>
-  <script src="/static/system-view.js?v=10"></script>
-  <script src="/static/agents-view.js?v=10"></script>
-  <script src="/static/app.js?v=10"></script>
-  <script type="module" src="/static/map3d.js?v=10"></script>
-  <script type="module" src="/static/hero3d.js?v=10"></script>
+  <script src="/static/text.js?v=11"></script>
+  <script src="/static/pipeline-graph.js?v=11"></script>
+  <script src="/static/system-view.js?v=11"></script>
+  <script src="/static/agents-view.js?v=11"></script>
+  <script src="/static/app.js?v=11"></script>
+  <script type="module" src="/static/map3d.js?v=11"></script>
+  <script type="module" src="/static/hero3d.js?v=11"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const EASE = "cubic-bezier(.2,.8,.2,1)";
 const sleep = (ms) => new Promise((r) => setTimeout(r, RM ? 0 : ms));
 const anim = (el, kf, o = {}) => (RM || !el ? null : el.animate(kf, { duration: 600, easing: EASE, fill: "both", ...o }));
-const MAP_MODE = { enter: "dash", talk: "ambient", pause: "scan", reading: "reading", dash: "dash" };
+const MAP_MODE = { enter: "dash", intro: "dash", talk: "ambient", pause: "scan", reading: "reading", dash: "dash" };
 
 // Reveal text word by word; bare numbers and percentages count up.
 function reveal(el, text, { delay = 0, stagger = 45 } = {}) {
@@ -50,7 +50,9 @@ let current = "enter";
 async function show(id) {
   const from = document.getElementById(current), to = document.getElementById(id);
   window.MarketMap?.mode(MAP_MODE[id]);
-  if (id !== "enter") setTimeout(() => window.HeroBG?.stop(), 400); else window.HeroBG?.start();
+  const heroOn = id === "enter" || id === "intro";
+  document.body.classList.toggle("hero-on", heroOn);
+  if (!heroOn) setTimeout(() => window.HeroBG?.stop(), 400); else window.HeroBG?.start();
   if (from && from !== to && !RM) {
     await anim(from, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 320 })?.finished;
   }
@@ -69,10 +71,13 @@ async function show(id) {
   stagger(document.querySelectorAll("#enter .hero-copy > *"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 120, duration: 800 });
   S.world = await api("/api/world");
   S.script = await api("/api/demo/script");
-  $("#world-line").textContent = `Synthetic market · ${S.world.companies} companies · ${S.world.posts.toLocaleString()} posts`;
 })();
 
 $("#begin").onclick = async () => {
+  await show("intro");
+  stagger(document.querySelectorAll("#intro .intro > *, .intro-steps li"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 110, duration: 700 });
+};
+$("#start-interview").onclick = async () => {
   const r = await api("/api/sessions", { method: "POST" });
   S.sid = r.id;
   listen();
