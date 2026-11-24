@@ -388,3 +388,53 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 .ag-msg.err { color: var(--warn); }
 .ag-log { margin-top: 16px; color: var(--muted-foreground); font-size: 12px; }
 .ag-log summary { cursor: pointer; }
+
+/* system fills the screen */
+.sys { min-height: calc(100vh - 120px); display: flex; flex-direction: column; }
+.sys-body { flex: 1; grid-template-columns: minmax(0, 1fr) 300px; }
+.sys-stage { display: flex; flex-direction: column; justify-content: center; }
+.sys-stage .sys-svg { max-height: calc(100vh - 230px); }
+.sys.wide .sys-body { grid-template-columns: 1fr; }
+.sys.wide .sys-drawer { display: none; }
+.sys-credit { margin: 10px 0 0; font-size: 12px; color: rgba(255,255,255,.35); }
+/* learning v2 */
+.learn2 { display: flex; flex-direction: column; gap: 18px; padding: 8px 4px; height: 100%; }
+.l-curves { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.l-card { background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 20px; padding: 20px 22px 16px; }
+.l-say { margin: 0 0 6px; font: italic 400 28px/1.15 var(--serif); color: #fff; }
+.beta2 { width: 100%; height: auto; display: block; }
+.beta2 .bline { fill: none; stroke: #9085e9; stroke-width: 2.5; }
+.beta2 .bfill { fill: url(#none); fill: rgba(144,133,233,.16); }
+.beta2 .bprior { fill: none; stroke: rgba(255,255,255,.35); stroke-width: 1.5; stroke-dasharray: 4 5; transition: opacity .4s; }
+.beta2 .bmean { stroke: rgba(255,255,255,.8); stroke-dasharray: 2 4; }
+.beta2 .baxis { stroke: rgba(255,255,255,.15); }
+.beta2 .btick { fill: rgba(255,255,255,.4); font: 12px var(--sans); }
+.l-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.l-mean { font: 400 44px/1 var(--serif); color: #fff; margin-right: 10px; font-variant-numeric: tabular-nums; }
+.l-ab { font-size: 13px; color: var(--muted-foreground); }
+.l-dots { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 50%; }
+.d { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.d.ok { background: #199e70; } .d.mid { background: #eda100; } .d.bad { background: #d95926; }
+.l-controls { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.seg2 { display: flex; gap: 2px; padding: 4px; border: 1px solid var(--border-strong); border-radius: 999px; }
+.seg2 button { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; color: #fff; font: 500 14px var(--sans);
+  padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: background .15s; }
+.seg2 button:hover { background: rgba(255,255,255,.08); }
+.seg2 button:active { transform: scale(.96); }
+.l-bottom { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; flex: 1; }
+.l-panel { background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 20px; padding: 18px 22px; }
+.l-h { margin: 0 0 12px; font: italic 400 22px var(--serif); color: #fff; }
+.wbar2 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(90px, 1fr) 48px; gap: 12px; align-items: center; margin: 11px 0;
+  font-size: 14px; color: rgba(255,255,255,.8); }
+.wbar2 b { font: 500 13px var(--mono); text-align: right; color: #fff; }
+.stepper { position: relative; display: grid; gap: 0; padding-left: 22px; }
+.stepper::before { content: ""; position: absolute; left: 6px; top: 10px; bottom: 10px; width: 1px; background: var(--border-strong); }
+.stp { position: relative; padding: 9px 0; color: rgba(255,255,255,.4); transition: color .4s; }
+.stp b { display: block; font: 400 22px/1.1 var(--serif); color: inherit; }
+.stp b small { font: 13px var(--sans); color: var(--muted-foreground); }
+.stp span:not(.stp-dot) { font-size: 13px; }
+.stp-dot { position: absolute; left: -21px; top: 15px; width: 11px; height: 11px; border-radius: 50%; background: #1a1a1c; border: 1px solid var(--border-strong); transition: background .4s, box-shadow .4s; }
+.stp.on { color: rgba(255,255,255,.85); }
+.stp.on .stp-dot { background: #fff; }
+.stp.cur .stp-dot { box-shadow: 0 0 0 5px rgba(255,255,255,.15); }
+@media (max-width: 860px) { .l-curves, .l-bottom { grid-template-columns: 1fr; } }

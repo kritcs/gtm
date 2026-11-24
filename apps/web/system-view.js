@@ -38,13 +38,13 @@
     constructor(root) {
       this.root = root; this.live = {}; this.step = 0; this.running = false; this.sel = null; this.panel = "loop";
       root.innerHTML = `
-        <div class="sys-head mono">
+        <div class="sys-head">
           <div class="seg" id="sys-seg"><button data-p="loop" class="on">loop</button><button data-p="graph">graph</button><button data-p="learn">learning</button></div>
           <span class="grow"></span>
           <span class="sys-legend">${Object.values(STATUS).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join("")}</span>
         </div>
         <div class="sys-body"><div class="sys-stage" id="sys-stage"></div><aside class="sys-drawer" id="sys-drawer"></aside></div>
-        <p class="mono small muted sys-credit">architecture: Peem Puangmaha · docs/peem-pipeline.txt</p>`;
+        <p class="sys-credit">Architecture by Peem Puangmaha</p>`;
       root.querySelectorAll("#sys-seg button").forEach((b) => b.onclick = () => {
         root.querySelectorAll("#sys-seg button").forEach((x) => x.classList.toggle("on", x === b));
         this.show(b.dataset.p);
@@ -59,6 +59,7 @@
       if (p === "loop") this.loop(st);
       if (p === "graph") this.graph(st);
       if (p === "learn") this.learn(st);
+      this.root.classList.toggle("wide", p === "learn");
       st.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
     }
 
@@ -231,34 +232,39 @@
     // ------------------------------------------------------------------ 3. learning
     learn(st) {
       const segs = [{ name: "fintech", belief: 0.7, conf: "quite sure", k: 20 }, { name: "healthcare", belief: 0.5, conf: "a hunch", k: 4 }];
+      const STAGES = [["0", "outcomes", "priors + graph similarity"], ["1–99", "outcomes", "Beta updates"],
+                      ["100+", "outcomes", "per-startup fine-tune"], ["many", "tenants", "shared model"]];
       st.innerHTML = `
-        <div class="learn">
-          <div class="learn-top">
-            ${segs.map((s, i) => `<div class="beta-card" id="bc${i}">
-
-              <p class="say">“${s.name}, ${Math.round(s.belief * 100)}%, ${s.conf}”</p>
-              <svg viewBox="0 0 300 120" class="beta"><path class="bfill"/><path class="bline"/><line class="bmean" y1="8" y2="104"/>
-                <line x1="10" x2="290" y1="104" y2="104" stroke="rgba(255,255,255,.15)"/></svg>
-              <p class="mono small"><span class="ab"></span> <span class="muted">mean</span> <span class="mean"></span></p>
-              <div class="chips-out"></div>
+        <div class="learn2">
+          <div class="l-curves">
+            ${segs.map((s, i) => `<div class="l-card" id="bc${i}">
+              <p class="l-say">“${s.name}, ${Math.round(s.belief * 100)}%, ${s.conf}”</p>
+              <svg viewBox="0 0 400 190" class="beta2">
+                <path class="bprior"/><path class="bfill"/><path class="bline"/><line class="bmean" y1="10" y2="160"/>
+                <line x1="10" x2="390" y1="160" y2="160" class="baxis"/>
+                <text x="10" y="180" class="btick">0</text><text x="200" y="180" class="btick" text-anchor="middle">0.5</text><text x="390" y="180" class="btick" text-anchor="end">1</text>
+              </svg>
+              <div class="l-foot"><div><span class="l-mean">0.00</span><span class="l-ab"></span></div><div class="l-dots"></div></div>
             </div>`).join("")}
           </div>
-          <div class="sys-controls">
-            <button class="btn" data-o="1">+ retained (1)</button><button class="btn" data-o="0.3">+ trial (0.3)</button><button class="btn" data-o="0">+ churned (0)</button>
+          <div class="l-controls">
+            <div class="seg2"><button data-o="1"><i class="d ok"></i>retained</button><button data-o="0.3"><i class="d mid"></i>trial</button><button data-o="0"><i class="d bad"></i>churned</button></div>
             <button class="btn ghost" id="lreset">reset</button>
           </div>
-          <div class="residual">
-            <p class="math mono">score(account) = logit(prior) + correction(graph features)</p>
-            <div id="wbars"></div>
-
-          </div>
-          <div class="maturity mono">
-            <span>0 customers<br><b>priors + graph similarity</b></span><span>tens<br><b>Beta updates</b></span>
-            <span>hundreds<br><b>per-startup fine-tune</b></span><span>many tenants<br><b>shared model</b></span>
+          <div class="l-bottom">
+            <div class="l-panel">
+              <p class="l-h">score = logit(prior) + correction</p>
+              <div id="wbars"></div>
+            </div>
+            <div class="l-panel">
+              <p class="l-h">maturity</p>
+              <div class="stepper">${STAGES.map(([n, u, m], i) => `<div class="stp" data-i="${i}"><span class="stp-dot"></span><b>${n} <small>${u}</small></b><span>${m}</span></div>`).join("")}</div>
+            </div>
           </div>
         </div>`;
-      const state = segs.map((s) => ({ a: s.belief * s.k, b: (1 - s.belief) * s.k, hist: [] }));
-      const lgamma = (z) => { // Lanczos
+      const state = segs.map((s) => ({ a: s.belief * s.k, b: (1 - s.belief) * s.k, a0: s.belief * s.k, b0: (1 - s.belief) * s.k }));
+      let outcomes = 0;
+      const lgamma = (z) => {
         const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
           12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
         if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
@@ -266,52 +272,59 @@
         const t = z + g + 0.5; return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
       };
       const pdf = (x, a, b) => Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) - (lgamma(a) + lgamma(b) - lgamma(a + b)));
+      const curve = (a, b) => Array.from({ length: 119 }, (_, j) => pdf((j + 1) / 120, a, b));
+      const toPath = (ys, mx) => "M" + ys.map((v, j) => `${(10 + (j + 1) / 120 * 380).toFixed(1)},${(160 - (v / mx) * 140).toFixed(1)}`).join(" L");
+      const stepper = () => {
+        const stage = outcomes >= 100 ? 2 : outcomes >= 1 ? 1 : 0;
+        st.querySelectorAll(".stp").forEach((el) => el.classList.toggle("on", +el.dataset.i <= stage));
+        st.querySelectorAll(".stp").forEach((el) => el.classList.toggle("cur", +el.dataset.i === stage));
+      };
       const draw = (i, from) => {
         const card = st.querySelector("#bc" + i), s = state[i];
-        const target = Array.from({ length: 99 }, (_, j) => pdf((j + 1) / 100, s.a, s.b));
-        const prev = from || target;
+        const prior = curve(s.a0, s.b0), target = curve(s.a, s.b), prev = from || target;
+        const mx = Math.max(...prior, ...target);
+        card.querySelector(".bprior").setAttribute("d", toPath(prior, mx));
+        card.querySelector(".bprior").style.opacity = s.a === s.a0 && s.b === s.b0 ? 0 : 1;
         const t0 = performance.now();
         const f = (now) => {
           const t = RM ? 1 : Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - t, 3);
-          const ys = target.map((v, j) => prev[j] + (v - prev[j]) * e), mx = Math.max(...ys, 1e-9);
-          const pts = ys.map((v, j) => [10 + (j + 1) * 2.8, 104 - (v / mx) * 92]);
-          const d = "M" + pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join(" L");
+          const ys = target.map((v, j) => prev[j] + (v - prev[j]) * e), d = toPath(ys, mx);
           card.querySelector(".bline").setAttribute("d", d);
-          card.querySelector(".bfill").setAttribute("d", d + " L290,104 L10,104 Z");
-          const mean = s.a / (s.a + s.b);
-          card.querySelector(".bmean").setAttribute("x1", 10 + mean * 280); card.querySelector(".bmean").setAttribute("x2", 10 + mean * 280);
-          card.querySelector(".ab").textContent = `Beta(${+s.a.toFixed(1)}, ${+s.b.toFixed(1)})`;
-          card.querySelector(".mean").textContent = mean.toFixed(2);
+          card.querySelector(".bfill").setAttribute("d", d + " L390,160 L10,160 Z");
+          const mean = s.a / (s.a + s.b), x = 10 + mean * 380;
+          card.querySelector(".bmean").setAttribute("x1", x); card.querySelector(".bmean").setAttribute("x2", x);
+          card.querySelector(".l-mean").textContent = mean.toFixed(2);
+          card.querySelector(".l-ab").textContent = `Beta(${+s.a.toFixed(1)}, ${+s.b.toFixed(1)})`;
           if (t < 1) requestAnimationFrame(f); else card._ys = target;
         };
         requestAnimationFrame(f);
       };
       state.forEach((_, i) => draw(i));
-      st.querySelectorAll("[data-o]").forEach((b) => b.onclick = () => {
-        const o = +b.dataset.o;
+      stepper();
+      st.querySelectorAll("[data-o]").forEach((btn) => btn.onclick = () => {
+        const o = +btn.dataset.o;
+        outcomes++;
         state.forEach((s, i) => {
           const card = st.querySelector("#bc" + i), prev = card._ys;
           s.a += o; s.b += 1 - o;
-          const chip = document.createElement("span"); chip.className = "out"; chip.textContent = o === 1 ? "retained" : o === 0 ? "churned" : "trial";
-          card.querySelector(".chips-out").appendChild(chip);
-          chip.animate?.([{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 300 });
+          const dot = document.createElement("i");
+          dot.className = "d " + (o === 1 ? "ok" : o === 0 ? "bad" : "mid");
+          card.querySelector(".l-dots").appendChild(dot);
+          dot.animate?.([{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1.4)" });
           draw(i, prev);
         });
+        stepper();
       });
       st.querySelector("#lreset").onclick = () => this.learn(st);
-      // learned correction weights (synthetic run)
       fetch("/api/model-proof").then((r) => r.ok ? r.json() : null).then((d) => {
         if (!d) return;
         const ws = Object.entries(d.prior_residual.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 6);
         const mx = Math.max(...ws.map((w) => Math.abs(w[1])));
-        st.querySelector("#wbars").innerHTML = ws.map(([f, v]) => `<div class="wbar"><span class="wl">${esc(f)}</span>
-          <span class="wtrack"><i style="--w:${(Math.abs(v) / mx * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#eb6834" : "#3987e5"}"></i></span>
-          <span class="wv">${v > 0 ? "+" : ""}${v.toFixed(2)}</span></div>`).join("");
+        st.querySelector("#wbars").innerHTML = ws.map(([f, v]) => `<div class="wbar2"><span>${esc(f)}</span>
+          <span class="wtrack"><i style="--w:${(Math.abs(v) / mx * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#d95926" : "#3987e5"}"></i></span>
+          <b>${v > 0 ? "+" : ""}${v.toFixed(2)}</b></div>`).join("");
         st.querySelectorAll(".wtrack i").forEach((el, i) => el.animate?.([{ width: "0%" }, { width: el.style.getPropertyValue("--w") }], { duration: 800, delay: i * 80, fill: "both", easing: "cubic-bezier(.2,.8,.2,1)" }));
       });
-      this.root.querySelector("#sys-drawer").innerHTML = `
-        <h3>Learning</h3>
-        <p class="q">A belief is a prior. Every outcome moves it.</p>`;
     }
   }
 
