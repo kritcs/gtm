@@ -295,7 +295,7 @@ function tab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === name));
   anim(document.getElementById(name), [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
-  ({ overview: loadOverview, accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: loadAgents })[name]?.();
+  ({ voice: () => VoiceView.render($("#voice-root")), overview: loadOverview, accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: loadAgents })[name]?.();
 }
 async function openDash() { await show("dash"); tab("overview"); }
 
@@ -319,7 +319,7 @@ async function loadOverview() {
       </div>
       ${tile("reading", "reading", "book-open", "3", "The reading", `${S.cards.length || 6} insights`, "What we found together")}
       ${tile("accounts", "accounts", "building-2", "4", "Top accounts", esc(L.rank?.top || "—"), `#1 of ${fmtN(L.rank?.ranked)} ranked`)}
-      ${tile("email", "outreach", "mail", "5", "Email", `${L.approve?.approved || 0} sent`, "In your voice, you approve")}
+      ${tile("email", "voice", "mic-vocal", "5", "Your voice", window.VoiceView?.state.trained ? "Model ready" : "Upload docs", `${L.approve?.approved || 0} sent, you approve each`)}
       ${tile("deals", "pipeline", "columns-3", "6", "Deal stages", `${L.reply?.replies || 0} ${L.reply?.replies === 1 ? "reply" : "replies"}`, "Replies teach the bottle")}
     </div>
     <p class="ov-behind-h">Behind the scenes</p>
@@ -399,7 +399,8 @@ $("#enrich").onclick = async () => {
 window.draftFor = async (id) => {
   const d = await api(`/api/sessions/${S.sid}/drafts`, { method: "POST", body: { account_id: id } });
   S.drafts[d.id] = d;
-  tab("outreach");
+  $("#draft-modal").hidden = false;
+  anim($("#draft-modal .dcard"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
   renderDraft(d);
 };
 
@@ -421,6 +422,7 @@ function renderDraft(d) {
       : `<span class="small">Sent · reply at <a href="${link}" target="_blank">${esc(location.host)}/reply/${esc(d.id)}</a></span>`;
     anim($("#sent-line"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }]);
     await sleep(1400);
+    $("#draft-modal").hidden = true;
     tab("pipeline");
   };
 }
@@ -692,3 +694,6 @@ async function loadProof() {
 
   </div>`;
 }
+
+$("#draft-close").onclick = () => { $("#draft-modal").hidden = true; };
+$("#draft-modal").onclick = (e) => { if (e.target.id === "draft-modal") $("#draft-modal").hidden = true; };

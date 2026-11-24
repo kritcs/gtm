@@ -747,3 +747,37 @@ body:not(.hero-on) {
 /* Your intuition: replies that credited a belief */
 .rcard .credits { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
 .rcard .credit { font: 500 11px/1 var(--sans); color: #199e70; background: rgba(25,158,112,.12); border: 1px solid rgba(25,158,112,.35); border-radius: 999px; padding: 4px 8px; }
+
+/* Draft pop-up (from Top accounts) */
+.dmodal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(5,4,20,.6); backdrop-filter: blur(6px); padding: 24px; }
+.dmodal[hidden] { display: none; }
+.dcard { position: relative; width: min(720px, 100%); max-height: 90vh; overflow: auto; background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 28px; }
+.dclose { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; padding: 0; justify-content: center; }
+
+/* Your voice: upload and a simulated fine-tune */
+.voice { max-width: 760px; display: grid; gap: 18px; }
+.vhead h3 { font: 400 34px/1.1 var(--serif); margin: 0 0 6px; text-wrap: balance; }
+.vhead p { margin: 0; }
+.vdrop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 38px; border: 1px dashed var(--border-strong); border-radius: 22px;
+  background: var(--card); color: var(--muted-foreground); cursor: pointer; transition: border-color .2s, background .2s; }
+.vdrop .i { width: 22px; height: 22px; }
+.vdrop:hover, .vdrop.over { border-color: #9085e9; background: var(--card-2); color: var(--foreground); }
+.vfiles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vfile { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); }
+.vfile b { font: 400 12px var(--mono); color: var(--muted-foreground); }
+.vtrain { display: grid; gap: 14px; }
+.vtrain[hidden] { display: none; }
+.vrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.vstages { display: grid; gap: 10px; }
+.vstage { display: grid; grid-template-columns: 150px 1fr 210px; align-items: center; gap: 14px; font-size: 13px; color: var(--muted-foreground); }
+.vstage.on { color: var(--foreground); }
+.vstage b { font-weight: 400; font-size: 12px; text-align: right; color: var(--muted-foreground); }
+.vbar { height: 6px; border-radius: 6px; background: var(--muted); overflow: hidden; }
+.vbar i { display: block; height: 100%; width: 0; background: #9085e9; border-radius: 6px; }
+.vstage.ok .vbar i { background: #199e70; }
+.vloss { width: 100%; height: auto; background: var(--card); border: 1px solid var(--border); border-radius: 18px; }
+.vloss .vline { fill: none; stroke: #9085e9; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.vloss .vbase { stroke: rgba(255,255,255,.18); stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.vloss .vlbl { font: 12px var(--sans); fill: var(--muted-foreground); }
+.vdone { margin: 0; color: #199e70; font-size: 14px; min-height: 1em; }
+@media (max-width: 700px) { .vstage { grid-template-columns: 1fr; gap: 6px; } .vstage b { text-align: left; } }
