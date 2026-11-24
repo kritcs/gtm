@@ -17,7 +17,7 @@ const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const EASE = "cubic-bezier(.2,.8,.2,1)";
 const sleep = (ms) => new Promise((r) => setTimeout(r, RM ? 0 : ms));
 const anim = (el, kf, o = {}) => (RM || !el ? null : el.animate(kf, { duration: 600, easing: EASE, fill: "both", ...o }));
-const MAP_MODE = { enter: "dash", intro: "dash", talk: "ambient", pause: "scan", reading: "reading", dash: "dash" };
+const MAP_MODE = { enter: "dash", problem: "dash", intro: "dash", talk: "ambient", pause: "scan", reading: "reading", dash: "dash" };
 
 // Reveal text word by word; bare numbers and percentages count up.
 function reveal(el, text, { delay = 0, stagger = 45 } = {}) {
@@ -50,7 +50,7 @@ let current = "enter";
 async function show(id) {
   const from = document.getElementById(current), to = document.getElementById(id);
   window.MarketMap?.mode(MAP_MODE[id]);
-  const heroOn = id === "enter" || id === "intro";
+  const heroOn = id === "enter" || id === "intro" || id === "problem";
   document.body.classList.toggle("hero-on", heroOn);
   if (!heroOn) setTimeout(() => window.HeroBG?.stop(), 400); else window.HeroBG?.start();
   if (from && from !== to && !RM) {
@@ -74,6 +74,10 @@ async function show(id) {
 })();
 
 $("#begin").onclick = async () => {
+  await show("problem");
+  stagger(document.querySelectorAll("#problem .intro > *, .pcard, .drow"), [{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { step: 70, duration: 650 });
+};
+$("#to-how").onclick = async () => {
   await show("intro");
   stagger(document.querySelectorAll("#intro .intro > *, .intro-steps li"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 110, duration: 700 });
 };

@@ -54,6 +54,9 @@ The engine builds in about 4 s on a laptop CPU. A reading takes about 0.3 s, wel
 
 ## Design and open-source UI pieces
 
+Before changing the UI, read [docs/design-guide.md](docs/design-guide.md). It holds the rules for copy, type, color, motion and the checks to run before committing.
+
+
 The look follows the dark editorial style of startup sites like Monaco and Ornn:
 - near-black surfaces
 - a serif display face for headlines

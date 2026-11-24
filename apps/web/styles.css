@@ -598,7 +598,8 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 body.hero-on { background:
     radial-gradient(90% 55% at 50% 112%, rgba(155,231,240,.95) 0%, rgba(124,140,245,.75) 30%, rgba(91,79,224,0) 70%),
     linear-gradient(180deg, #120f3d 0%, #1d1766 38%, #3a2fb8 72%, #5a4fe0 100%); }
-#enter.hero, #intro { padding: 0; overflow: hidden; background: transparent; }
+#enter.hero, #intro, #problem { padding: 0; overflow: hidden; background: transparent; }
+#problem { overflow-y: auto; }
 #hero-bg { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity .6s; pointer-events: none; }
 body.hero-on #hero-bg { opacity: 1; }
 #hero-bg canvas { width: 100%; height: 100%; display: block; }
@@ -674,3 +675,23 @@ body.hero-on #hero-bg { opacity: 1; }
 .ex-beta.up { stroke: #22c55e; } .ex-beta.down { stroke: #ef4444; }
 .ex-rank2 { fill: #fff; font: 700 13px var(--sans); }
 .hx-cap { font-size: 21px; }
+
+/* problem + how we're different */
+#problem .intro { padding-top: 9vh; padding-bottom: 8vh; }
+.pcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: left; margin-bottom: 52px; }
+.pcard { background: rgba(10,8,40,.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 22px; display: grid; gap: 10px; align-content: start; }
+.pcard b { font: 400 24px/1.15 var(--serif); color: #fff; }
+.pcard span { font-size: 14px; line-height: 1.55; color: rgba(255,255,255,.75); }
+.diff-h { margin-bottom: 14px; }
+.diff-table { text-align: left; background: rgba(10,8,40,.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; overflow: hidden; margin: 0 auto 40px; }
+.drow { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 16px; padding: 14px 22px; border-top: 1px solid rgba(255,255,255,.08); font-size: 15px; align-items: center; }
+.drow:first-child { border-top: 0; }
+.drow span:first-child { color: rgba(255,255,255,.55); font-size: 13px; }
+.drow span:nth-child(2) { color: rgba(255,255,255,.55); }
+.drow span:nth-child(3) { color: #fff; }
+.drow.dhead span { font: italic 400 20px var(--serif); color: rgba(255,255,255,.6); }
+.drow.dhead span:nth-child(3) { color: #9be7f0; }
+@media (max-width: 860px) { .pcards { grid-template-columns: 1fr; } .drow { grid-template-columns: 1fr; gap: 4px; } }
+
+/* never leave one word alone on the last line of a heading */
+h1, h2, h3, .display, .question, .front-text, .story-text, .hx-cap { text-wrap: balance; }
