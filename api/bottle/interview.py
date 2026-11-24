@@ -14,10 +14,10 @@ import re
 from dataclasses import dataclass, field
 
 QUESTIONS = [
-    ("customer", "Tell me about the last customer who got really excited. What was happening at their company right before?"),
-    ("lost", "Tell me about a deal you lost that you thought you'd win."),
-    ("before", "What were people doing before they found you?"),
-    ("buyer", "Who signs, and who feels the pain first?"),
+    ("customer", "Name your best recent customers. What was going on at those companies when they bought?"),
+    ("lost", "Which deal did you lose that you expected to win, and why did it fall through?"),
+    ("before", "What were customers using before you?"),
+    ("buyer", "Who signs the contract, and who uses the product day to day?"),
 ]
 
 PAIN_WORDS = ["spreadsheet", "reconcil", "manual", "by hand", "close", "trust", "match", "invoice",
@@ -134,8 +134,6 @@ def next_question(bottle: Bottle) -> dict | None:
     if i >= len(QUESTIONS):
         return None
     key, q = QUESTIONS[i]
-    if i > 0 and bottle.phrases:
-        q = f'You said "{bottle.phrases[-1]}". {q}'
     return {"index": i, "key": key, "text": q, "total": len(QUESTIONS)}
 
 

@@ -52,9 +52,7 @@ def draft_email(account: dict, voice: dict, product: str, customers: list[str]) 
         role = re.sub(r"^Hired (an? )?", "", chips["trigger"]["label"].split(" · ")[0], flags=re.I)
         lines.append(f"Saw {account['name']} is hiring for {role}.")
     if "pain" in chips:
-        q = chips["pain"]["receipt"]["quote"].rstrip(".")
-        q = q[0].lower() + q[1:] if q[:2].istitle() or q[1:2].islower() else q
-        lines.append(f"Your team wrote that {q}.")
+        lines.append("Your job post mentions month-end reconciliation problems.")
     if not lines and "stack" in chips:
         lines.append(f"Noticed you run {chips['stack']['label'].split(' · ')[0][5:]}.")
     why = f"We built {product} because {voice['reason']}." if voice.get("reason") else f"That's what {product} fixes."
@@ -65,8 +63,8 @@ def draft_email(account: dict, voice: dict, product: str, customers: list[str]) 
     return {"id": did, "account_id": account["id"], "account": account["name"], "to": c["email"],
             "to_name": c["first"], "to_role": c["role"], "subject": f"{account['name']}'s month-end close",
             "body": body, "flags": ai_check(body), "status": "draft",
-            "why": (f"You're about to write to the {c['role']} at {account['name']}. Here's why they'd want to hear "
-                    f"from you: " + "; ".join(ch["label"].strip('"') for ch in account["chips"][:2]) + ".")}
+            "why": (f"{c['first']}, {c['role']}, {account['name']}. Evidence: "
+                    + "; ".join(ch["label"].strip('"') for ch in account["chips"][:2]) + ".")}
 
 
 async def send(draft: dict) -> dict:

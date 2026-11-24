@@ -84,7 +84,7 @@ def find_discovery(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, fou
         segs.append({"j": j, "members": mem, "quoted": quoted, "fit": float(fit_c[lab == j].mean()),
                      "d": float(rk.dist[mem].mean())})
     if not segs:
-        return Card(id="discovery", kind="discovery", front_text="I haven't found a segment outside your world yet.",
+        return Card(id="discovery", kind="discovery", front_text="No segment outside your current customers qualified.",
                     clarity=0.3)
     fits = np.array([s["fit"] for s in segs])
     cut = np.quantile(fits, 0.8)
@@ -99,8 +99,8 @@ def find_discovery(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, fou
     phrase = distinctive_phrase(quotes, mq, founder_words)
     inds = Counter(w.companies[c].industry for c in best["members"]).most_common(2)
     who = " and ".join(i for i, _ in inds)
-    front = (f'{len(quoted)} {who} companies describe your pain as "{phrase}".' if phrase
-             else f"{len(quoted)} {who} companies describe your pain in other words.")
+    front = (f'{len(quoted)} {who} companies post about the same problem. Their term: "{phrase}".' if phrase
+             else f"{len(quoted)} {who} companies post about the same problem.")
     # distinct wordings first: eight companies saying it eight ways is the evidence
     seen, first, rest = set(), [], []
     for c, q in zip(quoted, quotes):
@@ -141,8 +141,9 @@ def find_needed(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, now: i
     recs = [receipt(p, p.title + " " + p.text, None)]
     recs += [receipt(q, pain_sentence(q.text, founder_vec, model), w.companies[c].name) for _, c, q in moment[:5]]
     return Card(id="needed", kind="needed",
-                front_text=f"On {p.date}, a stranger described your problem in their own words.",
-                back_text=f"{len(moment)} companies were posting about the same pain within two months of it.",
+                front_text=f"“{p.title}” ({p.date})",
+                back_text=f"Closest public post to your problem. {len(moment)} companies posted about the same problem "
+                          f"within two months of it.",
                 clarity=float(np.clip(sims.max() * 1.6, 0.3, 1.0)), receipts=recs,
                 stats={"similarity": float(sims.max()), "author": p.author, "title": p.title,
                        "moment_companies": len(moment), "window": f"{month_label(p.month - 2)}..{month_label(p.month + 2)}"},
@@ -168,10 +169,10 @@ def find_blindspot(model: MarketModel, rk: Ranking, experience: list[int], now: 
     thin = [x for x in rows if x["recent_posts"] / x["companies"] <= med] or rows
     r = max(thin, key=lambda x: x["model_score"])
     return Card(id="blindspot", kind="blindspot",
-                front_text=f"I can't see {r['industry']} clearly yet: {r['companies']} companies, "
-                           f"about {r['recent_posts'] / r['companies']:.1f} posts each this year.",
-                back_text="The market model rates this group above average, but you've never sold there and "
-                          "the public data is thin. Treat anything I say about it as a guess.",
+                front_text=f"{r['industry'].capitalize()}: {r['companies']} companies, "
+                           f"{r['recent_posts'] / r['companies']:.1f} posts each this year. Not enough data to rank.",
+                back_text="The market model scores this group above average, but none of your customers are in it "
+                          "and there is little recent data. Scores here are low-confidence.",
                 clarity=0.3, stats=r, revisable=False)
 
 

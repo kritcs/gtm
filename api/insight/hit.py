@@ -51,7 +51,7 @@ def find_hit(g: MarketGraph, customers: list[tuple[int, int]], transcript: str, 
     w = g.world
     n = len(customers)
     if n == 0:
-        return _no_hit("Name a customer or two and I'll look for what they share."), []
+        return _no_hit("No customers named, so no shared pattern to test."), []
     windows = {cid: g.feature_window(cid, s - WINDOW, s) for cid, s in customers}
     cust_ids = {cid for cid, _ in customers}
 
@@ -85,7 +85,7 @@ def find_hit(g: MarketGraph, customers: list[tuple[int, int]], transcript: str, 
 
     best = rows[0] if rows and rows[0]["passes"] else None
     if best is None:
-        return _no_hit("No pattern among your customers beats chance yet."), rows
+        return _no_hit("No shared customer trait passed the significance test."), rows
 
     f = best["feature"]
     recs = []
@@ -95,11 +95,10 @@ def find_hit(g: MarketGraph, customers: list[tuple[int, int]], transcript: str, 
             post = g.posts[pid]
             recs.append(receipt(post, post.text.split("\n", 1)[0], w.companies[cid].name))
     k, n = best["k"], best["n"]
-    lead = f"All {n}" if k == n else f"{k} of {n}"
-    front = f"{lead} of your customers {best['label']} in the six months before signing."
-    back = (f"In comparable companies (same size and stage, same months) {best['base_rate']:.0%} did. "
-            f"Odds this is chance: {best['p_chance']:.1e} before correction, q = {best['q_value']:.3f} "
-            f"after testing {len(rows)} features. You never mentioned it.")
+    front = f"{k} of {n} customers {best['label']} in the 6 months before buying. Base rate: {best['base_rate']:.0%}."
+    back = (f"Base rate from companies of the same size and stage over the same months. "
+            f"p = {best['p_chance']:.1e}; q = {best['q_value']:.3f} after Benjamini-Hochberg over {len(rows)} features. "
+            f"Not mentioned in the interview.")
     clarity = float(np.clip(-np.log10(max(best["q_value"], 1e-12)) / 3, 0.25, 1.0))
     card = Card(id="hit", kind="hit", front_text=front, back_text=back, clarity=clarity, receipts=recs,
                 stats={k_: best[k_] for k_ in ("feature", "k", "n", "base_rate", "p_chance", "q_value",

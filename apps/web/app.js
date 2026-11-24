@@ -9,8 +9,8 @@ const api = async (path, opts = {}) => {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const S = { sid: null, world: null, script: null, qIndex: 0, cards: [], cardIdx: 0, drafts: {}, events: [] };
-const EYEBROW = { reflection: "Understood", hit: "What your customers share", discovery: "The one you didn't see",
-  needed: "Needed", blindspot: "Where I can't see clearly", next_step: "The next step" };
+const EYEBROW = { reflection: "From the interview", hit: "Shared customer trait", discovery: "New segment",
+  needed: "Public post", blindspot: "Low data", next_step: "First account" };
 
 function show(id) {
   document.querySelectorAll(".stage").forEach((s) => s.classList.toggle("active", s.id === id));
@@ -156,7 +156,7 @@ function renderCard() {
   $("#card-diff").textContent = c.diff || "";
   $("#flip").style.display = c.receipts.length || Object.keys(c.stats).length ? "" : "none";
   for (const id of ["#yes", "#no", "#no-text"]) $(id).style.display = c.revisable ? "" : "none";
-  $("#next-card").textContent = S.cardIdx === S.cards.length - 1 ? "Open the engine" : "Next";
+  $("#next-card").textContent = S.cardIdx === S.cards.length - 1 ? "Accounts" : "Next";
   $("#dots").innerHTML = S.cards.map((_, i) => `<span class="${i === S.cardIdx ? "on" : ""}"></span>`).join("");
   $("#no-text").value = "";
 }
@@ -170,7 +170,7 @@ async function sendFeedback(text) {
   const nc = await api(`/api/sessions/${S.sid}/cards/${c.id}/feedback`, { method: "POST", body: { text } });
   S.cards[S.cardIdx] = nc; renderCard();
 }
-$("#yes").onclick = () => sendFeedback("Yes, exactly");
+$("#yes").onclick = () => sendFeedback("Yes");
 $("#no").onclick = () => sendFeedback($("#no-text").value || "No");
 $("#no-text").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#no").click(); });
 $("#no-text").addEventListener("focus", () => { if (!$("#no-text").value && S.cards[S.cardIdx].id === "discovery") $("#no-text").placeholder = S.script.correction; });

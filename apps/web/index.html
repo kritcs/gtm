@@ -10,8 +10,8 @@
   <!-- 1. Enter -->
   <section id="enter" class="stage active">
     <div class="center">
-      <p class="eyebrow">A reading for founders</p>
-      <h1 class="display">Tell me who got excited.<br>I'll show you who's next.</h1>
+      <p class="eyebrow">Intuition in a bottle</p>
+      <h1 class="display">Four questions about your customers.<br>Then a ranked list of who to contact.</h1>
       <button id="begin" class="primary">Begin</button>
       <p class="fine" id="world-line">Loading the market…</p>
     </div>
@@ -25,17 +25,17 @@
         <h2 class="question" id="question"></h2>
         <div class="phrases" id="phrases"></div>
         <div class="answer-box">
-          <textarea id="answer" rows="4" placeholder="Speak or type. Specific moments beat general rules."></textarea>
+          <textarea id="answer" rows="4" placeholder="Speak or type."></textarea>
           <div class="row">
             <button id="mic" class="ghost" title="Speak (Web Speech API)">● Speak</button>
-            <button id="demo-answer" class="link">use the demo founder's answer</button>
+            <button id="demo-answer" class="link">fill demo answer</button>
             <span class="grow"></span>
             <button id="send" class="primary">Next</button>
           </div>
         </div>
       </div>
       <aside class="bottle" id="bottle">
-        <p class="eyebrow">The bottle</p>
+        <p class="eyebrow">Extracted so far</p>
         <div class="bottle-glass"><div class="bottle-fill" id="bottle-fill"></div></div>
         <dl id="bottle-list"></dl>
       </aside>
@@ -45,7 +45,7 @@
   <!-- 3. Pause -->
   <section id="pause" class="stage">
     <div class="center">
-      <h2 class="display small">Let me look.</h2>
+      <h2 class="display small">Scoring companies…</h2>
       <div class="shuffle" id="shuffle"></div>
       <div class="kitchen" id="kitchen"></div>
     </div>
@@ -63,11 +63,11 @@
       </div>
       <div class="diff" id="card-diff"></div>
       <div class="card-actions" id="card-actions">
-        <button class="ghost" id="flip">See the receipts</button>
+        <button class="ghost" id="flip">Evidence</button>
         <span class="grow"></span>
-        <button class="ghost" id="yes">Yes, exactly</button>
-        <input id="no-text" placeholder="No, because…">
-        <button class="ghost" id="no">Correct it</button>
+        <button class="ghost" id="yes">Correct</button>
+        <input id="no-text" placeholder="What's wrong?">
+        <button class="ghost" id="no">Wrong</button>
         <button class="primary" id="next-card">Next</button>
       </div>
       <div class="dots" id="dots"></div>

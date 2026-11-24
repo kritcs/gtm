@@ -184,11 +184,12 @@ class Session:
         return r[0].text if r else "Head of Finance"
 
     def _reflection(self) -> Card:
-        ph = self.bottle.phrases[:2]
-        n = len(self.bottle.customers)
-        said = " and ".join(f"“{p}”" for p in ph) if ph else "very little so far"
-        return Card(id="reflection", kind="reflection", front_text=f"You said {said}. {n} customers, one pain.",
-                    back_text="Your words, kept as rules with trust that replies will update.",
+        w = self.engine.world
+        names = [w.companies[c].name for c in self.bottle.customers]
+        who = ", ".join(names[:-1]) + f" and {names[-1]}" if len(names) > 1 else (names[0] if names else "No customers named")
+        pain = self.bottle.phrases[0] if self.bottle.phrases else "none recorded"
+        return Card(id="reflection", kind="reflection", front_text=f"Customers: {who}. Problem: {pain}.",
+                    back_text="Extracted from the interview. Each item is stored as a rule; replies change its trust score.",
                     clarity=0.9, revisable=False,
                     stats={"rules": [r.to_dict() for r in self.bottle.rules]})
 
@@ -199,9 +200,9 @@ class Session:
         ch = a["chips"][0]
         from .cards import Receipt
         return Card(id="next_step", kind="next_step",
-                    front_text=f"Write to the {a['contact']['role']} at {a['name']} first.",
-                    back_text=f"Why: {ch['label']}. Score {a['score']} (market {a['market']}, you {a['founder']}, "
-                              f"weight on you {a['lambda']}).",
+                    front_text=f"Start with {a['name']} ({a['contact']['role']}).",
+                    back_text=f"Top evidence: {ch['label']}. Score {a['score']} = market {a['market']} + "
+                              f"founder {a['founder']} weighted {a['lambda']}.",
                     clarity=0.85, receipts=[Receipt(**c["receipt"]) for c in a["chips"]],
                     companies=[{"id": a["id"], "name": a["name"]}], stats={"account": a["id"]})
 
@@ -226,10 +227,12 @@ class Session:
         t = text.lower().strip()
         rules = [r for r in self.bottle.rules if r.kind in ("pain", "trigger")]
         if re.match(r"^(yes|yeah|exactly|right|true)\b", t):
+            before_t = rules[0].trust if rules else 0
             for r in rules:
                 r.alpha += 1
+            after_t = rules[0].trust if rules else 0
             card = card.model_copy(update={"clarity": min(1.0, card.clarity + 0.1), "version": card.version + 1,
-                                           "diff": "You confirmed this. I'll lean on it more."})
+                                           "diff": f"Confirmed. Rule trust {before_t:.2f} → {after_t:.2f}."})
             self.cards[card_id] = card
             await self.emit("Writer", "thought", f"Founder confirmed the {card_id} card.")
             return card
@@ -250,10 +253,12 @@ class Session:
             self.constraints.exclude_industries += (m_not.group(1),)
             changed = True
         if not changed:
+            before_t = rules[0].trust if rules else 0
             for r in rules:
                 r.beta += 1
+            after_t = rules[0].trust if rules else 0
             card = card.model_copy(update={"clarity": max(0.15, card.clarity - 0.25), "version": card.version + 1,
-                                           "diff": "You disagreed. I've marked this as a guess and lowered my trust in it."})
+                                           "diff": f"Marked wrong. Rule trust {before_t:.2f} → {after_t:.2f}."})
             self.cards[card_id] = card
             await self.emit("Writer", "thought", f"Founder disagreed with {card_id}; trust lowered.")
             return card
@@ -273,8 +278,8 @@ class Session:
             new = self._next_step()
         removed = [c for c in before if not self.constraints.allows(e.world.companies[c])]
         new = new.model_copy(update={"version": card.version + 1,
-                                     "diff": f"Removed {len(removed)} companies over the size you sell to "
-                                             f"({self._constraint_text()}). Re-ranked {rk.meta['candidates']} companies."})
+                                     "diff": f"Filter added: {self._constraint_text()}. Removed {len(removed)}, "
+                                             f"re-ranked {rk.meta['candidates']}."})
         self._verify_receipts(new)
         self.cards[card_id] = new
         if card_id != "next_step":
