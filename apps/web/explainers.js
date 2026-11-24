@@ -103,7 +103,7 @@
     },
 
     engine: {
-      title: "Dual past-future engine",
+      title: "We test your instinct against the market",
       adjusts: "What gets adjusted: graph embeddings (LightGCN) and one vector for your product",
       steps: [
         ["We build a market knowledge graph from public posts. Every edge cites its post.", (s) => {
@@ -227,10 +227,10 @@
           s.rows = vals.map((v, i) => {
             const y = 238 + i * 24;
             const line = el("rect", { x: 300, y, width: [230, 190, 240, 150][i], height: 9, rx: 4, fill: "rgba(255,255,255,.75)" }, s.svg);
-            const sc = el("rect", { x: 560, y: y - 1, width: 0, height: 11, rx: 5, fill: v > .5 ? C.green : C.red }, s.svg);
+            const sc = el("rect", { x: 545, y: y - 1, width: 0, height: 11, rx: 5, fill: v > .5 ? C.green : C.red }, s.svg);
             sc.style.transition = `width ${RM ? 0 : 500}ms`;
-            setTimeout(() => sc.setAttribute("width", 120 * v), RM ? 0 : 200 + i * 150);
-            text(s.svg, 690, y + 9, `log p ${v > .5 ? "high" : "low"}`, "ex-small");
+            setTimeout(() => sc.setAttribute("width", 100 * v), RM ? 0 : 200 + i * 150);
+            text(s.svg, 655, y + 9, v > .5 ? "Sounds like you" : "Doesn't", "ex-small");
             return { line, sc };
           });
           await sleep(900);
@@ -238,7 +238,7 @@
         }],
         ["The weak line is rewritten. You approve before anything sends.", async (s) => {
           const r = s.rows[2];
-          r.line.setAttribute("fill", "rgba(255,255,255,.75)"); r.sc.setAttribute("fill", C.green); r.sc.setAttribute("width", 120 * .9);
+          r.line.setAttribute("fill", "rgba(255,255,255,.75)"); r.sc.setAttribute("fill", C.green); r.sc.setAttribute("width", 100 * .9);
           const g = el("g", { transform: "translate(620,40)" }, s.svg);
           el("rect", { x: -70, y: -18, width: 140, height: 36, rx: 18, fill: C.ink }, g);
           text(g, 0, 6, "Approve & send", "ex-btn", "middle");
