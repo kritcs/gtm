@@ -41,7 +41,9 @@ class LightGCN:
             M += P
         return M / (self.K + 1)
 
-    def fit(self, pairs: np.ndarray, epochs: int = 160, batch: int = 4096) -> "LightGCN":
+    def fit(self, pairs: np.ndarray, epochs: int = 160, batch: int = 4096,
+            callback=None, every: int = 10) -> "LightGCN":
+        """callback(epoch, users, items) runs every `every` epochs (for validation curves)."""
         pairs = np.asarray(pairs, np.int64)
         self.M = self._propagation(pairs)
         pos = {(int(u), int(i)) for u, i in pairs}
@@ -67,6 +69,9 @@ class LightGCN:
             m = b1 * m + (1 - b1) * grad
             v = b2 * v + (1 - b2) * grad * grad
             self.E0 -= self.lr * (m / (1 - b1**ep)) / (np.sqrt(v / (1 - b2**ep)) + 1e-8)
+            if callback and (ep % every == 0 or ep == 1):
+                Ef = self.M @ self.E0
+                callback(ep, Ef[: self.U], Ef[self.U:])
         E = self.M @ self.E0
         self.user_emb, self.item_emb = E[: self.U], E[self.U:]
         return self

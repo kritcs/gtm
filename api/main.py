@@ -117,6 +117,15 @@ async def get_backtest():
     return await STATE["backtest_task"]
 
 
+@app.get("/api/model-proof")
+def model_proof():
+    """Precomputed by `make sim` (sim/build.py): training on the synthetic market + labelled mock-ups."""
+    path = Path(__file__).resolve().parents[1] / "sim" / "out" / "results.json"
+    if not path.exists():
+        raise HTTPException(404, "run `make sim` first")
+    return json.loads(path.read_text())
+
+
 @app.get("/api/graph/cypher", response_class=PlainTextResponse)
 def cypher(limit: int = 25):
     return eng().graph.to_cypher(limit=limit)

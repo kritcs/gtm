@@ -12,6 +12,7 @@ uv run uvicorn api.main:app --port 8000      # open http://localhost:8000
 uv run python scripts/demo_check.py          # end-to-end check of the scripted demo
 uv run pytest -q                             # tests
 uv run python -m api.ml.backtest             # backtest + ablation (writes data/cache/backtest.json)
+make sim                                     # Model & proof panel: real training on the synthetic market (~18 s)
 ```
 
 The engine builds in about 4 s on a laptop CPU. A reading takes about 0.3 s, well under the 10 s budget.
@@ -33,7 +34,7 @@ The engine builds in about 4 s on a laptop CPU. A reading takes about 0.3 s, wel
    - **Reply:** open `/reply/<draft_id>` on a phone and tap Reply. The webhook fires and the card moves to *Replied*.
    - **Bottle:** rules with Beta trust, plus every feature tested.
    - **Band feed:** every agent step.
-   - **Proof:** the backtest.
+   - **Model & proof:** say it out loud: *"This panel is the roadmap. The training ran on synthetic data, the voice fine-tune is simulated, and there are no measured numbers yet."*
 
 ## What's inside
 
@@ -73,6 +74,18 @@ Train through 2024-12, then predict which of 724 companies adopt Ledgerlight aft
 | **market + founder** | **0.145** | 0.072 to 0.232 |
 
 The combination beats both parts on the point estimate, but the intervals overlap, and the UI says exactly that. Most 2025 adopters come from the logistics shift, which neither the market history nor the founder's gut anticipated. That shift is what the discovery card exists to surface.
+
+## Model & proof panel (`make sim` → `sim/out/results.json`)
+
+Three badges, never mixed in one chart or table:
+- **Synthetic data:** real training code ran on the seeded synthetic market. This covers LightGCN vs ALS training curves, `logit(founder prior) + correction` across a time split (Newton/IRLS), Beta priors + Thompson sampling over 40 outcome rounds, the backtest and ablation, and checks that the planted patterns were recovered. It shows the method works, not real-world accuracy.
+- **Simulated:** the LoRA + DPO voice fine-tune is a seeded mock-up. It needs a GPU pod and was not run.
+- **Measured:** real public data. There are none yet, and the panel shows an empty slot.
+
+What the synthetic runs show:
+- **Market model:** LightGCN only matches the popularity baseline on this market.
+- **Prior + correction:** the correction learns the planted RevOps trigger and shifts weight toward logistics. Because the founder's stated beliefs are miscalibrated, the correction alone beats prior + correction.
+- **Thompson sampling:** founder priors used as stated cost conversions. Rescaled to the market base rate, they finish best.
 
 ## Honest limits
 - The market is simulated. Swapping in the real corpus means replacing `simulate.generate()` with a loader for `brusic/hacker-news-who-is-hiring-posts` (updated 2026-11-21). The post → triple → graph path stays the same.
