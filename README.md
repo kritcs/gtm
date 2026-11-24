@@ -2,7 +2,7 @@
 
 A GTM engine for founders breaking into a market. The founder talks through a short interview. The engine combines what it hears with a market graph built from public hiring posts, then gives a **reading** with checkable evidence, followed by ranked accounts and approved outreach.
 
-> **Demo data is simulated.** There was no time to pull and train on the real HN corpus during the hackathon, so `api/market/simulate.py` generates a seeded market with the same shape: 900 fictional companies (`*.example` domains), about 75 real tool names, and about 8,300 dated HN-style posts. Only the post *text* leaves the simulator. The extraction, the Reviewer, LightGCN, the cold start, the stats and the backtest all run for real on that text.
+> **Demo data is simulated.** There was no time to pull and train on the real HN corpus during the hackathon, so `api/market/simulate.py` generates a seeded market with the same shape: 900 fictional companies (`*.example` domains), about 75 real tool names, and about 8,300 dated HN-style posts. Only the post *text* leaves the simulator. The extraction, the Reviewer, LightGCN, the cold start, the stats and the backtest all run for real on that text. ***We hope to update this repo as fast as possible once we finish training our dataset. We will improve and maintain this dataset overtime.*** 
 
 ## Run it
 
