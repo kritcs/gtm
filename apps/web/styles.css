@@ -614,7 +614,7 @@ body.dome-on #hero-bg { opacity: 0; }
 .hero-copy { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 14vh 6vw 0; text-align: center; }
 .hero-eyebrow { margin: 0 0 18px; font-size: 14px; color: rgba(255,255,255,.7); letter-spacing: .01em; }
 .hero-title { font-size: clamp(60px, 9vw, 132px); margin: 0 0 22px; text-shadow: 0 2px 30px rgba(10,8,60,.5); }
-.hero-title em { color: rgba(255,255,255,.72); }
+.hero-title em { color: rgba(255,255,255,.72); font-style: normal; }
 .hero-sub { margin: 0 auto 34px; max-width: 560px; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.45; color: rgba(255,255,255,.82); }
 .hero-copy .eyebrow-s { margin-top: 18px; color: rgba(255,255,255,.55); }
 .hero .btn.primary { box-shadow: 0 10px 40px -10px rgba(155,231,240,.6); }
@@ -698,7 +698,7 @@ body.dome-on #hero-bg { opacity: 0; }
 .drow span:nth-child(2) { color: rgba(255,255,255,.55); }
 .drow span:nth-child(3) { color: #fff; }
 .drow.dhead span { font: italic 400 20px var(--serif); color: rgba(255,255,255,.6); }
-.drow.dhead span:nth-child(3) { color: #9be7f0; }
+.drow.dhead span:nth-child(3) { color: #9be7f0; font-style: normal; }
 @media (max-width: 860px) { .pcards { grid-template-columns: 1fr; } .drow { grid-template-columns: 1fr; gap: 4px; } }
 
 /* never leave one word alone on the last line of a heading */
