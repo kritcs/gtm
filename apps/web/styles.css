@@ -664,3 +664,13 @@ body.hero-on #hero-bg { opacity: 1; }
 .ex-div { stroke: rgba(255,255,255,.15); stroke-dasharray: 4 6; }
 .ex-bottle { fill: rgba(57,135,229,.08); stroke: rgba(255,255,255,.7); stroke-width: 2; }
 .ex-arrow { stroke: rgba(255,255,255,.5); stroke-width: 2; fill: none; stroke-dasharray: 4 5; animation: ovflow 1.2s linear infinite; }
+
+.hx-adj { margin: 4px 0 0; font: 13px var(--mono); color: #9be7f0; }
+.ex-node { fill: #fff; font: 600 11px var(--sans); }
+.ex-edge { stroke: rgba(255,255,255,.4); stroke-width: 1.5; }
+.ex-elbl { fill: rgba(255,255,255,.55); font: 10px var(--mono); }
+.ex-mono { fill: #fff; font: 14px var(--mono); }
+.ex-beta { fill: none; stroke: #9085e9; stroke-width: 2.5; transition: d .8s cubic-bezier(.2,.8,.2,1); }
+.ex-beta.up { stroke: #22c55e; } .ex-beta.down { stroke: #ef4444; }
+.ex-rank2 { fill: #fff; font: 700 13px var(--sans); }
+.hx-cap { font-size: 21px; }
