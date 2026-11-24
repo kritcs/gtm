@@ -4,7 +4,7 @@ A go-to-market engine that starts from the founder's instinct and lets market da
 
 Early-stage companies have two weak data sources. Their own data is a handful of customers, which is too thin to learn from. Public data is broad but noisy, and a traditional knowledge graph needs a lot of volume before it says anything useful. The founder's judgment about who buys and why is the strongest signal they have. This project treats that judgment as a **prior**, tests it against a **heterogeneous market graph**, and **updates** it as replies come in.
 
-**Live demo:** https://verygoodbread.github.io/gtm/
+**Live demo:** https://kritcs.github.io/gtm/
 
 > **Demo data is simulated.** There was no time to pull and train on the real HN corpus during the hackathon. Only the post *text* leaves the simulator. The extraction, the Reviewer, LightGCN, the cold start, the stats and the backtest all run for real on that text. ***We hope to update this repo as fast as possible once we finish training our dataset. We will improve and maintain this dataset overtime.*** 
 
