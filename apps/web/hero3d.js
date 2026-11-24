@@ -28,11 +28,11 @@ if (host) {
     const left = Array.from({ length: NL }, (_, i) => ({ x: W * (0.04 + rnd(i, 1) * 0.03), y: H * (0.38 + (i / (NL - 1)) * 0.6) + (rnd(i, 2) - .5) * 8 }));
     const right = Array.from({ length: NR }, (_, i) => ({ x: W * (0.93 + rnd(i, 3) * 0.03), y: H * (0.5 + (i / (NR - 1)) * 0.48) + (rnd(i, 4) - .5) * 8 }));
     funnel = { neck, left, right };
-    const NRAY = W < 700 ? 110 : 190, o = { x: W * 0.5, y: H * 1.02 };
+    const NRAY = W < 700 ? 70 : 120, o = { x: W * 0.5, y: H * 1.02 };
     rays = Array.from({ length: NRAY }, (_, i) => {
       const a = Math.PI + (0.04 + rnd(i, 5) * 0.92) * Math.PI; // upper half
-      const len = Math.min(W, H * 1.6) * (0.28 + Math.pow(rnd(i, 6), 0.7) * 0.55);
-      return { o, a, len, dot: 1 + rnd(i, 7) * 2.4, phase: rnd(i, 8), speed: 0.12 + rnd(i, 9) * 0.18, alpha: 0.25 + rnd(i, 10) * 0.55 };
+      const len = Math.min(W * 0.5, H * 0.62) * (0.35 + Math.pow(rnd(i, 6), 0.8) * 0.65);
+      return { o, a, len, dot: 0.8 + rnd(i, 7) * 1.6, phase: rnd(i, 8), speed: 0.12 + rnd(i, 9) * 0.18, alpha: 0.18 + rnd(i, 10) * 0.4 };
     });
   }
 
@@ -99,9 +99,9 @@ if (host) {
     });
     const o = rays[0]?.o;
     if (o) {
-      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, 140);
+      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, 110);
       g.addColorStop(0, "rgba(255,255,255,.55)"); g.addColorStop(1, "rgba(155,231,240,0)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, 140, 0, 6.283); ctx.fill();
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, 110, 0, 6.283); ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
