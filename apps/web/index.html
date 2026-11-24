@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
   <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/styles.css?v=12">
+  <link rel="stylesheet" href="/static/styles.css?v=13">
 </head>
 <body class="hero-on">
   <div id="hero-bg" aria-hidden="true"></div>
@@ -23,28 +23,21 @@
       <p class="hero-eyebrow">How it works</p>
       <h2 class="display intro-title">We turn your instinct into your next customer.</h2>
       <ol class="intro-steps">
-        <li><button class="icard" aria-expanded="false">
+        <li><button class="icard" data-x="bottle">
           <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/mic.svg)"></i><em>1</em></span>
           <b>Talk us through your instinct.</b>
           <span class="ifront">Tell us about the customers you won and the deal you lost.</span>
-          <span class="imore"><span>Every belief gets a confidence score. A belief you're sure about starts strong, a hunch starts weak, and every reply moves it up or down.</span></span>
-          <span class="itoggle">How it works</span></button></li>
-        <li><button class="icard" aria-expanded="false">
+          <span class="itoggle">See how it works</span></button></li>
+        <li><button class="icard" data-x="engine">
           <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/network.svg)"></i><em>2</em></span>
-          <b>We score it in both directions.</b>
-          <span class="ifront">We check your instinct against the past and the present.</span>
-          <span class="imore">
-            <span><strong>Backward.</strong> We replay what already happened. If companies like your customers didn't really buy for the reason you think, the pattern gets thrown out as luck.</span>
-            <span><strong>Forward.</strong> We scan 900 companies today for the same signals, including companies that describe your problem in different words. That's how we find buyers you'd never search for.</span>
-          </span>
-          <span class="itoggle">How it works</span></button></li>
-        <li><button class="icard" aria-expanded="false">
+          <b>Dual past-future engine.</b>
+          <span class="ifront">We test your instinct against what already happened and against the market today.</span>
+          <span class="itoggle">See how it works</span></button></li>
+        <li><button class="icard" data-x="voice">
           <span class="istep"><i class="i" style="--i:url(/static/vendor/icons/send.svg)"></i><em>3</em></span>
           <b>Unmistakably yours.</b>
           <span class="ifront">Every email sounds like you wrote it.</span>
-          <span class="imore"><span>We fine-tune a small model on your own sent emails. Each draft is scored on how likely you are to have written it, and any line that doesn't sound like you gets flagged before you approve.</span>
-            <span class="tag">Roadmap. The demo uses a simpler phrase check.</span></span>
-          <span class="itoggle">How it works</span></button></li>
+          <span class="itoggle">See how it works</span></button></li>
       </ol>
       <button id="start-interview" class="btn primary lg">Start the interview <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
     </div>
@@ -139,12 +132,13 @@
     </main>
   </section>
 
-  <script src="/static/text.js?v=12"></script>
-  <script src="/static/pipeline-graph.js?v=12"></script>
-  <script src="/static/system-view.js?v=12"></script>
-  <script src="/static/agents-view.js?v=12"></script>
-  <script src="/static/app.js?v=12"></script>
-  <script type="module" src="/static/map3d.js?v=12"></script>
-  <script type="module" src="/static/hero3d.js?v=12"></script>
+  <script src="/static/explainers.js?v=16"></script>
+  <script src="/static/text.js?v=13"></script>
+  <script src="/static/pipeline-graph.js?v=13"></script>
+  <script src="/static/system-view.js?v=13"></script>
+  <script src="/static/agents-view.js?v=13"></script>
+  <script src="/static/app.js?v=13"></script>
+  <script type="module" src="/static/map3d.js?v=13"></script>
+  <script type="module" src="/static/hero3d.js?v=13"></script>
 </body>
 </html>

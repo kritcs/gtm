@@ -27,7 +27,7 @@ Buttons are icons now. This script names each one by its icon, and every icon sh
 
 > "Founders win their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. That bright point is a founder's intuition. Each streak is a company it could reach."
 
-**2. Interview (35 s).** *Click **Begin**. On "We turn your instinct into your next customer", click card 2 once.*
+**2. Interview (35 s).** *Click **Begin**. On "We turn your instinct into your next customer", click **Dual past-future engine**. Narrate over the animation, then close it.*
 
 > "We score your instinct in both directions. Backward, we replay the past and throw out anything that could be luck. Forward, we scan the market for companies that show the same signals, even when they use different words."
 
