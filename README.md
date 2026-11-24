@@ -67,7 +67,7 @@ The look follows the dark editorial style of startup sites like Monaco and Ornn:
 Those sites use commercial fonts (Season Serif, PP Neue Montreal, FK Roman), so we use open-source counterparts instead:
 - **Type:** [Instrument Serif](https://github.com/Instrument/instrument-serif) for headlines, [Inter](https://github.com/rsms/inter) for the UI, and [Fragment Mono](https://github.com/weiweihuanghuang/fragment-mono) for numbers. All three are SIL OFL.
 - **Icons:** [Lucide](https://github.com/lucide-icons/lucide) (ISC).
-- **Front-flow backgrounds** (`apps/web/hero3d.js`, canvas 2D): the front page shows a bottleneck, where market signals funnel through one glowing neck (your instinct) and fan out to customers. The Problem and How it works pages show a fan of rays from one founder to the market.
+- **Front-flow backgrounds** (`apps/web/hero3d.js`, canvas 2D): the front page shows a bottleneck, where market signals funnel through one glowing neck (your instinct) and fan out to customers. The Problem page shows a fan of rays from one founder to the market. How it works shows an arc dome (`apps/web/dome3d.js`, three.js), where every streak runs from the founder's intuition to one of the 900 companies.
 - **Market map:** [three.js](https://github.com/mrdoob/three.js) r170 (MIT), in `apps/web/map3d.js`. All 900 companies are plotted as a 3D point cloud laid out by the model's embeddings (PCA). Each card lights up its evidence on the map, and a scan wave runs while the engine scores companies.
 
 All of these are vendored in `apps/web/vendor/` with their licenses, so the demo needs no network.

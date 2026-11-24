@@ -54,6 +54,10 @@ async function show(id) {
   document.body.classList.toggle("hero-on", heroOn);
   if (!heroOn) setTimeout(() => window.HeroBG?.stop(), 400);
   else { window.HeroBG?.start(); window.HeroBG?.scene(id === "enter" ? "bottleneck" : "fan"); }
+  // How it works gets the arc dome; the canvas scenes fade out under it
+  const dome = id === "intro";
+  document.body.classList.toggle("dome-on", dome);
+  if (dome) window.DomeBG?.start(); else setTimeout(() => { if (!document.body.classList.contains("dome-on")) window.DomeBG?.stop(); }, 700);
   if (from && from !== to && !RM) {
     await anim(from, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 320 })?.finished;
   }

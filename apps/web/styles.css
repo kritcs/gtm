@@ -602,6 +602,10 @@ body.hero-on { background:
 #problem { overflow-y: auto; }
 #hero-bg { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity .6s; pointer-events: none; }
 body.hero-on #hero-bg { opacity: 1; }
+#dome-bg { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity .7s; pointer-events: none; }
+#dome-bg canvas { width: 100%; height: 100%; display: block; }
+body.dome-on #dome-bg { opacity: 1; }
+body.dome-on #hero-bg { opacity: 0; }
 #hero-bg canvas { width: 100%; height: 100%; display: block; }
 .hero-copy { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 14vh 6vw 0; text-align: center; }
 .hero-eyebrow { margin: 0 0 18px; font-size: 14px; color: rgba(255,255,255,.7); letter-spacing: .01em; }
