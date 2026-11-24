@@ -102,7 +102,8 @@ function ask(q) {
   S.qIndex = q.index;
   $("#q-count").textContent = `${q.index + 1}/${q.total}`;
   reveal($("#question"), q.text, { stagger: 28 });
-  $("#answer").value = "";
+  // the static demo replays recorded answers, so show the one it will use
+  $("#answer").value = window.STATIC_DEMO ? S.script?.answers[q.index] || "" : "";
   $("#answer").focus();
 }
 
@@ -415,7 +416,9 @@ function renderDraft(d) {
     S.drafts[d.id] = r;
     $("#approve").disabled = true;
     const link = `${location.origin}/reply/${d.id}`;
-    $("#sent-line").innerHTML = `<span class="small">Sent · reply at <a href="${link}" target="_blank">${esc(location.host)}/reply/${esc(d.id)}</a></span>`;
+    $("#sent-line").innerHTML = window.STATIC_DEMO
+      ? `<span class="small">Sent. Watch Deal stages for their reply.</span>`
+      : `<span class="small">Sent · reply at <a href="${link}" target="_blank">${esc(location.host)}/reply/${esc(d.id)}</a></span>`;
     anim($("#sent-line"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }]);
     await sleep(1400);
     tab("pipeline");
