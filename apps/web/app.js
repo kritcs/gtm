@@ -9,8 +9,8 @@ const api = async (path, opts = {}) => {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const S = { sid: null, world: null, script: null, qIndex: 0, cards: [], cardIdx: 0, drafts: {}, events: [] };
-const EYEBROW = { reflection: "01 · heard", hit: "02 · pattern", discovery: "03 · new segment",
-  needed: "04 · public post", blindspot: "05 · low data", next_step: "06 · start here" };
+const EYEBROW = { reflection: "01 — Heard", hit: "02 — Pattern", discovery: "03 — New segment",
+  needed: "04 — Public post", blindspot: "05 — Low data", next_step: "06 — Start here" };
 
 // ---------------------------------------------------------------- motion helpers
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -69,7 +69,6 @@ async function show(id) {
   S.world = await api("/api/world");
   S.script = await api("/api/demo/script");
   $("#world-line").textContent = `${S.world.companies} companies · ${S.world.posts.toLocaleString()} posts · synthetic`;
-  $("#sim-note").textContent = `synthetic market · seed ${S.world.seed}`;
 })();
 
 $("#begin").onclick = async () => {
@@ -429,7 +428,7 @@ function renderFeed() {
 }
 
 // ---------------------------------------------------------------- model & proof
-const SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]; // categorical slots 1-3, fixed order
+const SERIES = ["#3987e5", "#d95926", "#199e70"]; // categorical slots 1-3, dark-surface steps, fixed order
 const BADGE_NAME = { synthetic: "Synthetic data", simulated: "Simulated", measured: "Measured" };
 const badge = (b, caption) => `<span class="badge ${b}">${BADGE_NAME[b]}</span>` +
   (caption ? `<div class="badge-caption ${b}">${esc(caption)}</div>` : "");
@@ -445,19 +444,19 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
   const Y = (v) => T + (1 - (v - y0) / (y1 - y0 || 1)) * (H - T - B);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => y0 + f * (y1 - y0));
   let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
-  for (const t of ticks) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" stroke="#ece8e1"/>` +
-    `<text x="${L - 6}" y="${Y(t) + 4}" font-size="10" text-anchor="end" fill="#6f6a62">${yFmt(t)}</text>`;
-  svg += `<text x="${(L + W - R) / 2}" y="${H - 4}" font-size="10" text-anchor="middle" fill="#6f6a62">${esc(xLabel)}</text>`;
-  svg += `<text x="${L}" y="${H - 16}" font-size="10" fill="#6f6a62">${x0}</text><text x="${W - R}" y="${H - 16}" font-size="10" text-anchor="end" fill="#6f6a62">${x1}</text>`;
-  if (ref) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(ref.y)}" y2="${Y(ref.y)}" stroke="#6f6a62" stroke-dasharray="4 4"/>` +
-    `<text x="${W - R + 6}" y="${Y(ref.y) + 4}" font-size="10" fill="#52514e">${esc(ref.label)}</text>`;
+  for (const t of ticks) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" stroke="rgba(255,255,255,.07)"/>` +
+    `<text x="${L - 6}" y="${Y(t) + 4}" font-size="10" text-anchor="end" fill="rgba(255,255,255,.45)">${yFmt(t)}</text>`;
+  svg += `<text x="${(L + W - R) / 2}" y="${H - 4}" font-size="10" text-anchor="middle" fill="rgba(255,255,255,.45)">${esc(xLabel)}</text>`;
+  svg += `<text x="${L}" y="${H - 16}" font-size="10" fill="rgba(255,255,255,.45)">${x0}</text><text x="${W - R}" y="${H - 16}" font-size="10" text-anchor="end" fill="rgba(255,255,255,.45)">${x1}</text>`;
+  if (ref) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(ref.y)}" y2="${Y(ref.y)}" stroke="rgba(255,255,255,.4)" stroke-dasharray="4 4"/>` +
+    `<text x="${W - R + 6}" y="${Y(ref.y) + 4}" font-size="10" fill="rgba(255,255,255,.6)">${esc(ref.label)}</text>`;
   series.forEach((s, i) => {
     const d = s.points.map((p, j) => `${j ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
     svg += `<path class="draw" d="${d}" fill="none" stroke="${SERIES[i]}" stroke-width="2" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${RM ? 0 : 1}"/>`;
     const last = s.points[s.points.length - 1];
-    if (series.length > 1 || !ref) svg += `<text x="${X(last[0]) + 6}" y="${Y(last[1]) + 4 + i * 0}" font-size="10" fill="#0b0b0b">${esc(s.short || s.name)}</text>`;
+    if (series.length > 1 || !ref) svg += `<text x="${X(last[0]) + 6}" y="${Y(last[1]) + 4 + i * 0}" font-size="10" fill="rgba(255,255,255,.85)">${esc(s.short || s.name)}</text>`;
   });
-  svg += `<line class="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#b9b3a9" style="display:none"/>`;
+  svg += `<line class="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="rgba(255,255,255,.3)" style="display:none"/>`;
   svg += `<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg>`;
   const legend = series.length > 1 ? `<div class="legend">${series.map((s, i) => `<span><i style="background:${SERIES[i]}"></i>${esc(s.name)}</span>`).join("")}</div>` : "";
   const id = "c" + Math.random().toString(36).slice(2, 8);

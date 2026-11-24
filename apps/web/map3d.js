@@ -3,12 +3,12 @@
 import * as THREE from "./vendor/three.module.min.js";
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const INK = new THREE.Color("#1d1b18");
+const INK = new THREE.Color("#f5f5f4");
 const ROLE = {
-  customers: new THREE.Color("#2a78d6"), // categorical slot 1
-  segment: new THREE.Color("#eb6834"),   // slot 2
-  accounts: new THREE.Color("#1baf7a"),  // slot 3
-  focus: new THREE.Color("#1d1b18"),
+  customers: new THREE.Color("#3987e5"), // categorical slot 1 (dark step)
+  segment: new THREE.Color("#d95926"),   // slot 2
+  accounts: new THREE.Color("#199e70"),  // slot 3
+  focus: new THREE.Color("#ffffff"),
 };
 const SCALE = 3.1;
 
@@ -142,7 +142,7 @@ const MarketMap = {
       tgt.tint.set([c.r, c.g, c.b], i * 3);
       tgt.size[i] = removed.has(i) ? 3 : r === "focus" ? 26 : r === "customers" ? 20 : r ? 14 : 6;
       tgt.alpha[i] = removed.has(i) ? 0.06 : r ? 0.95 : dim;
-      if (removed.has(i)) { tgt.tint.set([0.6, 0.58, 0.55], i * 3); }
+      if (removed.has(i)) { tgt.tint.set([0.35, 0.35, 0.36], i * 3); }
     }
     clearArc();
     const from = map[arcFrom], to = map[arcTo];

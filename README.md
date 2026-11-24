@@ -54,8 +54,15 @@ The engine builds in about 4 s on a laptop CPU. A reading takes about 0.3 s, wel
 
 ## Design and open-source UI pieces
 
-- **Look:** [shadcn/ui](https://github.com/shadcn-ui/ui)'s zinc design tokens (MIT), the same foundation as [Vercel AI Elements](https://github.com/vercel/ai-elements). Copied as CSS variables, with no React build.
-- **Type:** [Geist](https://github.com/vercel/geist-font) (SIL OFL).
+The look follows the dark editorial style of startup sites like Monaco and Ornn:
+- near-black surfaces
+- a serif display face for headlines
+- a clean grotesk for UI text
+- pill buttons
+- a floating nav bar
+
+Those sites use commercial fonts (Season Serif, PP Neue Montreal, FK Roman), so we use open-source counterparts instead:
+- **Type:** [Instrument Serif](https://github.com/Instrument/instrument-serif) for headlines, [Inter](https://github.com/rsms/inter) for the UI, and [Fragment Mono](https://github.com/weiweihuanghuang/fragment-mono) for numbers. All three are SIL OFL.
 - **Icons:** [Lucide](https://github.com/lucide-icons/lucide) (ISC).
 - **Market map:** [three.js](https://github.com/mrdoob/three.js) r170 (MIT), in `apps/web/map3d.js`. All 900 companies are plotted as a 3D point cloud laid out by the model's embeddings (PCA). Each card lights up its evidence on the map, and a scan wave runs while the engine scores companies.
 

@@ -207,7 +207,7 @@
         const hub = n.kind !== "company";
         const max = n.kind === "evidence" ? 22 : 30;
         const lab = n.label.length > max ? n.label.slice(0, max - 1) + "…" : n.label;
-        x.font = `${hub ? 600 : 400} ${hub ? 12 : 11}px "Geist Mono", ui-monospace, monospace`;
+        x.font = `${hub ? 600 : 400} ${hub ? 12 : 11}px Inter, ui-sans-serif, sans-serif`;
         x.fillStyle = hub ? "rgba(255,255,255,.9)" : "rgba(255,255,255,.6)";
         if (n.kind === "evidence") x.fillStyle = "rgba(255,255,255,.55)";
         x.textAlign = "center";
