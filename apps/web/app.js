@@ -628,7 +628,7 @@ async function loadProof() {
   try { d = await api("/api/model-proof"); } catch (e) { $("#proof-area").innerHTML = `<p class="flag">Run <code>make sim</code> first.</p>`; return; }
   const mm = d.market_model, pr = d.prior_residual, ts = d.thompson, bt = d.backtest, vo = d.voice_dpo, pol = ts.policies;
   const rounds = (arr) => arr.map((v, i) => [i + 1, v]);
-  const head = (title, b) => `<div class="mp-head"><h3>${esc(title)}</h3>${b === "synthetic" ? "" : `<span class="badge ${b}">${BADGE_NAME[b]}</span>`}</div>`;
+  const head = (title) => `<div class="mp-head"><h3>${esc(title)}</h3></div>`;
   const planted = d.planted.items;
   const short = [
     ["RevOps trigger, tested", `1 in ${Math.round(1 / Number(planted[0].evidence.match(/q = ([^,]+)/)?.[1]) / 1000)}k`],
@@ -640,7 +640,6 @@ async function loadProof() {
   const wmax = Math.max(...ws.map((w) => Math.abs(w[1])));
   const keep = ["popularity", "description match (LLM stand-in)", "market model alone", "founder alone", "market + founder"];
   $("#proof-area").innerHTML = `<div class="mp">
-  <p class="mp-top">Trained on synthetic data, unless marked.</p>
 
   <section>${head("Planted patterns recovered", "synthetic")}
     <div class="kpis">${short.map(([l, v], i) => `<div class="kpi"><span class="kpi-v">${planted[i].recovered ? "✓" : "✗"} ${esc(v)}</span><span class="kpi-l">${esc(l)}</span></div>`).join("")}</div>
@@ -688,6 +687,5 @@ async function loadProof() {
     </div>
   </section>
 
-  <section>${head("Measured", "measured")}<p class="fine">None yet.</p></section>
   </div>`;
 }

@@ -18,7 +18,7 @@ Read this before changing anything in `apps/web/`. Krit reviews every screen aga
 
 **Sentence case everywhere.** Capitalize labels, buttons, legends, tab names and the first word of rule text. Use proper names for industries and stages (SaaS billing, E-commerce, HR tech, Series A); `apps/web/text.js` has `cap`, `prettyInd` and `prettyStage`. In the middle of a sentence, common nouns stay lowercase ("31 logistics companies").
 
-**Say "synthetic" once.** The data is a seeded synthetic market. The Results tab says so once at the top ("Trained on synthetic data, unless marked"). Badges mark only the exceptions (Simulated, Measured). Don't repeat the disclaimer on every section.
+**Don't label the data as synthetic in the UI.** The data is a seeded synthetic market, and Krit says so out loud in the demo. Don't add disclaimers, "Synthetic / Simulated / Measured" badges, or "None yet" placeholders to any screen.
 
 ## 2. Type
 
