@@ -93,7 +93,9 @@
         <div id="account-list" class="accounts"></div>
       </div>
       <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="mono muted small">pick an account</p></div></div>
-      <div class="tab" id="pipeline"><div class="kanban" id="kanban"></div></div>
+      <div class="tab" id="pipeline"><div class="graph-wrap"><canvas id="pgraph"></canvas>
+        <div class="group-by mono" id="groupby"><span>group by</span><button data-g="industry" class="on">industry</button><button data-g="signal">signal</button><button data-g="stage">stage</button></div>
+        <div class="graph-legend mono" id="glegend"></div></div></div>
       <div class="tab" id="bottle-tab"><div id="bottle-inspect"></div></div>
       <div class="tab" id="feed"><p class="mono muted small" id="band-status"></p><ol class="feed" id="feed-list"></ol></div>
       <div class="tab" id="proof"><div id="proof-area"></div></div>
@@ -101,6 +103,7 @@
   </section>
 
   <footer class="sim-note mono" id="sim-note">synthetic market</footer>
+  <script src="/static/pipeline-graph.js"></script>
   <script src="/static/app.js"></script>
   <script type="module" src="/static/map3d.js"></script>
 </body>

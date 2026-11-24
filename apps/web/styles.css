@@ -141,6 +141,20 @@ main { max-width: 1060px; margin: 0 auto; }
 .sweep { position: absolute; left: 1px; right: 1px; top: 1px; height: 3px; background: linear-gradient(90deg, transparent, var(--c1), transparent); opacity: 0; pointer-events: none; }
 .weight { font: 12px var(--mono); color: var(--muted-foreground); margin: 0 0 8px; }
 .flag { color: var(--warn); font: 12px var(--mono); }
+.graph-wrap { position: relative; height: min(72vh, 680px); background: #1e1e20; border-radius: calc(var(--radius) + 4px); overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+#pgraph { width: 100%; height: 100%; display: block; }
+.graph-legend { position: absolute; left: 14px; bottom: 12px; font-size: 11px; color: rgba(255,255,255,.55); pointer-events: none; }
+.graph-legend div { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.graph-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.graph-legend i.ln { width: 16px; height: 2px; border-radius: 1px; }
+.graph-legend b { color: rgba(255,255,255,.9); font-weight: 500; margin-left: 2px; }
+.group-by { position: absolute; top: 12px; left: 12px; display: flex; gap: 2px; align-items: center; padding: 3px; font-size: 11px;
+  background: rgba(255,255,255,.06); border-radius: 8px; color: rgba(255,255,255,.45); }
+.group-by span { padding: 0 8px; }
+.group-by button { background: none; border: 0; color: rgba(255,255,255,.6); font: inherit; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.group-by button:hover { color: #fff; }
+.group-by button.on { background: rgba(255,255,255,.14); color: #fff; }
 .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .col { background: var(--muted); border-radius: var(--radius); padding: 10px; min-height: 220px; }
 .col h4 { margin: 2px 4px 10px; font: 500 11px var(--mono); color: var(--muted-foreground); text-transform: lowercase; }

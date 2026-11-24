@@ -370,19 +370,26 @@ async function typeDraft(d) {
   btn.disabled = false;
 }
 
+let PG = null;
 async function loadPipeline(highlight) {
-  const prev = {};
-  document.querySelectorAll(".kcard").forEach((k) => (prev[k.dataset.acct] = k.getBoundingClientRect()));
-  const r = await api(`/api/sessions/${S.sid}/pipeline`);
-  $("#kanban").innerHTML = Object.entries(r.columns).map(([col, items]) => `
-    <div class="col"><h4>${col}</h4>${items.map((it) => `<div class="kcard ${highlight === it.account ? "just" : ""}" data-acct="${esc(it.account)}">${esc(it.account)}</div>`).join("")}</div>`).join("");
-  // FLIP: cards travel from their old column to the new one
-  document.querySelectorAll(".kcard").forEach((k, i) => {
-    const old = prev[k.dataset.acct], now = k.getBoundingClientRect();
-    if (old && (old.left !== now.left || old.top !== now.top))
-      anim(k, [{ transform: `translate(${old.left - now.left}px, ${old.top - now.top}px)` }, { transform: "none" }], { duration: 900 });
-    else if (!old) anim(k, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 400, delay: i * 50 });
-  });
+  const d = await api(`/api/sessions/${S.sid}/graph`);
+  if (!PG) {
+    PG = new PipelineGraph($("#pgraph"));
+    document.querySelectorAll("#groupby button").forEach((b) => b.onclick = () => {
+      document.querySelectorAll("#groupby button").forEach((x) => x.classList.toggle("on", x === b));
+      PG.setGroup(b.dataset.g);
+    });
+  }
+  PG.resize();
+  const hit = highlight && d.accounts.find((a) => a.name === highlight);
+  PG.update(d, { pulse: hit ? hit.id : null });
+  const count = (st) => d.accounts.filter((a) => a.stage === st).length;
+  const dot = (c) => `<i style="background:${c}"></i>`;
+  $("#glegend").innerHTML =
+    `<div>${dot(PIPELINE_STATUS.customer.color)}past customer ${d.customers.length}` +
+    ["suggested", "drafted", "sent", "replied"].map((st) => `${dot(PIPELINE_STATUS[st].color)}${st} <b>${count(st)}</b>`).join("") +
+    `${dot(PIPELINE_STATUS.segment.color)}new segment ${d.segment.length}</div>` +
+    `<div>${["industry", "trigger", "tool", "pain"].map((k) => `<i class="ln" style="background:${PIPELINE_REL[k].color}"></i>${PIPELINE_REL[k].label}`).join("")}</div>`;
 }
 
 async function onReply() {

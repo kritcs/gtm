@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .engine import Engine, Session
+from .insight.hit import feature_label
 from .ml import backtest
 
 WEB = Path(__file__).resolve().parents[1] / "apps" / "web"
@@ -234,6 +235,33 @@ async def approve(sid: str, draft_id: str, body: Approve):
 def pipeline(sid: str):
     s = sess(sid)
     return {"columns": s.pipeline(), "drafts": list(s.drafts.values())}
+
+
+@app.get("/api/sessions/{sid}/graph")
+def pipeline_graph(sid: str):
+    """Everything the pipeline graph needs: accounts by stage, past customers, the new segment, shared evidence."""
+    s = sess(sid)
+    w = eng().world
+    stage = {}
+    for col, items in s.pipeline().items():
+        for it in items:
+            stage[it["account_id"]] = col.lower()
+    by_acct = {d["account_id"]: d for d in s.drafts.values()}
+    for aid, d in by_acct.items():
+        stage[aid] = {"draft": "drafted", "approved": "sent", "sent": "sent", "replied": "replied"}[d["status"]]
+    co = lambda c: {"id": c.id, "name": c.name, "industry": c.industry, "size": c.size}  # noqa: E731
+    accounts = [co(w.companies[a["id"]]) | {"stage": stage.get(a["id"], "suggested"), "score": a["score"],
+                                            "chips": [{"kind": ch["kind"], "label": ch["label"]} for ch in a["chips"]]}
+                for a in s.accounts[:8]]
+    disc = s.cards.get("discovery")
+    seen = {a["id"] for a in accounts} | set(s.bottle.customers)
+    segment = [co(w.companies[c["id"]]) for c in (disc.companies if disc else []) if c["id"] not in seen][:10]
+    return {"product": "Ledgerlight",
+            "customers": [co(w.companies[c]) for c in s.bottle.customers],
+            "accounts": accounts, "segment": segment,
+            "segment_term": disc.stats.get("phrase") if disc else None,
+            "founder_pain": s.bottle.phrases[0] if s.bottle.phrases else "your problem",
+            "trait": feature_label(s.hit_feature) if s.hit_feature else None}
 
 
 @app.get("/api/sessions/{sid}/bottle")
