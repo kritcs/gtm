@@ -4,19 +4,19 @@
 (function () {
   const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const STATUS = {
-    customer: { color: "#d55181", label: "past customer" },
-    suggested: { color: "#e4e4e7", label: "suggested" },
-    drafted: { color: "#eda100", label: "drafted" },
-    sent: { color: "#3987e5", label: "sent" },
-    replied: { color: "#1baf7a", label: "replied" },
-    segment: { color: "#eb6834", label: "new segment" },
+    customer: { color: "#d55181", label: "Past customer" },
+    suggested: { color: "#e4e4e7", label: "Suggested" },
+    drafted: { color: "#eda100", label: "Drafted" },
+    sent: { color: "#3987e5", label: "Sent" },
+    replied: { color: "#1baf7a", label: "Replied" },
+    segment: { color: "#eb6834", label: "New segment" },
   };
   const REL = {
-    industry: { color: "rgba(255,255,255,.16)", label: "same industry" },
-    trigger: { color: "rgba(57,135,229,.55)", label: "same trigger" },
-    tool: { color: "rgba(255,255,255,.22)", label: "same tool" },
-    pain: { color: "rgba(235,104,52,.5)", label: "same problem" },
-    stage: { color: "rgba(255,255,255,.16)", label: "stage" },
+    industry: { color: "rgba(255,255,255,.16)", label: "Same industry" },
+    trigger: { color: "rgba(57,135,229,.55)", label: "Same trigger" },
+    tool: { color: "rgba(255,255,255,.22)", label: "Same tool" },
+    pain: { color: "rgba(235,104,52,.5)", label: "Same problem" },
+    stage: { color: "rgba(255,255,255,.16)", label: "Stage" },
   };
   // which link kinds pull (and which hubs show) in each grouping
   const GROUP = {
@@ -75,20 +75,20 @@
       ];
       // hubs
       for (const ind of new Set(companies.map((c) => c.industry))) {
-        add("i:" + ind, { label: ind, kind: "industry", r: 8, color: "#a1a1aa" });
+        add("i:" + ind, { label: prettyInd(ind), kind: "industry", r: 8, color: "#a1a1aa" });
         link("p", "i:" + ind, "hub");
       }
-      const STAGE_HUB = { customer: "won", segment: "unexplored" };
+      const STAGE_HUB = { customer: "Won", segment: "Unexplored" };
       for (const st of ["customer", "suggested", "drafted", "sent", "replied", "segment"]) {
-        add("s:" + st, { label: STAGE_HUB[st] || st, kind: "stage", r: 8, color: STATUS[st].color });
+        add("s:" + st, { label: STAGE_HUB[st] || cap(st), kind: "stage", r: 8, color: STATUS[st].color });
         link("p", "s:" + st, "hub");
       }
       const ev = (key, label, rel) => { add("e:" + key, { label, kind: "evidence", rel, r: 5, color: "#71717a" }); return "e:" + key; };
-      const pain = ev("pain", d.founder_pain, "pain");
+      const pain = ev("pain", cap(d.founder_pain), "pain");
       link("p", pain, "hub");
       const term = d.segment_term ? ev("term", `“${d.segment_term}”`, "pain") : null;
       if (term) link(pain, term, "pain");
-      const trait = d.trait ? ev("trait", d.trait, "trigger") : null;
+      const trait = d.trait ? ev("trait", cap(d.trait), "trigger") : null;
       if (trait) link("p", trait, "hub");
 
       for (const c of companies) {

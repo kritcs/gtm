@@ -3,7 +3,7 @@
 (function () {
   const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const STATUS = { demo: ["#22c55e", "in demo"], partly: ["#eda100", "partly in demo"], roadmap: ["#71717a", "roadmap"] };
+  const STATUS = { demo: ["#22c55e", "In demo"], partly: ["#eda100", "Partly in demo"], roadmap: ["#71717a", "Roadmap"] };
   const ICON = (name, size = 18) => `<foreignObject x="${-size / 2}" y="${-size / 2}" width="${size}" height="${size}">
     <div xmlns="http://www.w3.org/1999/xhtml" class="fo-i" style="width:${size}px;height:${size}px;--i:url(/static/vendor/icons/${name}.svg)"></div></foreignObject>`;
   const fmt = (v) => typeof v === "number" ? v.toLocaleString() : v;
@@ -25,7 +25,7 @@
     { n: 4, title: "Discover + enrich", icon: "users", q: "Find the real people.", status: "partly",
       math: "wallet check before each batch", kpis: [["credits", "left", "credits left"], ["credits", "spent on", "enriched"]] },
     { n: 5, title: "Signal packet", icon: "package", q: "Why reach out now?", status: "partly",
-      math: "signals → packet → draft", kpis: [["hit", "feature", "top signal"], ["hit", "q", "q-value"], ["disc", "term", "new segment term"]] },
+      math: "signals → packet → draft", kpis: [["hit", "feature", "top signal"], ["hit", "q", "odds of luck"], ["disc", "term", "new segment term"]] },
     { n: 6, title: "Draft + review", icon: "square-pen", q: "Write it, then check it.", status: "partly",
       math: "every sentence → signal → source", kpis: [["draft", "drafts", "drafts"], ["draft", "AI flags", "AI flags"]] },
     { n: 7, title: "Approve + send", icon: "send", q: "Human says yes.", status: "demo",
@@ -48,7 +48,7 @@
       root.classList.add("wide");
       root.innerHTML = `
         <div class="sys-head">
-          <div class="seg" id="sys-seg"><button data-p="loop" class="on">loop</button><button data-p="graph">graph</button><button data-p="learn">learning</button></div>
+          <div class="seg" id="sys-seg"><button data-p="loop" class="on">Loop</button><button data-p="graph">Graph</button><button data-p="learn">Learning</button></div>
           <span class="grow"></span>
           <span class="sys-legend">${Object.values(STATUS).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join("")}</span>
         </div>
@@ -78,7 +78,7 @@
         const a0 = ang(ph.steps[0]) - gap + 0.05, a1 = ang(ph.steps.at(-1)) + gap - 0.05, am = (a0 + a1) / 2;
         const [lx, ly] = [CX + (R - 46) * Math.cos(am), CY + (R - 46) * Math.sin(am)];
         return `<path d="${arc(a0, a1, R)}" class="phase" style="stroke:${ph.color}"/>
-          <text x="${lx}" y="${ly}" class="phase-lbl" style="fill:${ph.color}">${ph.name}</text>`;
+          <text x="${lx}" y="${ly}" class="phase-lbl" style="fill:${ph.color}">${cap(ph.name)}</text>`;
       }).join("");
       const nodes = STEPS.map((s, i) => {
         const [x, y] = pos(i), [col] = STATUS[s.status];
@@ -96,9 +96,9 @@
           <circle cx="${CX}" cy="${CY}" r="${R}" class="ring-flow"/>
           ${phases}
           <path id="back" d="M${lx},${ly} Q${CX},${CY - 120} ${sx},${sy}" class="back"/>
-          <text x="${CX}" y="${CY - 74}" class="back-lbl">outcomes flow back</text>
+          <text x="${CX}" y="${CY - 74}" class="back-lbl">Outcomes flow back</text>
           <text x="${CX}" y="${CY + 22}" class="center-n" id="cn">1</text>
-          <text x="${CX}" y="${CY + 58}" class="center-sub" id="cs">forward pass</text>
+          <text x="${CX}" y="${CY + 58}" class="center-sub" id="cs">Forward pass</text>
           ${nodes}
           <circle r="8" class="token" id="tok" cx="${pos(0)[0]}" cy="${pos(0)[1]}" opacity="0"/>
           <circle r="8" class="token back-tok" id="btok" opacity="0"/>
@@ -119,8 +119,13 @@
       const s = STEPS[i], [col, lab] = STATUS[s.status];
       const ph = PHASES.find((p) => p.steps.includes(i));
       const cn = this.root.querySelector("#cn"), cs = this.root.querySelector("#cs");
-      if (cn) { cn.textContent = s.n; cs.textContent = ph.name; cs.style.fill = ph.color; }
-      const kpis = s.kpis.map(([sec, key, label]) => [label, this.live[sec]?.[key]]).filter(([, v]) => v !== undefined && v !== null && v !== "");
+      if (cn) { cn.textContent = s.n; cs.textContent = cap(ph.name); cs.style.fill = ph.color; }
+      const kpis = s.kpis.map(([sec, key, label]) => {
+        let v = this.live[sec]?.[key];
+        if (key === "q" && v) v = oddsText(v).replace(" odds of luck", "");
+        if (key === "feature" && v) v = { "role:revops": "RevOps hire" }[v] || v;
+        return [cap(label), v];
+      }).filter(([, v]) => v !== undefined && v !== null && v !== "");
       const d = this.root.querySelector("#loop-detail");
       if (!d) return;
       d.innerHTML = `
@@ -163,7 +168,7 @@
       }
       if (!this.running) { tok.setAttribute("opacity", 0); return; }
       back.classList.add("live"); tok.setAttribute("opacity", 0); btok.setAttribute("opacity", 1);
-      const cs = this.root.querySelector("#cs"); cs.textContent = "backward pass"; cs.style.fill = "#22c55e";
+      const cs = this.root.querySelector("#cs"); cs.textContent = "Backward pass"; cs.style.fill = "#22c55e";
       const L = back.getTotalLength(), t0 = performance.now();
       await new Promise((res) => {
         const f = (now) => {
@@ -193,9 +198,9 @@
         email: ["Founder email", "mail", 870, 470, "private", "partly", L.draft?.drafts],
       };
       const E = { // id: [from, to, label]
-        uses: ["company", "product", "uses"], hiring: ["company", "signal", "hiring for"], competes: ["product", "competitor", "competes with"],
-        works: ["person", "company", "works at"], outcome: ["outcome", "company", "outcome of"], credits: ["outcome", "signal", "credits"],
-        targets: ["rule", "company", "targets"], trains: ["email", "rule", "trains"],
+        uses: ["company", "product", "Uses"], hiring: ["company", "signal", "Hiring for"], competes: ["product", "competitor", "Competes with"],
+        works: ["person", "company", "Works at"], outcome: ["outcome", "company", "Outcome of"], credits: ["outcome", "signal", "Credits"],
+        targets: ["rule", "company", "Targets"], trains: ["email", "rule", "Trains"],
       };
       const STORIES = [
         { edges: ["uses"], text: "Companies use products. Every edge cites the post it came from." },
@@ -218,7 +223,7 @@
           <rect x="-82" y="-30" width="164" height="60" rx="16"/>
           <g transform="translate(-54,0)">${ICON(ic, 20)}</g>
           <text x="-30" y="${c != null ? -3 : 5}" class="gt">${l}</text>
-          ${c != null ? `<text x="-30" y="16" class="gc">${Number(c).toLocaleString()}</text>` : `<text x="-30" y="22" class="gc">roadmap</text>`}</g>`).join("");
+          ${c != null ? `<text x="-30" y="16" class="gc">${Number(c).toLocaleString()}</text>` : `<text x="-30" y="22" class="gc">Roadmap</text>`}</g>`).join("");
       st.innerHTML = `<div class="graph2">
         <svg viewBox="0 0 1000 570" class="sys-svg">
           <rect x="8" y="10" width="984" height="300" rx="22" class="zone public"/>
@@ -226,7 +231,7 @@
           <rect x="8" y="360" width="984" height="200" rx="22" class="zone private"/>
           <text x="32" y="392" class="zone-lbl private">Your private data · only you</text>
           <g transform="translate(32,335)">${ICON("lock", 16)}</g>
-          <text x="50" y="340" class="lock-lbl">private data never leaves your layer</text>
+          <text x="50" y="340" class="lock-lbl">Private data never leaves your layer</text>
           <line x1="300" x2="980" y1="335" y2="335" class="boundary"/>
           ${edges}${nodes}
           <circle r="6" class="gtok" id="gtok" opacity="0"/>
@@ -234,10 +239,10 @@
         <div class="story"><p class="story-text" id="story-text"></p>
           <div class="story-dots">${STORIES.map((_, i) => `<button data-s="${i}" aria-label="Story ${i + 1}"></button>`).join("")}</div></div>
         <div class="gkpis">
-          <div><b>${fmt(L.posts?.companies ?? "—")}</b><span>companies</span></div>
-          <div><b>${fmt(L.graph?.["adoption edges"] ?? "—")}</b><span>adoption edges</span></div>
-          <div><b>${fmt(L.review?.kept ?? "—")}</b><span>facts kept</span></div>
-          <div><b>${fmt(L.review?.rejected ?? "—")}</b><span>rejected by Reviewer</span></div>
+          <div><b>${fmt(L.posts?.companies ?? "—")}</b><span>Companies</span></div>
+          <div><b>${fmt(L.graph?.["adoption edges"] ?? "—")}</b><span>Adoption edges</span></div>
+          <div><b>${fmt(L.review?.kept ?? "—")}</b><span>Facts kept</span></div>
+          <div><b>${fmt(L.review?.rejected ?? "—")}</b><span>Rejected by Reviewer</span></div>
         </div></div>`;
       const play = (k) => {
         this.story = k;
@@ -291,8 +296,8 @@
             </div>`).join("")}
           </div>
           <div class="l-controls">
-            <div class="seg2"><button data-o="1"><i class="d ok"></i>retained</button><button data-o="0.3"><i class="d mid"></i>trial</button><button data-o="0"><i class="d bad"></i>churned</button></div>
-            <button class="btn ghost" id="lreset">reset</button>
+            <div class="seg2"><button data-o="1"><i class="d ok"></i>Retained</button><button data-o="0.3"><i class="d mid"></i>Trial</button><button data-o="0"><i class="d bad"></i>Churned</button></div>
+            <button class="btn ghost" id="lreset">Reset</button>
           </div>
           <div class="l-bottom">
             <div class="l-panel">
@@ -300,7 +305,7 @@
               <div id="wbars"></div>
             </div>
             <div class="l-panel">
-              <p class="l-h">maturity</p>
+              <p class="l-h">Maturity</p>
               <div class="stepper">${STAGES.map(([n, u, m], i) => `<div class="stp" data-i="${i}"><span class="stp-dot"></span><b>${n} <small>${u}</small></b><span>${m}</span></div>`).join("")}</div>
             </div>
           </div>
@@ -363,7 +368,7 @@
         if (!d) return;
         const ws = Object.entries(d.prior_residual.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 6);
         const mx = Math.max(...ws.map((w) => Math.abs(w[1])));
-        st.querySelector("#wbars").innerHTML = ws.map(([f, v]) => `<div class="wbar2"><span>${esc(f)}</span>
+        st.querySelector("#wbars").innerHTML = ws.map(([f, v]) => `<div class="wbar2"><span>${esc(cap(f))}</span>
           <span class="wtrack"><i style="--w:${(Math.abs(v) / mx * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#d95926" : "#3987e5"}"></i></span>
           <b>${v > 0 ? "+" : ""}${v.toFixed(2)}</b></div>`).join("");
         st.querySelectorAll(".wtrack i").forEach((el, i) => el.animate?.([{ width: "0%" }, { width: el.style.getPropertyValue("--w") }], { duration: 800, delay: i * 80, fill: "both", easing: "cubic-bezier(.2,.8,.2,1)" }));

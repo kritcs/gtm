@@ -120,13 +120,13 @@ function settlePhrases(list) {
 }
 
 function renderBottle(b) {
-  const kinds = { pain: "pain", trigger: "trigger", buyer: "buyer", segment: "segment" };
+  const kinds = { pain: "Pain", trigger: "Trigger", buyer: "Buyer", segment: "Segment" };
   let html = "";
-  if (b.customers.length) html += `<dt>customers</dt><dd>${b.customers.map(esc).join(", ")}</dd>`;
-  if (b.lost.length) html += `<dt>lost</dt><dd>${b.lost.map(esc).join(", ")}</dd>`;
+  if (b.customers.length) html += `<dt>Customers</dt><dd>${b.customers.map(esc).join(", ")}</dd>`;
+  if (b.lost.length) html += `<dt>Lost deals</dt><dd>${b.lost.map(esc).join(", ")}</dd>`;
   for (const k of Object.keys(kinds)) {
     const rs = b.rules.filter((r) => r.kind === k);
-    if (rs.length) html += `<dt>${kinds[k]}</dt>` + rs.map((r) => `<dd>${esc(r.text)}</dd>`).join("");
+    if (rs.length) html += `<dt>${kinds[k]}</dt>` + rs.map((r) => `<dd>${esc(cap(r.text))}</dd>`).join("");
   }
   const before = new Set([...document.querySelectorAll("#bottle-list dd")].map((d) => d.textContent));
   $("#bottle-list").innerHTML = html;
@@ -289,7 +289,7 @@ async function loadAccounts({ animate = true } = {}) {
       <div class="score" title="market ${a.market.toFixed(2)} · founder ${a.founder.toFixed(2)} · λ ${a.lambda.toFixed(2)}">${a.score.toFixed(2)}</div>
       <h3>${esc(a.name)}</h3>
       <div class="scorebar"><i style="--w:${(a.score / top * 100).toFixed(1)}%"></i></div>
-      <div class="sub" data-acct="${a.id}">${esc(a.industry)} · ${esc(a.size)} people · ${esc(a.stage.replace("_", " "))}${a.enriched ? ` · <span class="contact">${esc(a.contact.first)}, ${esc(a.contact.role)} &lt;${esc(a.contact.email)}&gt;</span>` : ""}</div>
+      <div class="sub" data-acct="${a.id}">${esc(prettyInd(a.industry))} · ${esc(a.size.replace("-", "–"))} people · ${esc(prettyStage(a.stage))}${a.enriched ? ` · <span class="contact">${esc(a.contact.first)}, ${esc(a.contact.role)} &lt;${esc(a.contact.email)}&gt;</span>` : ""}</div>
       <div class="chips">${a.chips.map((ch) => `<a class="chip ${ch.kind}" href="${esc(ch.receipt.url)}" target="_blank" title="${esc(ch.receipt.date)}">${esc(ch.label)}</a>`).join("")}</div>
       <button class="btn" onclick="draftFor(${a.id})"><i class="i" style="--i:url(/static/vendor/icons/mail.svg)"></i>Draft</button>
     </div>`).join("");
@@ -361,7 +361,7 @@ async function typeDraft(d) {
   ta.value = d.body;
   const sw = document.querySelector(".sweep");
   await anim(sw, [{ transform: "translateY(0)", opacity: 0.9 }, { transform: `translateY(${ta.offsetHeight - 4}px)`, opacity: 0.9 }, { opacity: 0 }], { duration: 900, easing: "linear" })?.finished;
-  $("#flags").innerHTML = d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">✓ no AI tells</p>`;
+  $("#flags").innerHTML = d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">✓ No AI tells</p>`;
   anim($("#flags"), [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
   btn.disabled = false;
 }
@@ -382,9 +382,9 @@ async function loadPipeline(highlight) {
   const count = (st) => d.accounts.filter((a) => a.stage === st).length;
   const dot = (c) => `<i style="background:${c}"></i>`;
   $("#glegend").innerHTML =
-    `<div>${dot(PIPELINE_STATUS.customer.color)}past customer ${d.customers.length}` +
-    ["suggested", "drafted", "sent", "replied"].map((st) => `${dot(PIPELINE_STATUS[st].color)}${st} <b>${count(st)}</b>`).join("") +
-    `${dot(PIPELINE_STATUS.segment.color)}new segment ${d.segment.length}</div>` +
+    `<div>${dot(PIPELINE_STATUS.customer.color)}Past customer ${d.customers.length}` +
+    ["suggested", "drafted", "sent", "replied"].map((st) => `${dot(PIPELINE_STATUS[st].color)}${cap(st)} <b>${count(st)}</b>`).join("") +
+    `${dot(PIPELINE_STATUS.segment.color)}New segment ${d.segment.length}</div>` +
     `<div>${["industry", "trigger", "tool", "pain"].map((k) => `<i class="ln" style="background:${PIPELINE_REL[k].color}"></i>${PIPELINE_REL[k].label}`).join("")}</div>`;
 }
 
@@ -415,23 +415,23 @@ async function loadBottle() {
     if (!rs.length) return "";
     return `<div class="rcol"><h4>${k}</h4>${rs.map((r) => {
       const market = (r.key || "").includes(":");
-      return `<div class="rcard ${market ? "market" : ""}"><p>${esc(r.text.replace(" (found in the market data)", ""))}</p>
+      return `<div class="rcard ${market ? "market" : ""}"><p>${esc(cap(r.text.replace(" (found in the market data)", "")))}</p>
         <div class="rfoot"><span class="src">${market ? "from market data" : ""}</span>${gauge(r.trust, market)}<b>${r.trust.toFixed(2)}</b></div></div>`;
     }).join("")}</div>`;
   }).join("");
 
   const tr = b.hit_features.slice(0, 8);
-  const RW = 900, L = 230, PW = 520, RH = 46, X = (v) => L + v * PW;
+  const RW = 960, L = 230, PW = 500, RH = 46, X = (v) => L + v * PW;
   const rows = tr.map((f, i) => {
     const y = 40 + i * RH, share = f.k / f.n, base = f.base_rate;
     return `<g class="trow ${f.passes ? "sig" : ""}" style="--d:${i * 90}ms">
-      <text x="0" y="${y + 5}" class="tl">${esc(f.label)}</text>
+      <text x="0" y="${y + 5}" class="tl">${esc(cap(f.label))}</text>
       <line x1="${X(0)}" x2="${X(1)}" y1="${y}" y2="${y}" class="tgrid"/>
       <line x1="${X(base)}" x2="${X(share)}" y1="${y}" y2="${y}" class="tgap" pathLength="1"/>
       <circle cx="${X(base)}" cy="${y}" r="6" class="tbase"/>
       <circle cx="${X(share)}" cy="${y}" r="7" class="tshare" style="--from:${X(base) - X(share)}px"/>
       <text x="${X(1) + 24}" y="${y + 5}" class="tv">${f.k}/${f.n} <tspan class="muted">vs ${(base * 100).toFixed(0)}%</tspan></text>
-      ${f.passes ? `<g transform="translate(${X(1) + 120},${y})"><rect x="0" y="-12" width="84" height="24" rx="12" class="tbadge"/><text x="42" y="4" class="tbadge-t">q ${f.q_value.toExponential(0).replace("e-", "e-")}</text></g>` : ""}
+      ${f.passes ? `<g transform="translate(${X(1) + 112},${y})"><rect x="0" y="-13" width="170" height="26" rx="13" class="tbadge"/><text x="85" y="4" class="tbadge-t">${oddsText(f.q_value)}</text></g>` : ""}
     </g>`;
   }).join("");
   const ticks = [0, .25, .5, .75, 1].map((t) => `<text x="${X(t)}" y="18" class="ttick">${t * 100}%</text>`).join("");
@@ -439,7 +439,7 @@ async function loadBottle() {
     <section class="bsec"><div class="bhead"><h3>What you believe</h3></div>
       <div class="rboard">${cols}</div></section>
     <section class="bsec"><div class="bhead"><h3>Your customers vs similar companies</h3>
-      <span class="blegend"><i class="dot-c"></i>your customers <i class="dot-b"></i>similar companies</span></div>
+      <span class="blegend"><i class="dot-c"></i>Your customers <i class="dot-b"></i>Similar companies</span></div>
       <svg viewBox="0 0 ${RW + 60} ${60 + tr.length * RH}" class="traits">${ticks}${rows}</svg></section>`;
   if (!RM) {
     document.querySelectorAll(".rcard").forEach((c, i) => anim(c, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { delay: i * 50 }));
@@ -525,7 +525,7 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
 }
 
 const recallTable = (methods, k) => `<table><tr><th></th><th>Recall@${k}</th><th>95% CI</th></tr>` +
-  Object.entries(methods).map(([m, v]) => `<tr><td>${esc(m)}</td><td>${v.recall.toFixed(2)}</td><td class="muted">${v.ci95[0].toFixed(2)}–${v.ci95[1].toFixed(2)}</td></tr>`).join("") + `</table>`;
+  Object.entries(methods).map(([m, v]) => `<tr><td>${esc(cap(m))}</td><td>${v.recall.toFixed(2)}</td><td class="muted">${v.ci95[0].toFixed(2)}–${v.ci95[1].toFixed(2)}</td></tr>`).join("") + `</table>`;
 
 async function loadProof() {
   $("#proof-area").innerHTML = `<p class="fine">Loading…</p>`;
@@ -536,7 +536,7 @@ async function loadProof() {
   const head = (title, b) => `<div class="mp-head"><h3>${esc(title)}</h3>${b === "synthetic" ? "" : `<span class="badge ${b}">${BADGE_NAME[b]}</span>`}</div>`;
   const planted = d.planted.items;
   const short = [
-    ["RevOps trigger, tested", `q ${Number(planted[0].evidence.match(/q = ([^,]+)/)?.[1]).toExponential(0)}`],
+    ["RevOps trigger, tested", `1 in ${Math.round(1 / Number(planted[0].evidence.match(/q = ([^,]+)/)?.[1]) / 1000)}k`],
     ["RevOps trigger, learned", `w ${pr.weights["RevOps hire, last 6 months"].toFixed(2)}`],
     ["Logistics segment", (planted[2].evidence.match(/^(\d+ of \d+)/)?.[1] || "").replace(" of ", "/")],
     ["Bad extractions caught", planted[3].evidence.match(/rejected (\d+)/)?.[1] || ""],
@@ -553,26 +553,26 @@ async function loadProof() {
 
   <section>${head("Market model", "synthetic")}
     <div class="grid2">
-      ${lineChart({ title: "BPR loss", xLabel: "epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.loss]) }] })}
-      ${lineChart({ title: "Recall@10", xLabel: "epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.val_recall]) }],
-        ref: { y: mm.popularity_recall, label: "popularity" } })}
+      ${lineChart({ title: "BPR loss", xLabel: "Epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.loss]) }] })}
+      ${lineChart({ title: "Recall@10", xLabel: "Epoch", yLabel: "", series: [{ name: "LightGCN", points: mm.lightgcn.curve.map((r) => [r.epoch, r.val_recall]) }],
+        ref: { y: mm.popularity_recall, label: "Popularity" } })}
     </div>
   </section>
 
   <section>${head("Prior + correction", "synthetic")}
     <div class="grid2">
       <div>${recallTable(pr.methods, pr.test.k)}</div>
-      <div>${ws.map(([f, v]) => `<div class="wbar"><span class="wl">${esc(f)}</span>
+      <div>${ws.map(([f, v]) => `<div class="wbar"><span class="wl">${esc(cap(f))}</span>
         <span class="wtrack"><i style="--w:${(Math.abs(v) / wmax * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#d95926" : "#3987e5"}"></i></span>
         <span class="wv">${v > 0 ? "+" : ""}${v.toFixed(2)}</span></div>`).join("")}</div>
     </div>
   </section>
 
   <section>${head("Thompson sampling", "synthetic")}
-    ${lineChart({ title: "Conversions", xLabel: "round", yLabel: "", yFmt: (v) => v.toFixed(0),
-      series: [{ name: "rescaled priors", points: rounds(pol.ts_calibrated.cum_conversions) },
-               { name: "flat priors", points: rounds(pol.ts_flat.cum_conversions) },
-               { name: "priors as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}
+    ${lineChart({ title: "Conversions", xLabel: "Round", yLabel: "", yFmt: (v) => v.toFixed(0),
+      series: [{ name: "Rescaled priors", points: rounds(pol.ts_calibrated.cum_conversions) },
+               { name: "Flat priors", points: rounds(pol.ts_flat.cum_conversions) },
+               { name: "Priors as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}
   </section>
 
   <section>${head(`Backtest · ${bt.asof} → after`, "synthetic")}
@@ -581,8 +581,8 @@ async function loadProof() {
 
   <section>${head("Voice model · LoRA + DPO", "simulated")}
     <div class="grid2">
-      ${lineChart({ title: "DPO loss", xLabel: "step", yLabel: "", series: [{ name: "DPO loss", points: vo.dpo_curve.map((r) => [r.step, r.loss]) }] })}
-      <div class="kpis one"><div class="kpi"><span class="kpi-v">${vo.eval.win_rate_vs_base.toFixed(2)}</span><span class="kpi-l">win rate vs base</span></div></div>
+      ${lineChart({ title: "DPO loss", xLabel: "Step", yLabel: "", series: [{ name: "DPO loss", points: vo.dpo_curve.map((r) => [r.step, r.loss]) }] })}
+      <div class="kpis one"><div class="kpi"><span class="kpi-v">${vo.eval.win_rate_vs_base.toFixed(2)}</span><span class="kpi-l">Win rate vs base</span></div></div>
     </div>
   </section>
 

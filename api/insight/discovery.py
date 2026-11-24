@@ -12,7 +12,7 @@ from collections import Counter
 import numpy as np
 
 from ..cards import Card, receipt
-from ..market.simulate import month_label
+from ..market.simulate import INDUSTRY_NAME, month_label
 from ..ml.market import MarketModel
 from ..ml.text import STOP, TOKEN, stem
 from .ranking import Ranking
@@ -98,7 +98,7 @@ def find_discovery(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, fou
     mq = [pain_sentence(posts[int(rk.pain_post[c])].text, founder_vec, model) for c in others if rk.pain_post[c] > 0][:200]
     phrase = distinctive_phrase(quotes, mq, founder_words)
     inds = Counter(w.companies[c].industry for c in best["members"]).most_common(2)
-    who = " and ".join(i for i, _ in inds)
+    who = " and ".join(INDUSTRY_NAME.get(i, i) for i, _ in inds)
     front = (f'{len(quoted)} {who} companies post about the same problem. Their term: "{phrase}".' if phrase
              else f"{len(quoted)} {who} companies post about the same problem.")
     # distinct wordings first: eight companies saying it eight ways is the evidence
@@ -169,7 +169,7 @@ def find_blindspot(model: MarketModel, rk: Ranking, experience: list[int], now: 
     thin = [x for x in rows if x["recent_posts"] / x["companies"] <= med] or rows
     r = max(thin, key=lambda x: x["model_score"])
     return Card(id="blindspot", kind="blindspot",
-                front_text=f"{r['industry'].capitalize()}: {r['companies']} companies, "
+                front_text=f"{INDUSTRY_NAME.get(r['industry'], r['industry'])[:1].upper() + INDUSTRY_NAME.get(r['industry'], r['industry'])[1:]}: {r['companies']} companies, "
                            f"{r['recent_posts'] / r['companies']:.1f} posts each this year. Not enough data to rank.",
                 back_text="Scores well, but little data. Low confidence.",
                 clarity=0.3, stats=r, revisable=False,

@@ -131,6 +131,9 @@ SIZE_BY_STAGE = {
     "public": (["201-1000", "1000+"], [0.2, 0.8]),
 }
 SIZE_ORDER = ["1-50", "51-200", "201-1000", "1000+"]
+INDUSTRY_NAME = {"saas-billing": "SaaS billing", "fintech": "fintech", "devtools": "devtools", "martech": "martech",
+                 "healthtech": "healthtech", "logistics": "logistics", "ecommerce": "e-commerce", "edtech": "edtech",
+                 "insurtech": "insurtech", "ml-platform": "ML platform", "hr-tech": "HR tech"}
 POST_RATE = {"1-50": 0.05, "51-200": 0.09, "201-1000": 0.14, "1000+": 0.2}
 REGIONS = ["San Francisco", "New York", "REMOTE", "London", "Berlin", "Austin", "Toronto"]
 

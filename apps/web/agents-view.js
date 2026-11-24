@@ -34,7 +34,7 @@
       };
       root.innerHTML = `
         <div class="ag-top">
-          <div class="ag-title"><span class="ag-live"><i></i>live</span><span class="muted" id="ag-count"></span>
+          <div class="ag-title"><span class="ag-live"><i></i>Live</span><span class="muted" id="ag-count"></span>
             <div class="ag-total"><i id="ag-total"></i></div></div>
           <button class="btn" id="ag-replay"><i class="i" style="--i:url(/static/vendor/icons/play.svg)"></i>Replay</button>
         </div>

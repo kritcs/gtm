@@ -190,6 +190,7 @@ class Session:
         names = [w.companies[c].name for c in self.bottle.customers]
         who = ", ".join(names[:-1]) + f" and {names[-1]}" if len(names) > 1 else (names[0] if names else "No customers named")
         pain = self.bottle.phrases[0] if self.bottle.phrases else "none recorded"
+        pain = pain[:1].upper() + pain[1:]
         return Card(id="reflection", kind="reflection", front_text=f"Customers: {who}. Problem: {pain}.",
                     back_text="",
                     clarity=0.9, revisable=False, map={"customers": list(self.bottle.customers)},

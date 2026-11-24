@@ -96,7 +96,13 @@ def find_hit(g: MarketGraph, customers: list[tuple[int, int]], transcript: str, 
             recs.append(receipt(post, post.text.split("\n", 1)[0], w.companies[cid].name))
     k, n = best["k"], best["n"]
     front = f"{k} of {n} customers {best['label']} in the 6 months before buying. Base rate: {best['base_rate']:.0%}."
-    back = f"Not luck: q = {best['q_value']:.0e}".replace("e-0", "e-") + f" across {len(rows)} traits."
+    q = best["q_value"]
+    if q > 0:
+        n = 1 / q
+        mag = 10 ** (len(str(int(n))) - 2)
+        back = f"Odds this is luck: about 1 in {round(n / mag) * mag:,.0f}, after testing {len(rows)} traits."
+    else:
+        back = f"Odds this is luck: effectively zero, after testing {len(rows)} traits."
     clarity = float(np.clip(-np.log10(max(best["q_value"], 1e-12)) / 3, 0.25, 1.0))
     card = Card(id="hit", kind="hit", front_text=front, back_text=back, clarity=clarity, receipts=recs,
                 stats={k_: best[k_] for k_ in ("feature", "k", "n", "base_rate", "p_chance", "q_value",
