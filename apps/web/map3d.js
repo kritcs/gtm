@@ -86,7 +86,7 @@ async function init() {
                                    uniforms: { uFade: { value: 0 } } });
   pts = new THREE.Points(geo, mat);
   group.add(pts);
-  view.fadeTgt = 1;
+  view.fadeTgt = document.querySelector("#enter.active") ? 0 : 1;
   requestAnimationFrame(tick);
 }
 

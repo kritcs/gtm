@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
   <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/styles.css?v=8">
+  <link rel="stylesheet" href="/static/styles.css?v=10">
 </head>
 <body>
-  <section id="enter" class="stage active">
-    <div class="center">
-      <p class="eyebrow-s">Intuition in a bottle</p>
-      <h1 class="display">Who buys <em>next.</em></h1>
+  <section id="enter" class="stage active hero">
+    <div id="hero-bg" aria-hidden="true"></div>
+    <div class="hero-copy">
+      <p class="hero-eyebrow">A go-to-market engine for founders</p>
+      <h1 class="display hero-title">Intuition <em>in a bottle.</em></h1>
+      <p class="hero-sub">Your instinct about who buys, tested against 900 companies.</p>
       <button id="begin" class="btn primary lg" aria-label="Begin">Begin <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
       <p class="eyebrow-s" id="world-line"></p>
     </div>
@@ -106,11 +108,12 @@
     </main>
   </section>
 
-  <script src="/static/text.js?v=8"></script>
-  <script src="/static/pipeline-graph.js?v=8"></script>
-  <script src="/static/system-view.js?v=8"></script>
-  <script src="/static/agents-view.js?v=8"></script>
-  <script src="/static/app.js?v=8"></script>
-  <script type="module" src="/static/map3d.js?v=8"></script>
+  <script src="/static/text.js?v=10"></script>
+  <script src="/static/pipeline-graph.js?v=10"></script>
+  <script src="/static/system-view.js?v=10"></script>
+  <script src="/static/agents-view.js?v=10"></script>
+  <script src="/static/app.js?v=10"></script>
+  <script type="module" src="/static/map3d.js?v=10"></script>
+  <script type="module" src="/static/hero3d.js?v=10"></script>
 </body>
 </html>

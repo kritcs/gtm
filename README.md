@@ -64,6 +64,7 @@ The look follows the dark editorial style of startup sites like Monaco and Ornn:
 Those sites use commercial fonts (Season Serif, PP Neue Montreal, FK Roman), so we use open-source counterparts instead:
 - **Type:** [Instrument Serif](https://github.com/Instrument/instrument-serif) for headlines, [Inter](https://github.com/rsms/inter) for the UI, and [Fragment Mono](https://github.com/weiweihuanghuang/fragment-mono) for numbers. All three are SIL OFL.
 - **Icons:** [Lucide](https://github.com/lucide-icons/lucide) (ISC).
+- **Front page:** a dome of light streaks, after Stripe's homepage, drawn with three.js and a custom shader in `apps/web/hero3d.js`. Every arc starts at one point (the founder's intuition) and lands on one of the 900 companies.
 - **Market map:** [three.js](https://github.com/mrdoob/three.js) r170 (MIT), in `apps/web/map3d.js`. All 900 companies are plotted as a 3D point cloud laid out by the model's embeddings (PCA). Each card lights up its evidence on the map, and a scan wave runs while the engine scores companies.
 
 All of these are vendored in `apps/web/vendor/` with their licenses, so the demo needs no network.

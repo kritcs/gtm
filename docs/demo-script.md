@@ -23,9 +23,9 @@ Buttons are icons now. This script names each one by its icon, and every icon sh
 
 ## The run
 
-**1. Open (15 s).** *Start screen. The dots behind the title are the market, one dot per company. Don't click yet.*
+**1. Open (15 s).** *Front page: "Intuition in a bottle." Every light streak starts at one point and lands on one company. Don't click yet.*
 
-> "Founders sell their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. Every dot here is a company. We take the founder's instinct and check it against all of them."
+> "Founders sell their first customers on instinct. They know who buys and why, but they can't write it down, and every sales tool needs data a new startup doesn't have. That bright point is a founder's intuition. Each streak is a company it could reach. We bottle the instinct and test it against all of them."
 
 **2. Interview (35 s).** *Click **Begin**.*
 
@@ -54,7 +54,7 @@ Press → to move between cards. Each card lights up its evidence on the map.
   Type **"No, they're too big."** and press ✕. The removed companies strike through, then the card rewrites itself. "When I push back, it adds a filter and re-ranks, and it tells me exactly what it changed."
 - **04 · public post.** One line on the Ask HN title.
 - **05 · low data.** "It also says where it doesn't have enough data to rank."
-- **06 · start here.** A ring appears around one dot. "Start with Fablesync, the VP Finance." Press →, which opens Accounts.
+- **06 · start here.** A ring appears around one dot. "Start with Fablesync, the VP Finance." Press →. The dashboard opens on the Overview: the whole product on one page. Click **Top accounts**.
 
 **4. The engine (20 s).**
 
