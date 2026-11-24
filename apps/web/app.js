@@ -80,9 +80,11 @@ async function show(id) {
 
 $("#begin").onclick = async () => {
   await show("problem");
+  window.ProblemDiagram?.start();
   stagger(document.querySelectorAll("#problem .intro > *, .pcard, .drow"), [{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { step: 70, duration: 650 });
 };
 $("#to-how").onclick = async () => {
+  window.ProblemDiagram?.stop();
   await show("intro");
   stagger(document.querySelectorAll("#intro .intro > *, .intro-steps li"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 110, duration: 700 });
 };

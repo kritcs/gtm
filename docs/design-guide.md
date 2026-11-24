@@ -92,6 +92,11 @@ Motion must explain something: a reply moving a card, a belief curve shifting, a
 | `apps/web/text.js` | Capitalization and plain-English odds helpers |
 | `apps/web/styles.css` | Tokens at the top, then one section per screen |
 
-**The problem page (`#problem` in `index.html`) is a placeholder for the next agent.** Its core message is that founders lack data, but their instinct is their greatest advantage. Every GTM tool needs data a startup doesn't have, and ignores the one thing it does have. The comparison table shows typical tools against us. Rewrite the page freely within these rules.
+**The problem page (`#problem` in `index.html`)** makes one argument, and each point appears once:
+1. A startup's own data is too thin (cold start), and public data is noisy.
+2. Graph models need volume, so neither source works on its own.
+3. Our approach: the founder is the prior (Beta priors, and the graph learns only the correction). The graph is heterogeneous (typed nodes and edges, so a reply credits its signal). It re-fits as feedback arrives (Bayesian updates and fold-in).
+
+`problem-diagram.js` plays those three points in sync with the list. Don't add "instinct" or "intuition" anywhere else on the page.
 
 The copy on the problem page is a placeholder. Replace it with real numbers only once they're sourced. Until then, keep every sentence free of made-up statistics.

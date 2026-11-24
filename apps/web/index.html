@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
   <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/styles.css?v=29">
+  <link rel="stylesheet" href="/static/styles.css?v=30">
 </head>
 <body class="hero-on">
   <div id="hero-bg" aria-hidden="true"></div>
@@ -24,18 +24,20 @@
   <section id="problem" class="stage hero">
     <div class="intro">
       <p class="hero-eyebrow">The problem</p>
-      <h2 class="display intro-title">Founders lack data. They have instinct.</h2>
+      <h2 class="display intro-title">Startups have too little data. The market has too much noise.</h2>
       <div class="pcards">
-        <div class="pcard"><b>GTM tools need data you don't have.</b></div>
-        <div class="pcard"><b>Your instinct is your edge.</b></div>
-        <div class="pcard"><b>Volume outreach burns your market.</b></div>
+        <div class="pcard"><b>Your data is too thin.</b><span class="ptag">Cold start: five customers can't train a model.</span></div>
+        <div class="pcard"><b>Public data is noisy.</b><span class="ptag">A tool named in a job post isn't a purchase.</span></div>
+        <div class="pcard"><b>Graph models need volume.</b><span class="ptag">Link prediction learns from thousands of edges.</span></div>
       </div>
-      <p class="hero-eyebrow diff-h">How we're different</p>
-      <div class="diff-table" role="table">
-        <div class="drow dhead" role="row"><span></span><span>Typical GTM tools</span><span>Intuition in a bottle</span></div>
-        <div class="drow" role="row"><span>Starts from</span><span>Your CRM data</span><span>Your instinct</span></div>
-        <div class="drow" role="row"><span>Finds</span><span>Lookalikes</span><span>Buyers you'd never search for</span></div>
-        <div class="drow" role="row"><span>Outreach</span><span>Hundreds of templates</span><span>Five emails in your voice</span></div>
+      <p class="hero-eyebrow diff-h">Our approach</p>
+      <div class="approach">
+        <ol class="apoints" id="apoints">
+          <li data-p="0"><b>The founder is the prior.</b><span>Your instinct seeds the model as Beta priors. The graph learns only the correction.</span></li>
+          <li data-p="1"><b>A heterogeneous graph.</b><span>Typed nodes and edges, so a reply credits the exact signal that found it.</span></li>
+          <li data-p="2"><b>It re-fits as feedback arrives.</b><span>Bayesian updates and fold-in. No full retrain.</span></li>
+        </ol>
+        <div class="adiagram" id="adiagram"></div>
       </div>
       <button id="to-how" class="btn primary lg">See how it works <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
     </div>
@@ -155,12 +157,13 @@
     </main>
   </section>
 
+  <script src="/static/problem-diagram.js?v=31"></script>
   <script src="/static/explainers.js?v=23"></script>
   <script src="/static/text.js?v=23"></script>
   <script src="/static/pipeline-graph.js?v=23"></script>
   <script src="/static/system-view.js?v=27"></script>
   <script src="/static/agents-view.js?v=27"></script>
-  <script src="/static/app.js?v=27"></script>
+  <script src="/static/app.js?v=30"></script>
   <script type="module" src="/static/map3d.js?v=23"></script>
   <script type="module" src="/static/hero3d.js?v=25"></script>
   <script type="module" src="/static/dome3d.js?v=24"></script>
