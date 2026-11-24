@@ -522,7 +522,7 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 .rcard.market { border-color: rgba(57,135,229,.5); background: rgba(57,135,229,.06); }
 .rcard p { margin: 0 0 10px; font-size: 15px; line-height: 1.35; }
 .rfoot { display: flex; align-items: center; gap: 8px; }
-.rfoot .src { font-size: 12px; color: var(--muted-foreground); flex: 1; }
+.rfoot .src { font-size: 12px; color: #7fb0f0; flex: 1; }
 .rfoot b { font: 400 24px/1 var(--serif); }
 .gauge { width: 46px; height: 28px; }
 .g-bg { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 5; stroke-linecap: round; }

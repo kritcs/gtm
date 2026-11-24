@@ -416,7 +416,7 @@ async function loadBottle() {
     return `<div class="rcol"><h4>${k}</h4>${rs.map((r) => {
       const market = (r.key || "").includes(":");
       return `<div class="rcard ${market ? "market" : ""}"><p>${esc(r.text.replace(" (found in the market data)", ""))}</p>
-        <div class="rfoot"><span class="src">${market ? "found in data" : "you said"}</span>${gauge(r.trust, market)}<b>${r.trust.toFixed(2)}</b></div></div>`;
+        <div class="rfoot"><span class="src">${market ? "from market data" : ""}</span>${gauge(r.trust, market)}<b>${r.trust.toFixed(2)}</b></div></div>`;
     }).join("")}</div>`;
   }).join("");
 
@@ -436,8 +436,7 @@ async function loadBottle() {
   }).join("");
   const ticks = [0, .25, .5, .75, 1].map((t) => `<text x="${X(t)}" y="18" class="ttick">${t * 100}%</text>`).join("");
   $("#bottle-inspect").innerHTML = `
-    <section class="bsec"><div class="bhead"><h3>What you believe</h3>
-      <span class="blegend"><i class="you"></i>you said <i class="mk"></i>found in data</span></div>
+    <section class="bsec"><div class="bhead"><h3>What you believe</h3></div>
       <div class="rboard">${cols}</div></section>
     <section class="bsec"><div class="bhead"><h3>Your customers vs similar companies</h3>
       <span class="blegend"><i class="dot-c"></i>your customers <i class="dot-b"></i>similar companies</span></div>
