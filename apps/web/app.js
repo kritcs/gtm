@@ -527,6 +527,28 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
 const recallTable = (methods, k) => `<table><tr><th></th><th>Recall@${k}</th><th>95% CI</th></tr>` +
   Object.entries(methods).map(([m, v]) => `<tr><td>${esc(cap(m))}</td><td>${v.recall.toFixed(2)}</td><td class="muted">${v.ci95[0].toFixed(2)}–${v.ci95[1].toFixed(2)}</td></tr>`).join("") + `</table>`;
 
+// Horizontal bars with 95% CI whiskers; one highlighted row; optional dashed reference line.
+function recallBars(methods, { highlight, ref, refLabel = "Random" } = {}) {
+  const rows = Object.entries(methods);
+  const max = Math.max(...rows.map(([, v]) => v.ci95[1]), ref || 0) * 1.08 || 1;
+  const W = 900, L = 210, PW = 560, RH = 44, X = (v) => L + (v / max) * PW, H = 30 + rows.length * RH;
+  const ticks = [0, max / 4, max / 2, (3 * max) / 4].map((t) => `<line x1="${X(t)}" x2="${X(t)}" y1="18" y2="${H}" class="rb-grid"/>
+    <text x="${X(t)}" y="12" class="rb-tick">${Math.round(t * 100)}%</text>`).join("");
+  const bars = rows.map(([m, v], i) => {
+    const y = 30 + i * RH, on = m === highlight;
+    return `<g class="rb-row ${on ? "on" : ""}" style="--d:${i * 80}ms">
+      <text x="0" y="${y + 17}" class="rb-l">${esc(cap(m))}</text>
+      <rect x="${L}" y="${y + 4}" width="${X(v.recall) - L}" height="20" rx="6" class="rb-bar"/>
+      <line x1="${X(v.ci95[0])}" x2="${X(v.ci95[1])}" y1="${y + 14}" y2="${y + 14}" class="rb-ci"/>
+      <line x1="${X(v.ci95[0])}" x2="${X(v.ci95[0])}" y1="${y + 8}" y2="${y + 20}" class="rb-ci"/>
+      <line x1="${X(v.ci95[1])}" x2="${X(v.ci95[1])}" y1="${y + 8}" y2="${y + 20}" class="rb-ci"/>
+      <text x="${X(v.ci95[1]) + 12}" y="${y + 19}" class="rb-v">${Math.round(v.recall * 100)}%</text></g>`;
+  }).join("");
+  const refLine = ref ? `<line x1="${X(ref)}" x2="${X(ref)}" y1="18" y2="${H}" class="rb-ref"/>
+    <text x="${X(ref) + 6}" y="${H + 14}" class="rb-reft">${esc(refLabel)} ${Math.round(ref * 100)}%</text>` : "";
+  return `<svg viewBox="0 0 ${W} ${H + 22}" class="rbars">${ticks}${refLine}${bars}</svg>`;
+}
+
 async function loadProof() {
   $("#proof-area").innerHTML = `<p class="fine">Loading…</p>`;
   let d;
@@ -560,8 +582,9 @@ async function loadProof() {
   </section>
 
   <section>${head("Prior + correction", "synthetic")}
-    <div class="grid2">
-      <div>${recallTable(pr.methods, pr.test.k)}</div>
+    <p class="mp-sub">Share of next-year adopters found in the top ${pr.test.k}.</p>
+    ${recallBars(pr.methods, { highlight: "logit(prior) + correction" })}
+    <div class="wcol">
       <div>${ws.map(([f, v]) => `<div class="wbar"><span class="wl">${esc(cap(f))}</span>
         <span class="wtrack"><i style="--w:${(Math.abs(v) / wmax * 50).toFixed(1)}%;${v < 0 ? "right:50%" : "left:50%"};background:${v < 0 ? "#d95926" : "#3987e5"}"></i></span>
         <span class="wv">${v > 0 ? "+" : ""}${v.toFixed(2)}</span></div>`).join("")}</div>
@@ -569,14 +592,20 @@ async function loadProof() {
   </section>
 
   <section>${head("Thompson sampling", "synthetic")}
-    ${lineChart({ title: "Conversions", xLabel: "Round", yLabel: "", yFmt: (v) => v.toFixed(0),
+    <div class="grid2"><div>${lineChart({ title: "Conversions", xLabel: "Round", yLabel: "", yFmt: (v) => v.toFixed(0),
       series: [{ name: "Rescaled priors", points: rounds(pol.ts_calibrated.cum_conversions) },
                { name: "Flat priors", points: rounds(pol.ts_flat.cum_conversions) },
-               { name: "Priors as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}
+               { name: "Priors as stated", points: rounds(pol.ts_founder.cum_conversions) }] })}</div>
+      <div class="kpis one">
+        <div class="kpi"><span class="kpi-v">${pol.ts_calibrated.cum_conversions.at(-1).toFixed(0)}</span><span class="kpi-l">Conversions with rescaled priors</span></div>
+        <div class="kpi"><span class="kpi-v">${pol.ts_flat.cum_conversions.at(-1).toFixed(0)} · ${pol.ts_founder.cum_conversions.at(-1).toFixed(0)}</span><span class="kpi-l">Flat priors · priors as stated</span></div>
+      </div></div>
   </section>
 
-  <section>${head(`Backtest · ${bt.asof} → after`, "synthetic")}
-    ${recallTable(Object.fromEntries(keep.map((k) => [k.replace(" (LLM stand-in)", ""), bt.methods[k]])), bt.k)}
+  <section>${head("Backtest", "synthetic")}
+    <p class="mp-sub">Trained through Dec 2024. Share of next-year adopters found in each method's top ${bt.k}.</p>
+    ${recallBars(Object.fromEntries(keep.map((k) => [k.replace(" (LLM stand-in)", ""), bt.methods[k]])),
+                 { highlight: "market + founder", ref: bt.methods["random (expected)"].recall })}
   </section>
 
   <section>${head("Voice model · LoRA + DPO", "simulated")}

@@ -328,6 +328,7 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 .mp-head h3 { margin: 6px 0 14px; }
 .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .kpis.one { grid-template-columns: 1fr; align-content: center; }
+.wcol { max-width: 640px; margin-top: 10px; }
 .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: grid; gap: 4px; }
 .kpi-v { font: 400 30px/1 var(--serif); }
 .kpi-l { font-size: 12px; color: var(--muted-foreground); }
@@ -542,3 +543,19 @@ table.mini td:first-child { color: rgba(255,255,255,.45); }
 .tv .muted { fill: rgba(255,255,255,.45); }
 .tbadge { fill: rgba(57,135,229,.15); stroke: #3987e5; }
 .tbadge-t { fill: #7fb0f0; font: 500 12px var(--sans); text-anchor: middle; }
+
+/* recall bars */
+.mp-sub { margin: -6px 0 14px; color: var(--muted-foreground); font-size: 14px; }
+.rbars { width: 100%; height: auto; display: block; }
+.rb-grid { stroke: rgba(255,255,255,.06); }
+.rb-tick { fill: rgba(255,255,255,.35); font: 12px var(--sans); text-anchor: middle; }
+.rb-l { fill: rgba(255,255,255,.75); font: 15px var(--sans); }
+.rb-bar { fill: rgba(255,255,255,.22); transform-box: fill-box; transform-origin: left; animation: grow .9s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d); }
+.rb-ci { stroke: rgba(255,255,255,.5); stroke-width: 1.5; }
+.rb-v { fill: rgba(255,255,255,.8); font: 400 20px var(--serif); }
+.rb-row.on .rb-l { fill: #fff; font-weight: 600; }
+.rb-row.on .rb-bar { fill: #3987e5; filter: drop-shadow(0 0 8px rgba(57,135,229,.5)); }
+.rb-row.on .rb-v { fill: #fff; }
+.rb-ref { stroke: rgba(255,255,255,.45); stroke-dasharray: 4 5; }
+.rb-reft { fill: rgba(255,255,255,.45); font: 12px var(--sans); }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
