@@ -92,4 +92,6 @@ Motion must explain something: a reply moving a card, a belief curve shifting, a
 | `apps/web/text.js` | Capitalization and plain-English odds helpers |
 | `apps/web/styles.css` | Tokens at the top, then one section per screen |
 
+**The problem page (`#problem` in `index.html`) is a placeholder for the next agent.** Its core message is that founders lack data, but their instinct is their greatest advantage. Every GTM tool needs data a startup doesn't have, and ignores the one thing it does have. The comparison table shows typical tools against us. Rewrite the page freely within these rules.
+
 The copy on the problem page is a placeholder. Replace it with real numbers only once they're sourced. Until then, keep every sentence free of made-up statistics.
