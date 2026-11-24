@@ -34,7 +34,8 @@
       };
       root.innerHTML = `
         <div class="ag-top">
-          <div class="ag-title"><span class="ag-live"><i></i>live</span><span class="muted" id="ag-count"></span></div>
+          <div class="ag-title"><span class="ag-live"><i></i>live</span><span class="muted" id="ag-count"></span>
+            <div class="ag-total"><i id="ag-total"></i></div></div>
           <button class="btn" id="ag-replay"><i class="i" style="--i:url(/static/vendor/icons/play.svg)"></i>Replay</button>
         </div>
         <svg viewBox="0 0 ${W} ${H}" class="relay">
@@ -45,8 +46,9 @@
         </svg>
         <div class="ag-grid">${AGENTS.map((a) => `
           <div class="ag-card idle" id="ac-${a.id.replace(/ /g, "_")}">
-            <div class="ag-head"><span class="orb"><i></i></span><div><b>${esc(a.id)}</b><span>${esc(a.role)}</span></div><em class="ag-n">0</em></div>
+            <div class="ag-head"><span class="orb"><i></i></span><b>${esc(a.id)}</b><em class="ag-n">0</em></div>
             <p class="ag-msg"></p>
+            <div class="ag-bar"><i></i></div>
           </div>`).join("")}</div>
         <details class="ag-log"><summary>log</summary><ol class="feed" id="feed-list"></ol></details>`;
       root.querySelector("#ag-replay").onclick = () => this.replay(this.events || []);
@@ -66,7 +68,8 @@
     count() {
       const n = Object.values(this.state).reduce((s, x) => s + x.steps, 0);
       const active = Object.values(this.state).filter((x) => x.steps).length;
-      this.root.querySelector("#ag-count").textContent = `${active} agents · ${n} steps`;
+      this.root.querySelector("#ag-count").textContent = `${active}/${AGENTS.length} agents · ${n} steps`;
+      this.root.querySelector("#ag-total").style.width = `${(active / AGENTS.length) * 100}%`;
     }
 
     setStatus(id, st) {
