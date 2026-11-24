@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
   <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=8">
 </head>
 <body>
   <section id="enter" class="stage active">
@@ -75,17 +75,19 @@
     <header class="dash-head">
       <button class="btn ghost icon" id="reread" title="Back to the reading" aria-label="Back to the reading"><i class="i flip-x" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
       <nav id="tabs">
-        <button data-tab="accounts" class="on"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Accounts</button>
-        <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/square-pen.svg)"></i>Draft</button>
-        <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Pipeline</button>
-        <button data-tab="system"><i class="i" style="--i:url(/static/vendor/icons/workflow.svg)"></i>System</button>
-        <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Bottle</button>
-        <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/activity.svg)"></i>Agents</button>
-        <button data-tab="proof"><i class="i" style="--i:url(/static/vendor/icons/flask-conical.svg)"></i>Proof</button>
+        <button data-tab="overview" class="on"><i class="i" style="--i:url(/static/vendor/icons/map.svg)"></i>Overview</button>
+        <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Your intuition</button>
+        <button data-tab="accounts"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Top accounts</button>
+        <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/mail.svg)"></i>Email</button>
+        <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Deal stages</button>
+        <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/bot.svg)"></i>AI agents</button>
+        <button data-tab="system"><i class="i" style="--i:url(/static/vendor/icons/workflow.svg)"></i>Architecture</button>
+        <button data-tab="proof"><i class="i" style="--i:url(/static/vendor/icons/chart-no-axes-column.svg)"></i>Results</button>
       </nav>
     </header>
     <main>
-      <div class="tab on" id="accounts">
+      <div class="tab on" id="overview"><div id="overview-root"></div></div>
+      <div class="tab" id="accounts">
         <div class="meter">
           <div class="meter-bar"><div id="meter-fill"></div></div>
           <span class="mono small" id="meter-text"></span>
@@ -104,11 +106,11 @@
     </main>
   </section>
 
-  <script src="/static/text.js"></script>
-  <script src="/static/pipeline-graph.js"></script>
-  <script src="/static/system-view.js"></script>
-  <script src="/static/agents-view.js"></script>
-  <script src="/static/app.js"></script>
-  <script type="module" src="/static/map3d.js"></script>
+  <script src="/static/text.js?v=8"></script>
+  <script src="/static/pipeline-graph.js?v=8"></script>
+  <script src="/static/system-view.js?v=8"></script>
+  <script src="/static/agents-view.js?v=8"></script>
+  <script src="/static/app.js?v=8"></script>
+  <script type="module" src="/static/map3d.js?v=8"></script>
 </body>
 </html>

@@ -276,9 +276,60 @@ function tab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === name));
   anim(document.getElementById(name), [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
-  ({ accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: loadAgents })[name]?.();
+  ({ overview: loadOverview, accounts: loadAccounts, pipeline: loadPipeline, system: loadSystem, "bottle-tab": loadBottle, proof: loadProof, feed: loadAgents })[name]?.();
 }
-async function openDash() { await show("dash"); tab("accounts"); }
+async function openDash() { await show("dash"); tab("overview"); }
+
+// ---------------------------------------------------------------- overview: how it all fits
+async function loadOverview() {
+  const L = await api(`/api/sessions/${S.sid}/system`);
+  let res = null;
+  try { res = (await api("/api/model-proof")).backtest; } catch (e) {}
+  const I = (n) => `<i class="i" style="--i:url(/static/vendor/icons/${n}.svg)"></i>`;
+  const agents = new Set(S.events.map((e) => e.agent)).size;
+  const tile = (id, go, icon, n, title, big, sub) => `<button class="ov-tile" id="ov-${id}" data-go="${go}">
+      <span class="ov-top">${I(icon)}<em>${n}</em></span><b class="ov-t">${title}</b><span class="ov-big">${big}</span><span class="ov-s">${sub}</span></button>`;
+  const fmtN = (v) => (v ?? 0).toLocaleString();
+  $("#overview-root").innerHTML = `<div class="ov">
+    <h2 class="ov-title">Your instinct <em>+</em> the market <em>→</em> who to contact</h2>
+    <div class="ov-flow" id="ov-flow">
+      <svg class="ov-links" id="ov-links"></svg>
+      <div class="ov-inputs">
+        ${tile("intuition", "bottle-tab", "wand-sparkles", "1", "Your intuition", `${fmtN(L.bottle?.rules)} beliefs`, `From your ${L.interview?.answers ?? 0} answers`)}
+        ${tile("market", "system", "network", "2", "The market", `${fmtN(L.posts?.companies)} companies`, `${fmtN(L.posts?.posts)} public posts`)}
+      </div>
+      ${tile("reading", "reading", "book-open", "3", "The reading", `${S.cards.length || 6} insights`, "What we found together")}
+      ${tile("accounts", "accounts", "building-2", "4", "Top accounts", esc(L.rank?.top || "—"), `#1 of ${fmtN(L.rank?.ranked)} ranked`)}
+      ${tile("email", "outreach", "mail", "5", "Email", `${L.approve?.approved || 0} sent`, "In your voice, you approve")}
+      ${tile("deals", "pipeline", "columns-3", "6", "Deal stages", `${L.reply?.replies || 0} ${L.reply?.replies === 1 ? "reply" : "replies"}`, "Replies teach the bottle")}
+    </div>
+    <p class="ov-behind-h">Behind the scenes</p>
+    <div class="ov-behind">
+      ${tile("agents", "feed", "bot", "", "AI agents", `${agents} agents`, `${S.events.length} steps this session`)}
+      ${tile("arch", "system", "workflow", "", "Architecture", "8-step loop", "Peem's design, live")}
+      ${tile("results", "proof", "chart-no-axes-column", "", "Results", res ? `${Math.round(res.methods["market + founder"].recall * 100)}% vs ${Math.round(res.methods["random (expected)"].recall * 100)}%` : "—", "Found vs random, synthetic backtest")}
+    </div></div>`;
+  document.querySelectorAll(".ov-tile").forEach((t) => t.onclick = () => {
+    const g = t.dataset.go;
+    if (g === "reading") { show("reading"); renderCard(0); } else tab(g);
+  });
+  stagger(document.querySelectorAll(".ov-tile"), [{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { step: 80 });
+  requestAnimationFrame(drawOverviewLinks);
+  setTimeout(drawOverviewLinks, 700);
+}
+
+function drawOverviewLinks() {
+  const flow = $("#ov-flow"), svg = $("#ov-links");
+  if (!flow || !svg || !flow.offsetWidth) return;
+  const fr = flow.getBoundingClientRect(), r = (id) => { const b = $("#ov-" + id).getBoundingClientRect(); return { l: b.left - fr.left, r: b.right - fr.left, t: b.top - fr.top, b: b.bottom - fr.top, cy: (b.top + b.bottom) / 2 - fr.top, cx: (b.left + b.right) / 2 - fr.left }; };
+  svg.setAttribute("viewBox", `0 0 ${fr.width} ${fr.height}`);
+  const link = (a, b) => { const A = r(a), B = r(b), mx = (A.r + B.l) / 2; return `<path class="ov-link" d="M${A.r},${A.cy} C${mx},${A.cy} ${mx},${B.cy} ${B.l},${B.cy}"/>`; };
+  const D = r("deals"), N = r("intuition"), low = Math.max(D.b, r("market").b) + 34;
+  svg.innerHTML = link("intuition", "reading") + link("market", "reading") + link("reading", "accounts") + link("accounts", "email") + link("email", "deals") +
+    `<path class="ov-loop" d="M${D.cx},${D.b} C${D.cx},${low} ${D.cx},${low} ${(D.cx + N.cx) / 2},${low} S${N.cx},${low} ${N.cx},${r("market").b}"/>
+     <text x="${(D.cx + N.cx) / 2}" y="${low + 18}" class="ov-loop-t">Replies update how much we trust each belief</text>`;
+}
+addEventListener("resize", () => { if ($("#overview.on")) drawOverviewLinks(); });
 
 async function loadAccounts({ animate = true } = {}) {
   const r = await api(`/api/sessions/${S.sid}/accounts`);
