@@ -27,6 +27,8 @@ class Card(BaseModel):
     revisable: bool = True
     version: int = 1
     diff: str | None = None
+    # which dots to light up on the market map: {"customers": [...], "segment": [...], "accounts": [...], "removed": [...]}
+    map: dict[str, list[int]] = {}
 
 
 def receipt(post, quote: str, company: str | None = None) -> Receipt:

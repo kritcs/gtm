@@ -107,6 +107,15 @@ def world():
     return eng().summary()
 
 
+@app.get("/api/world/map")
+def world_map():
+    """3D market map: one point per company (PCA of the model's embeddings)."""
+    e = eng()
+    return {"points": [[round(float(v), 4) for v in p] for p in e.layout],
+            "names": [c.name for c in e.world.companies],
+            "industry": [c.industry for c in e.world.companies]}
+
+
 @app.get("/api/demo/script")
 def demo_script():
     return eng().script

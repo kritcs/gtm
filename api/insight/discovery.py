@@ -116,7 +116,8 @@ def find_discovery(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, fou
         stats={"fit": best["fit"], "distance": best["d"], "segment_size": int(len(best["members"])),
                "quoted": len(quoted), "segments_considered": len(segs), "fit_cut": float(cut), "phrase": phrase,
                "industries": dict(inds)},
-        companies=[_co(w.companies[c], rk, c) for c in quoted[:12]])
+        companies=[_co(w.companies[c], rk, c) for c in quoted[:12]],
+        map={"segment": [int(c) for c in quoted], "customers": [int(c) for c in experience]})
 
 
 def find_needed(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, now: int) -> Card:
@@ -147,7 +148,8 @@ def find_needed(model: MarketModel, rk: Ranking, founder_vec: np.ndarray, now: i
                 clarity=float(np.clip(sims.max() * 1.6, 0.3, 1.0)), receipts=recs,
                 stats={"similarity": float(sims.max()), "author": p.author, "title": p.title,
                        "moment_companies": len(moment), "window": f"{month_label(p.month - 2)}..{month_label(p.month + 2)}"},
-                companies=[_co(w.companies[c], rk, c) for _, c, _ in moment[:5]])
+                companies=[_co(w.companies[c], rk, c) for _, c, _ in moment[:5]],
+                map={"accounts": [int(c) for _, c, _ in moment]})
 
 
 def find_blindspot(model: MarketModel, rk: Ranking, experience: list[int], now: int,
@@ -173,7 +175,8 @@ def find_blindspot(model: MarketModel, rk: Ranking, experience: list[int], now: 
                            f"{r['recent_posts'] / r['companies']:.1f} posts each this year. Not enough data to rank.",
                 back_text="The market model scores this group above average, but none of your customers are in it "
                           "and there is little recent data. Scores here are low-confidence.",
-                clarity=0.3, stats=r, revisable=False)
+                clarity=0.3, stats=r, revisable=False,
+                map={"segment": [c.id for c in w.companies if c.industry == r["industry"] and rk.candidates[c.id]]})
 
 
 def _co(c, rk: Ranking, cid: int) -> dict:

@@ -9,12 +9,54 @@ const api = async (path, opts = {}) => {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const S = { sid: null, world: null, script: null, qIndex: 0, cards: [], cardIdx: 0, drafts: {}, events: [] };
-const EYEBROW = { reflection: "From the interview", hit: "Shared customer trait", discovery: "New segment",
-  needed: "Public post", blindspot: "Low data", next_step: "First account" };
+const EYEBROW = { reflection: "01 · heard", hit: "02 · pattern", discovery: "03 · new segment",
+  needed: "04 · public post", blindspot: "05 · low data", next_step: "06 · start here" };
 
-function show(id) {
+// ---------------------------------------------------------------- motion helpers
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const EASE = "cubic-bezier(.2,.8,.2,1)";
+const sleep = (ms) => new Promise((r) => setTimeout(r, RM ? 0 : ms));
+const anim = (el, kf, o = {}) => (RM || !el ? null : el.animate(kf, { duration: 600, easing: EASE, fill: "both", ...o }));
+const MAP_MODE = { enter: "ambient", talk: "ambient", pause: "scan", reading: "reading", dash: "dash" };
+
+// Reveal text word by word; bare numbers and percentages count up.
+function reveal(el, text, { delay = 0, stagger = 45 } = {}) {
+  const words = String(text).split(/(\s+)/);
+  el.innerHTML = words.map((w) => /^\s+$/.test(w) ? w
+    : /^\d+(\.\d+)?%?[.,:]?$/.test(w) ? `<span class="w"><span class="num" data-to="${esc(w)}">${esc(w)}</span></span>`
+    : `<span class="w">${esc(w)}</span>`).join("");
+  if (RM) return;
+  el.querySelectorAll(".w").forEach((w, i) => anim(w, [
+    { opacity: 0, transform: "translateY(.45em)", filter: "blur(6px)" },
+    { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 560, delay: delay + i * stagger }));
+  el.querySelectorAll(".num").forEach((n) => {
+    const raw = n.dataset.to, m = raw.match(/^(\d+(?:\.\d+)?)(.*)$/), to = parseFloat(m[1]), dec = (m[1].split(".")[1] || "").length;
+    const t0 = performance.now() + delay + 150;
+    const step = (now) => {
+      const f = Math.min(1, Math.max(0, (now - t0) / 900)), e = 1 - Math.pow(1 - f, 3);
+      n.textContent = (to * e).toFixed(dec) + m[2];
+      if (f < 1) requestAnimationFrame(step);
+    };
+    n.textContent = (0).toFixed(dec) + m[2];
+    requestAnimationFrame(step);
+  });
+}
+
+function stagger(nodes, kf, o = {}) {
+  [...nodes].forEach((n, i) => anim(n, kf, { delay: (o.delay || 0) + i * (o.step || 70), duration: o.duration || 560 }));
+}
+
+let current = "enter";
+async function show(id) {
+  const from = document.getElementById(current), to = document.getElementById(id);
+  window.MarketMap?.mode(MAP_MODE[id]);
+  if (from && from !== to && !RM) {
+    await anim(from, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 320 })?.finished;
+  }
   document.querySelectorAll(".stage").forEach((s) => s.classList.toggle("active", s.id === id));
+  current = id;
   window.scrollTo(0, 0);
+  anim(to, [{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "none" }], { duration: 520 });
 }
 
 // ---------------------------------------------------------------- enter
@@ -23,11 +65,11 @@ function show(id) {
     try { const h = await api("/api/health"); if (h.ok) break; } catch (e) {}
     await new Promise((r) => setTimeout(r, 500));
   }
+  stagger(document.querySelectorAll("#enter .center > *"), [{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { step: 120, duration: 800 });
   S.world = await api("/api/world");
   S.script = await api("/api/demo/script");
-  $("#world-line").textContent =
-    `${S.world.companies} companies · ${S.world.posts.toLocaleString()} posts · through ${S.world.through} · simulated market`;
-  $("#sim-note").textContent = `Simulated market data (seed ${S.world.seed}) · Band: ${S.world.integrations.band.split(" ")[0]} · Flexprice: ${S.world.integrations.flexprice.split(" ")[0]}`;
+  $("#world-line").textContent = `${S.world.companies} companies · ${S.world.posts.toLocaleString()} posts · synthetic`;
+  $("#sim-note").textContent = `synthetic market · seed ${S.world.seed}`;
 })();
 
 $("#begin").onclick = async () => {
@@ -41,8 +83,8 @@ $("#begin").onclick = async () => {
 // ---------------------------------------------------------------- talk
 function ask(q) {
   S.qIndex = q.index;
-  $("#q-count").textContent = `Question ${q.index + 1} of ${q.total}`;
-  $("#question").textContent = q.text;
+  $("#q-count").textContent = `${q.index + 1}/${q.total}`;
+  reveal($("#question"), q.text, { stagger: 28 });
   $("#answer").value = "";
   $("#answer").focus();
 }
@@ -56,31 +98,42 @@ $("#send").onclick = async () => {
   try {
     const r = await api(`/api/sessions/${S.sid}/answer`, { method: "POST", body: { text } });
     settlePhrases(r.learned.phrases);
+    for (const c of r.learned.companies) if (c.role === "customer") window.MarketMap?.light(c.id);
     renderBottle(r.bottle);
+    if (r.next) await sleep(500);
     if (r.next) ask(r.next); else runReading();
   } finally { $("#send").disabled = false; }
 };
 $("#answer").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("#send").click(); });
 
+// phrases lift out of the answer box and settle above it
 function settlePhrases(list) {
+  const src = $("#answer").getBoundingClientRect();
   list.forEach((p, i) => {
     const el = document.createElement("span");
-    el.className = "phrase"; el.textContent = `“${p}”`;
+    el.className = "phrase in"; el.textContent = `“${p}”`;
     $("#phrases").appendChild(el);
-    setTimeout(() => el.classList.add("in"), 300 + i * 700);
+    const dst = el.getBoundingClientRect();
+    const dx = src.left + 20 - dst.left, dy = src.top + 20 - dst.top;
+    anim(el, [{ opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.9)`, filter: "blur(4px)" },
+              { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 1100, delay: 120 + i * 260 });
   });
 }
 
 function renderBottle(b) {
-  const kinds = { pain: "Pain", trigger: "Trigger", buyer: "Buyer", segment: "Segment" };
+  const kinds = { pain: "pain", trigger: "trigger", buyer: "buyer", segment: "segment" };
   let html = "";
-  if (b.customers.length) html += `<dt>Customers</dt><dd>${b.customers.map(esc).join(", ")}</dd>`;
-  if (b.lost.length) html += `<dt>Lost deals</dt><dd>${b.lost.map(esc).join(", ")}</dd>`;
+  if (b.customers.length) html += `<dt>customers</dt><dd>${b.customers.map(esc).join(", ")}</dd>`;
+  if (b.lost.length) html += `<dt>lost</dt><dd>${b.lost.map(esc).join(", ")}</dd>`;
   for (const k of Object.keys(kinds)) {
     const rs = b.rules.filter((r) => r.kind === k);
     if (rs.length) html += `<dt>${kinds[k]}</dt>` + rs.map((r) => `<dd>${esc(r.text)}</dd>`).join("");
   }
+  const before = new Set([...document.querySelectorAll("#bottle-list dd")].map((d) => d.textContent));
   $("#bottle-list").innerHTML = html;
+  stagger([...document.querySelectorAll("#bottle-list dd")].filter((d) => !before.has(d.textContent)),
+          [{ opacity: 0, transform: "translateX(-10px)", background: "#e5efe9" }, { opacity: 1, transform: "none", background: "transparent" }],
+          { step: 120, duration: 900 });
   $("#bottle-fill").style.height = `${Math.min(100, (b.answers.length / 4) * 100)}%`;
 }
 
@@ -96,8 +149,8 @@ $("#mic").onclick = () => {
     let t = ""; for (const r of e.results) t += r[0].transcript;
     $("#answer").value = (base + " " + t).trim();
   };
-  rec.onend = () => { rec = null; $("#mic").classList.remove("listening"); $("#mic").textContent = "● Speak"; };
-  rec.start(); $("#mic").classList.add("listening"); $("#mic").textContent = "■ Stop";
+  rec.onend = () => { rec = null; $("#mic").classList.remove("listening"); };
+  rec.start(); $("#mic").classList.add("listening");
 };
 
 // ---------------------------------------------------------------- pause + feed
@@ -107,31 +160,60 @@ function listen() {
     const ev = JSON.parse(m.data);
     S.events.push(ev);
     const k = document.createElement("div");
-    k.innerHTML = `<b>${esc(ev.agent)}</b> · ${esc(ev.content)}`;
+    k.innerHTML = `<span class="tick">✓</span><b>${esc(ev.agent)}</b> · ${esc(ev.content)}`;
     $("#kitchen").appendChild(k);
+    anim(k, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 380 });
     while ($("#kitchen").children.length > 7) $("#kitchen").firstChild.remove();
+    if (ev.meta?.candidates) countTo($("#scored"), ev.meta.candidates);
     renderFeed();
     if (ev.agent === "Webhook") onReply();
   };
 }
 
 async function runReading() {
-  show("pause");
+  await show("pause");
   const names = S.world.sample_names;
-  let i = 0;
-  const t = setInterval(() => { $("#shuffle").textContent = names[i++ % names.length]; }, 90);
+  const deck = $("#shuffle");
+  deck.innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="deck-card" style="--i:${i}">${esc(names[i])}</div>`).join("");
+  let i = 5;
+  const t = setInterval(() => {
+    const top = deck.lastElementChild;
+    anim(top, [{ transform: "translateY(0) rotate(0)", opacity: 1 }, { transform: "translateY(-46px) rotate(-6deg)", opacity: 0 }], { duration: 220, fill: "none" })
+      ?.finished.then(() => { top.textContent = names[i++ % names.length]; deck.prepend(top); });
+    if (RM) { top.textContent = names[i++ % names.length]; }
+  }, 160);
   const started = Date.now();
   const r = await api(`/api/sessions/${S.sid}/reading`, { method: "POST" });
-  const wait = Math.max(0, 2600 - (Date.now() - started)); // let the shuffle breathe
-  setTimeout(() => { clearInterval(t); S.cards = r.cards; S.cardIdx = 0; renderCard(); show("reading"); }, wait);
+  await sleep(Math.max(0, 3200 - (Date.now() - started))); // let the scan read as work
+  clearInterval(t);
+  S.cards = r.cards; S.cardIdx = 0;
+  await show("reading");
+  renderCard(0);
+}
+
+function countTo(el, to) {
+  if (!el) return;
+  const from = parseInt(el.textContent) || 0, t0 = performance.now();
+  const step = (now) => { const f = Math.min(1, (now - t0) / 1200); el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - f, 3))); if (f < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
 }
 
 // ---------------------------------------------------------------- reading
 function cardFront(c) {
-  const blur = (1 - c.clarity) * 3.2, op = 0.35 + 0.65 * c.clarity;
-  let html = `<div class="front-text" style="filter: blur(${blur.toFixed(2)}px); opacity:${op.toFixed(2)}">${esc(c.front_text)}</div>`;
-  if (c.companies?.length) html += `<div class="companies">${c.companies.slice(0, 10).map((x) => `<span class="chip">${esc(x.name)}</span>`).join("")}</div>`;
+  let html = `<div class="front-text"></div>`;
+  if (c.companies?.length) html += `<div class="companies">${c.companies.slice(0, 10).map((x) => `<span class="chip" data-id="${x.id}">${esc(x.name)}</span>`).join("")}</div>`;
   return html;
+}
+
+// confidence shows as clarity: words resolve, then settle at the card's own focus
+function playFront(c, delay = 0) {
+  const ft = $("#card-front .front-text");
+  const blur = (1 - c.clarity) * 3.2, op = 0.35 + 0.65 * c.clarity;
+  reveal(ft, c.front_text, { delay });
+  ft.style.filter = `blur(${blur.toFixed(2)}px)`; ft.style.opacity = op.toFixed(2);
+  anim(ft, [{ filter: "blur(10px)", opacity: 1 }, { filter: `blur(${blur.toFixed(2)}px)`, opacity: op }], { duration: 1600, delay });
+  stagger(document.querySelectorAll("#card-front .chip"), [{ opacity: 0, transform: "translateY(10px) scale(.92)" }, { opacity: 1, transform: "none" }],
+          { delay: delay + 500, step: 60 });
 }
 
 function cardBack(c) {
@@ -147,8 +229,13 @@ function cardBack(c) {
   return html;
 }
 
-function renderCard() {
+async function renderCard(dir = 1, { swapOnly = false } = {}) {
   const c = S.cards[S.cardIdx];
+  const scene = document.querySelector(".card-scene");
+  if (!swapOnly && dir && $("#card-front").innerHTML && !RM) {
+    await anim(scene, [{ transform: "none", opacity: 1 }, { transform: `translateX(${-70 * dir}px) rotate(${-3 * dir}deg)`, opacity: 0 }],
+               { duration: 300, easing: "cubic-bezier(.4,0,1,1)" })?.finished;
+  }
   $("#card").classList.remove("flipped");
   $("#card-eyebrow").textContent = EYEBROW[c.kind] || c.kind;
   $("#card-front").innerHTML = cardFront(c);
@@ -156,19 +243,29 @@ function renderCard() {
   $("#card-diff").textContent = c.diff || "";
   $("#flip").style.display = c.receipts.length || Object.keys(c.stats).length ? "" : "none";
   for (const id of ["#yes", "#no", "#no-text"]) $(id).style.display = c.revisable ? "" : "none";
-  $("#next-card").textContent = S.cardIdx === S.cards.length - 1 ? "Accounts" : "Next";
+  $("#next-card").title = S.cardIdx === S.cards.length - 1 ? "Accounts" : "Next";
   $("#dots").innerHTML = S.cards.map((_, i) => `<span class="${i === S.cardIdx ? "on" : ""}"></span>`).join("");
   $("#no-text").value = "";
+  window.MarketMap?.show(c.map || {});
+  if (!swapOnly) anim(scene, [{ transform: `translateY(36px) rotate(${1.5 * dir}deg) scale(.97)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 700 });
+  playFront(c, swapOnly ? 0 : 180);
+  if (c.diff) anim($("#card-diff"), [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 500, delay: 300 });
 }
 
 $("#flip").onclick = () => $("#card").classList.toggle("flipped");
 $("#next-card").onclick = () => {
-  if (S.cardIdx < S.cards.length - 1) { S.cardIdx++; renderCard(); } else openDash();
+  if (S.cardIdx < S.cards.length - 1) { S.cardIdx++; renderCard(1); } else openDash();
 };
 async function sendFeedback(text) {
   const c = S.cards[S.cardIdx];
   const nc = await api(`/api/sessions/${S.sid}/cards/${c.id}/feedback`, { method: "POST", body: { text } });
-  S.cards[S.cardIdx] = nc; renderCard();
+  // show what the correction removed before the card rewrites itself
+  const gone = new Set(nc.map?.removed || []);
+  const chips = [...document.querySelectorAll("#card-front .chip")].filter((ch) => gone.has(+ch.dataset.id));
+  chips.forEach((ch) => ch.classList.add("struck"));
+  if (chips.length) await sleep(900);
+  await anim($("#card-front .front-text"), [{ opacity: 1 }, { opacity: 0, filter: "blur(6px)" }], { duration: 300 })?.finished;
+  S.cards[S.cardIdx] = nc; renderCard(0, { swapOnly: true });
 }
 $("#yes").onclick = () => sendFeedback("Yes");
 $("#no").onclick = () => sendFeedback($("#no-text").value || "No");
@@ -181,34 +278,55 @@ document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => tab(b
 function tab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === name));
+  anim(document.getElementById(name), [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 420 });
   ({ accounts: loadAccounts, pipeline: loadPipeline, "bottle-tab": loadBottle, proof: loadProof, feed: renderFeed })[name]?.();
 }
-function openDash() { show("dash"); tab("accounts"); }
+async function openDash() { await show("dash"); tab("accounts"); }
 
-async function loadAccounts() {
+async function loadAccounts({ animate = true } = {}) {
   const r = await api(`/api/sessions/${S.sid}/accounts`);
   meter(r.credits);
+  const top = Math.max(...r.accounts.map((a) => a.score), 1);
   $("#account-list").innerHTML = r.accounts.map((a) => `
     <div class="account">
-      <div class="score"><b>${a.score.toFixed(2)}</b><br>market ${a.market.toFixed(2)} · you ${a.founder.toFixed(2)} · λ ${a.lambda.toFixed(2)}</div>
+      <div class="score" title="market ${a.market.toFixed(2)} · founder ${a.founder.toFixed(2)} · λ ${a.lambda.toFixed(2)}">${a.score.toFixed(2)}</div>
       <h3>${esc(a.name)}</h3>
-      <div class="sub">${esc(a.industry)} · ${esc(a.size)} people · ${esc(a.stage.replace("_", " "))}${a.enriched ? ` · ${esc(a.contact.first)}, ${esc(a.contact.role)} &lt;${esc(a.contact.email)}&gt;` : ""}</div>
+      <div class="scorebar"><i style="--w:${(a.score / top * 100).toFixed(1)}%"></i></div>
+      <div class="sub" data-acct="${a.id}">${esc(a.industry)} · ${esc(a.size)} people · ${esc(a.stage.replace("_", " "))}${a.enriched ? ` · <span class="contact">${esc(a.contact.first)}, ${esc(a.contact.role)} &lt;${esc(a.contact.email)}&gt;</span>` : ""}</div>
       <div class="chips">${a.chips.map((ch) => `<a class="chip ${ch.kind}" href="${esc(ch.receipt.url)}" target="_blank" title="${esc(ch.receipt.date)}">${esc(ch.label)}</a>`).join("")}</div>
-      <button class="ghost" onclick="draftFor(${a.id})">Draft email</button>
+      <button class="btn" onclick="draftFor(${a.id})"><i class="i" style="--i:url(/static/vendor/icons/mail.svg)"></i>Draft</button>
     </div>`).join("");
+  if (animate) {
+    stagger(document.querySelectorAll(".account"), [{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "none" }], { step: 90 });
+    document.querySelectorAll(".scorebar i").forEach((b, i) => anim(b, [{ width: "0%" }, { width: b.style.getPropertyValue("--w") }], { duration: 900, delay: 200 + i * 90 }));
+    stagger(document.querySelectorAll(".account .chip"), [{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, transform: "none" }], { delay: 350, step: 30 });
+  }
 }
 
 function meter(credits, start = 30) {
   $("#meter-fill").style.width = `${Math.max(0, (credits / start) * 100)}%`;
-  $("#meter-text").textContent = `${credits.toFixed(0)} of ${start} credits left · enrichment runs in order of score ÷ cost`;
+  $("#meter-text").textContent = `${credits.toFixed(0)}/${start} credits`;
 }
 
+// credits drain one account at a time, in the order Flexprice spent them
 $("#enrich").onclick = async () => {
   $("#enrich").disabled = true;
   const r = await api(`/api/sessions/${S.sid}/enrich`, { method: "POST" });
+  let bal = r.start;
+  for (const l of r.ledger) {
+    bal = l.balance;
+    meter(bal, r.start);
+    $("#meter-text").textContent = `${bal.toFixed(0)}/${r.start} · ${l.account}`;
+    const coin = document.createElement("span");
+    coin.className = "coin"; coin.textContent = `−${l.credits}`;
+    $(".meter").appendChild(coin);
+    anim(coin, [{ opacity: 0, transform: "translateY(0)" }, { opacity: 1, offset: 0.2 }, { opacity: 0, transform: "translateY(42px)" }], { duration: 700 })?.finished.then(() => coin.remove());
+    await sleep(380);
+  }
+  await loadAccounts({ animate: false });
+  document.querySelectorAll(".contact").forEach((c) => anim(c, [{ filter: "blur(6px)", opacity: 0 }, { filter: "blur(0)", opacity: 1 }], { duration: 800 }));
   meter(r.balance, r.start);
-  await loadAccounts();
-  if (r.skipped.length) $("#meter-text").textContent += ` · out of budget for ${r.skipped.join(", ")}`;
+  if (r.skipped.length) $("#meter-text").textContent += ` · ${r.skipped.length} skipped (budget)`;
 };
 
 window.draftFor = async (id) => {
@@ -221,50 +339,79 @@ window.draftFor = async (id) => {
 function renderDraft(d) {
   $("#draft-area").innerHTML = `
     <p class="weight">${esc(d.why)}</p>
-    <p class="fine">To ${esc(d.to_name)} &lt;${esc(d.to)}&gt; · ${esc(d.subject)}</p>
-    <textarea id="draft-body">${esc(d.body)}</textarea>
-    <div id="flags">${d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">No AI-sounding phrases found.</p>`}</div>
-    <div class="row"><span class="grow"></span><button class="primary" id="approve">Approve and send</button></div>
+    <p class="mono small muted">${esc(d.to)} · ${esc(d.subject)}</p>
+    <div class="draft-wrap"><textarea id="draft-body"></textarea><div class="sweep"></div></div>
+    <div id="flags"></div>
+    <div class="row" style="display:flex;margin-top:10px"><span class="grow"></span><button class="btn primary" id="approve"><i class="i" style="--i:url(/static/vendor/icons/send.svg)"></i>Approve & send</button></div>
     <p class="fine" id="sent-line"></p>`;
+  typeDraft(d);
   $("#approve").onclick = async () => {
     const r = await api(`/api/sessions/${S.sid}/drafts/${d.id}/approve`, { method: "POST", body: { body: $("#draft-body").value } });
     S.drafts[d.id] = r;
     $("#approve").disabled = true;
     const link = `${location.origin}/reply/${d.id}`;
-    $("#sent-line").innerHTML = `Sent via ${esc(r.delivery.channel)}. Open <a href="${link}" target="_blank">${link}</a> on a phone to reply as ${esc(d.to_name)}.`;
+    $("#sent-line").innerHTML = `<span class="mono small">sent · reply as ${esc(d.to_name)}: <a href="${link}" target="_blank">${link}</a></span>`;
+    anim($("#sent-line"), [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }]);
+    await sleep(1400);
+    tab("pipeline");
   };
 }
 
+async function typeDraft(d) {
+  const ta = $("#draft-body"), btn = $("#approve");
+  btn.disabled = true;
+  if (RM) ta.value = d.body;
+  else for (let i = 0; i <= d.body.length; i += 3) { ta.value = d.body.slice(0, i); await new Promise((r) => requestAnimationFrame(r)); }
+  ta.value = d.body;
+  const sw = document.querySelector(".sweep");
+  await anim(sw, [{ transform: "translateY(0)", opacity: 0.9 }, { transform: `translateY(${ta.offsetHeight - 4}px)`, opacity: 0.9 }, { opacity: 0 }], { duration: 900, easing: "linear" })?.finished;
+  $("#flags").innerHTML = d.flags.length ? d.flags.map((f) => `<div class="flag">⚑ ${esc(f)}</div>`).join("") : `<p class="fine">AI-sounding check: nothing found.</p>`;
+  anim($("#flags"), [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  btn.disabled = false;
+}
+
 async function loadPipeline(highlight) {
+  const prev = {};
+  document.querySelectorAll(".kcard").forEach((k) => (prev[k.dataset.acct] = k.getBoundingClientRect()));
   const r = await api(`/api/sessions/${S.sid}/pipeline`);
   $("#kanban").innerHTML = Object.entries(r.columns).map(([col, items]) => `
-    <div class="col"><h4>${col}</h4>${items.map((it) => `<div class="kcard ${highlight === it.account ? "just" : ""}">${esc(it.account)}</div>`).join("")}</div>`).join("");
+    <div class="col"><h4>${col}</h4>${items.map((it) => `<div class="kcard ${highlight === it.account ? "just" : ""}" data-acct="${esc(it.account)}">${esc(it.account)}</div>`).join("")}</div>`).join("");
+  // FLIP: cards travel from their old column to the new one
+  document.querySelectorAll(".kcard").forEach((k, i) => {
+    const old = prev[k.dataset.acct], now = k.getBoundingClientRect();
+    if (old && (old.left !== now.left || old.top !== now.top))
+      anim(k, [{ transform: `translate(${old.left - now.left}px, ${old.top - now.top}px)` }, { transform: "none" }], { duration: 900 });
+    else if (!old) anim(k, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 400, delay: i * 50 });
+  });
 }
 
 async function onReply() {
   const last = S.events.filter((e) => e.agent === "Webhook").pop();
   const name = last?.content.split(" replied")[0];
-  tab("pipeline");
+  if (!document.querySelector("#pipeline.on")) { tab("pipeline"); await sleep(450); }
   await loadPipeline(name);
 }
 
 async function loadBottle() {
   const b = await api(`/api/sessions/${S.sid}/bottle`);
   $("#bottle-inspect").innerHTML = `
-    <h3>Rules and their trust, q ~ Beta(α, β)</h3>
+    <h3>Rules · trust ~ Beta(α, β)</h3>
     <table><tr><th>Kind</th><th>Rule</th><th>Trust</th><th>α</th><th>β</th></tr>
     ${b.rules.map((r) => `<tr><td>${esc(r.kind)}</td><td>${esc(r.text)}</td><td><span class="trust" style="width:${r.trust * 80}px"></span>${r.trust.toFixed(2)}</td><td>${r.alpha}</td><td>${r.beta}</td></tr>`).join("")}</table>
-    <p class="fine">Experience set E: ${[...b.customers, ...b.lost].map(esc).join(", ")} · constraints: ${esc(b.constraints)}</p>
-    <h3>Every feature the hit finder tested</h3>
+    <p class="mono small muted">E = ${[...b.customers, ...b.lost].map(esc).join(", ")} · filter: ${esc(b.constraints)}</p>
+    <h3>Features tested</h3>
     <table><tr><th>Feature</th><th>k/n</th><th>base rate</th><th>p</th><th>BH q</th><th>shrunk lift</th><th>said it?</th><th>shown</th></tr>
     ${b.hit_features.map((f) => `<tr><td>${esc(f.label)}</td><td>${f.k}/${f.n}</td><td>${(f.base_rate * 100).toFixed(1)}%</td><td>${f.p_chance.toExponential(1)}</td><td>${f.q_value.toFixed(3)}</td><td>${f.shrunk_lift.toFixed(1)}</td><td>${f.mentioned ? "yes" : ""}</td><td>${f.passes ? "✓" : ""}</td></tr>`).join("")}</table>`;
 }
 
 function renderFeed() {
   if (!S.world) return;
-  $("#band-status").textContent = `Band: ${S.world.integrations.band}. Every agent step below is posted as a Band event.`;
+  $("#band-status").textContent = `band · ${S.world.integrations.band.split(" ")[0]}`;
+  const had = $("#feed-list").children.length;
   $("#feed-list").innerHTML = S.events.slice().reverse().map((e) => `
     <li><span class="agent">${esc(e.agent)}</span><span class="type ${e.type === "error" ? "error" : ""}">${esc(e.type)}</span><span>${esc(e.content)}</span><span class="band">${esc(e.band)}</span></li>`).join("");
+  const fresh = [...$("#feed-list").children].slice(0, Math.max(0, $("#feed-list").children.length - had));
+  if (document.querySelector("#feed.on")) stagger(fresh, [{ opacity: 0, transform: "translateX(-12px)" }, { opacity: 1, transform: "none" }], { step: 40, duration: 400 });
 }
 
 // ---------------------------------------------------------------- model & proof
@@ -292,7 +439,7 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
     `<text x="${W - R + 6}" y="${Y(ref.y) + 4}" font-size="10" fill="#52514e">${esc(ref.label)}</text>`;
   series.forEach((s, i) => {
     const d = s.points.map((p, j) => `${j ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
-    svg += `<path d="${d}" fill="none" stroke="${SERIES[i]}" stroke-width="2" stroke-linejoin="round"/>`;
+    svg += `<path class="draw" d="${d}" fill="none" stroke="${SERIES[i]}" stroke-width="2" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${RM ? 0 : 1}"/>`;
     const last = s.points[s.points.length - 1];
     if (series.length > 1 || !ref) svg += `<text x="${X(last[0]) + 6}" y="${Y(last[1]) + 4 + i * 0}" font-size="10" fill="#0b0b0b">${esc(s.short || s.name)}</text>`;
   });
@@ -302,6 +449,11 @@ function lineChart({ title, series, xLabel, yLabel, yFmt = (v) => v.toFixed(2), 
   const id = "c" + Math.random().toString(36).slice(2, 8);
   setTimeout(() => {
     const root = document.getElementById(id); if (!root) return;
+    new IntersectionObserver((ents, ob) => ents.forEach((en) => {
+      if (!en.isIntersecting) return;
+      root.querySelectorAll("path.draw").forEach((p, i) => anim(p, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1400, delay: i * 200 }));
+      ob.disconnect();
+    }), { threshold: 0.4 }).observe(root);
     const sv = root.querySelector("svg"), tip = root.querySelector(".tip"), xh = sv.querySelector(".xh");
     sv.addEventListener("mousemove", (e) => {
       const r = sv.getBoundingClientRect(), vx = ((e.clientX - r.left) / r.width) * W;

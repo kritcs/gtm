@@ -52,6 +52,15 @@ The engine builds in about 4 s on a laptop CPU. A reading takes about 0.3 s, wel
 | Integrations | `api/integrations/band.py`, `flexprice.py` | Real API calls when keys are set; otherwise the same payloads are mirrored locally. |
 | API + UI | `api/main.py`, `apps/web/` | FastAPI with SSE; a static full-screen UI with no Node build. |
 
+## Design and open-source UI pieces
+
+- **Look:** [shadcn/ui](https://github.com/shadcn-ui/ui)'s zinc design tokens (MIT), the same foundation as [Vercel AI Elements](https://github.com/vercel/ai-elements). Copied as CSS variables, with no React build.
+- **Type:** [Geist](https://github.com/vercel/geist-font) (SIL OFL).
+- **Icons:** [Lucide](https://github.com/lucide-icons/lucide) (ISC).
+- **Market map:** [three.js](https://github.com/mrdoob/three.js) r170 (MIT), in `apps/web/map3d.js`. All 900 companies are plotted as a 3D point cloud laid out by the model's embeddings (PCA). Each card lights up its evidence on the map, and a scan wave runs while the engine scores companies.
+
+All of these are vendored in `apps/web/vendor/` with their licenses, so the demo needs no network.
+
 ## Integrations (all optional; the demo runs offline)
 
 | Env var | Effect |

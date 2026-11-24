@@ -4,108 +4,104 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Intuition in a bottle</title>
+  <link rel="preload" href="/static/vendor/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <!-- 1. Enter -->
   <section id="enter" class="stage active">
     <div class="center">
-      <p class="eyebrow">Intuition in a bottle</p>
-      <h1 class="display">Four questions about your customers.<br>Then a ranked list of who to contact.</h1>
-      <button id="begin" class="primary">Begin</button>
-      <p class="fine" id="world-line">Loading the market…</p>
+      <p class="mono muted">intuition in a bottle</p>
+      <h1 class="display">Who buys next.</h1>
+      <button id="begin" class="btn primary lg" aria-label="Begin">Begin <i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
+      <p class="mono muted small" id="world-line"></p>
     </div>
   </section>
 
-  <!-- 2. Talk -->
   <section id="talk" class="stage">
     <div class="talk-grid">
       <div class="talk-main">
-        <p class="eyebrow" id="q-count"></p>
+        <p class="mono muted small" id="q-count"></p>
         <h2 class="question" id="question"></h2>
         <div class="phrases" id="phrases"></div>
-        <div class="answer-box">
-          <textarea id="answer" rows="4" placeholder="Speak or type."></textarea>
-          <div class="row">
-            <button id="mic" class="ghost" title="Speak (Web Speech API)">● Speak</button>
-            <button id="demo-answer" class="link">fill demo answer</button>
+        <div class="field">
+          <textarea id="answer" rows="3" aria-label="Your answer"></textarea>
+          <div class="field-bar">
+            <button id="mic" class="btn icon" title="Speak" aria-label="Speak"><i class="i" style="--i:url(/static/vendor/icons/mic.svg)"></i></button>
+            <button id="demo-answer" class="btn icon" title="Fill demo answer" aria-label="Fill demo answer"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i></button>
             <span class="grow"></span>
-            <button id="send" class="primary">Next</button>
+            <button id="send" class="btn primary icon" title="Next" aria-label="Next"><i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
           </div>
         </div>
       </div>
       <aside class="bottle" id="bottle">
-        <p class="eyebrow">Extracted so far</p>
         <div class="bottle-glass"><div class="bottle-fill" id="bottle-fill"></div></div>
         <dl id="bottle-list"></dl>
       </aside>
     </div>
   </section>
 
-  <!-- 3. Pause -->
   <section id="pause" class="stage">
     <div class="center">
-      <h2 class="display small">Scoring companies…</h2>
-      <div class="shuffle" id="shuffle"></div>
-      <div class="kitchen" id="kitchen"></div>
+      <p class="count"><span id="scored">0</span></p>
+      <p class="mono muted small">companies scored</p>
+      <div class="deck" id="shuffle"></div>
+      <div class="kitchen mono" id="kitchen"></div>
     </div>
   </section>
 
-  <!-- 4-8. The reading -->
   <section id="reading" class="stage">
     <div class="reading-wrap">
-      <p class="eyebrow" id="card-eyebrow"></p>
+      <p class="mono muted small" id="card-eyebrow"></p>
       <div class="card-scene">
         <div class="card" id="card">
           <div class="face front" id="card-front"></div>
           <div class="face back" id="card-back"></div>
         </div>
       </div>
-      <div class="diff" id="card-diff"></div>
+      <div class="diff mono small" id="card-diff"></div>
       <div class="card-actions" id="card-actions">
-        <button class="ghost" id="flip">Evidence</button>
+        <button class="btn icon" id="flip" title="Evidence" aria-label="Evidence"><i class="i" style="--i:url(/static/vendor/icons/scan-eye.svg)"></i></button>
         <span class="grow"></span>
-        <button class="ghost" id="yes">Correct</button>
-        <input id="no-text" placeholder="What's wrong?">
-        <button class="ghost" id="no">Wrong</button>
-        <button class="primary" id="next-card">Next</button>
+        <button class="btn icon" id="yes" title="Right" aria-label="Right"><i class="i" style="--i:url(/static/vendor/icons/check.svg)"></i></button>
+        <input id="no-text" class="input" placeholder="What's off?" aria-label="Correction">
+        <button class="btn icon" id="no" title="Wrong" aria-label="Wrong"><i class="i" style="--i:url(/static/vendor/icons/x.svg)"></i></button>
+        <button class="btn primary icon" id="next-card" title="Next" aria-label="Next"><i class="i" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
       </div>
       <div class="dots" id="dots"></div>
     </div>
   </section>
 
-  <!-- Dashboard -->
   <section id="dash" class="stage">
     <header class="dash-head">
-      <h2>Ledgerlight · GTM engine</h2>
+      <button class="btn ghost icon" id="reread" title="Back to the reading" aria-label="Back to the reading"><i class="i flip-x" style="--i:url(/static/vendor/icons/arrow-right.svg)"></i></button>
       <nav id="tabs">
-        <button data-tab="accounts" class="on">Accounts</button>
-        <button data-tab="outreach">Outreach</button>
-        <button data-tab="pipeline">Pipeline</button>
-        <button data-tab="bottle-tab">Bottle</button>
-        <button data-tab="feed">Band feed</button>
-        <button data-tab="proof">Model &amp; proof</button>
+        <button data-tab="accounts" class="on"><i class="i" style="--i:url(/static/vendor/icons/building-2.svg)"></i>Accounts</button>
+        <button data-tab="outreach"><i class="i" style="--i:url(/static/vendor/icons/square-pen.svg)"></i>Draft</button>
+        <button data-tab="pipeline"><i class="i" style="--i:url(/static/vendor/icons/columns-3.svg)"></i>Pipeline</button>
+        <button data-tab="bottle-tab"><i class="i" style="--i:url(/static/vendor/icons/wand-sparkles.svg)"></i>Bottle</button>
+        <button data-tab="feed"><i class="i" style="--i:url(/static/vendor/icons/activity.svg)"></i>Agents</button>
+        <button data-tab="proof"><i class="i" style="--i:url(/static/vendor/icons/flask-conical.svg)"></i>Proof</button>
       </nav>
-      <button class="link" id="reread">← the reading</button>
     </header>
     <main>
       <div class="tab on" id="accounts">
         <div class="meter">
-          <div><p class="eyebrow">Flexprice credits</p><div class="meter-bar"><div id="meter-fill"></div></div>
-            <p class="fine" id="meter-text"></p></div>
-          <button class="primary" id="enrich">Enrich top accounts</button>
+          <div class="meter-bar"><div id="meter-fill"></div></div>
+          <span class="mono small" id="meter-text"></span>
+          <button class="btn" id="enrich"><i class="i" style="--i:url(/static/vendor/icons/coins.svg)"></i>Enrich</button>
         </div>
         <div id="account-list" class="accounts"></div>
       </div>
-      <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="fine">Pick an account and press “Draft email”.</p></div></div>
+      <div class="tab" id="outreach"><div id="draft-area" class="draft-area"><p class="mono muted small">pick an account</p></div></div>
       <div class="tab" id="pipeline"><div class="kanban" id="kanban"></div></div>
       <div class="tab" id="bottle-tab"><div id="bottle-inspect"></div></div>
-      <div class="tab" id="feed"><p class="fine" id="band-status"></p><ol class="feed" id="feed-list"></ol></div>
+      <div class="tab" id="feed"><p class="mono muted small" id="band-status"></p><ol class="feed" id="feed-list"></ol></div>
       <div class="tab" id="proof"><div id="proof-area"></div></div>
     </main>
   </section>
 
-  <footer class="sim-note" id="sim-note">Simulated market data</footer>
+  <footer class="sim-note mono" id="sim-note">synthetic market</footer>
   <script src="/static/app.js"></script>
+  <script type="module" src="/static/map3d.js"></script>
 </body>
 </html>

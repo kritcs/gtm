@@ -78,6 +78,15 @@ class MarketModel:
         """Founder pain vector, in the same hybrid space as post_vecs."""
         return self.lsa.transform_hybrid([text])[0]
 
+    def layout_3d(self) -> np.ndarray:
+        """PCA of [graph embedding, text embedding] to 3D, scaled to roughly [-1, 1]: the market map."""
+        X = np.hstack([self.company_graph, self.company_text]).astype(np.float64)
+        X -= X.mean(0)
+        _, _, Vt = np.linalg.svd(X, full_matrices=False)
+        P = X @ Vt[:3].T
+        P /= np.abs(P).max(0) + 1e-9
+        return P.astype(np.float32)
+
     def experience_distance(self, E: list[int]) -> np.ndarray:
         """d(c, E): min cosine distance in graph space to the founder's experience set."""
         if not E:

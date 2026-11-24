@@ -45,6 +45,7 @@ class Engine:
         self.band = BandClient()
         self.flex = FlexpriceClient()
         self.sessions: dict[str, Session] = {}
+        self.layout = self.model.layout_3d()
         self.build_seconds = round(time.time() - t, 2)
 
     def summary(self) -> dict:
@@ -163,6 +164,7 @@ class Session:
 
         reflection = self._reflection()
         nxt = self._next_step()
+        hit.map = {"customers": list(b.customers)}
         cards = [reflection, hit, disc, need, blind, nxt]
         for c in cards:
             self._verify_receipts(c)
@@ -190,7 +192,7 @@ class Session:
         pain = self.bottle.phrases[0] if self.bottle.phrases else "none recorded"
         return Card(id="reflection", kind="reflection", front_text=f"Customers: {who}. Problem: {pain}.",
                     back_text="Extracted from the interview. Each item is stored as a rule; replies change its trust score.",
-                    clarity=0.9, revisable=False,
+                    clarity=0.9, revisable=False, map={"customers": list(self.bottle.customers)},
                     stats={"rules": [r.to_dict() for r in self.bottle.rules]})
 
     def _next_step(self) -> Card:
@@ -204,7 +206,9 @@ class Session:
                     back_text=f"Top evidence: {ch['label']}. Score {a['score']} = market {a['market']} + "
                               f"founder {a['founder']} weighted {a['lambda']}.",
                     clarity=0.85, receipts=[Receipt(**c["receipt"]) for c in a["chips"]],
-                    companies=[{"id": a["id"], "name": a["name"]}], stats={"account": a["id"]})
+                    companies=[{"id": a["id"], "name": a["name"]}], stats={"account": a["id"]},
+                    map={"customers": list(self.bottle.customers), "accounts": [x["id"] for x in self.accounts[:5]],
+                         "focus": [a["id"]]})
 
     def _verify_receipts(self, card: Card):
         posts = self.engine.graph.posts
@@ -277,6 +281,9 @@ class Session:
                                                        buyer=self._buyer(), now=e.now, founder_vec=fv, n=8)
             new = self._next_step()
         removed = [c for c in before if not self.constraints.allows(e.world.companies[c])]
+        seg_before = card.map.get("segment", [])
+        gone = [c for c in seg_before if not self.constraints.allows(e.world.companies[c])]
+        new.map = dict(new.map) | {"removed": gone}
         new = new.model_copy(update={"version": card.version + 1,
                                      "diff": f"Filter added: {self._constraint_text()}. Removed {len(removed)}, "
                                              f"re-ranked {rk.meta['candidates']}."})
