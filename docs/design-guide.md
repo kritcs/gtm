@@ -94,7 +94,7 @@ Motion must explain something: a reply moving a card, a belief curve shifting, a
 
 **The problem page (`#problem` in `index.html`)** makes one argument, and each point appears once:
 1. A startup's own data is too thin (cold start), and public data is noisy.
-2. Graph models need volume, so neither source works on its own.
+2. Traditional knowledge graphs need volume, so neither source works on its own.
 3. Our approach: the founder is the prior (Beta priors, and the graph learns only the correction). The graph is heterogeneous (typed nodes and edges, so a reply credits its signal). It re-fits as feedback arrives (Bayesian updates and fold-in).
 
 `problem-diagram.js` plays those three points in sync with the list. Don't add "instinct" or "intuition" anywhere else on the page.
