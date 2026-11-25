@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .data import N_FEAT
+from .data import N_FEAT, N_IND, N_SIZE
 
 
 class Block(nn.Module):
@@ -36,9 +36,12 @@ class Block(nn.Module):
 
 
 class PCRFM(nn.Module):
-    def __init__(self, d: int = 128, layers: int = 6, heads: int = 4, ff: int = 256, n_feat: int = N_FEAT):
+    def __init__(self, d: int = 128, layers: int = 6, heads: int = 4, ff: int = 256, n_feat: int = N_FEAT,
+                 seg_cross: bool = False):
         super().__init__()
         self.embed = nn.Sequential(nn.Linear(n_feat, d), nn.GELU(), nn.Linear(d, d))
+        # optional explicit industry x size segment embedding (v0.3); off = v0 behaviour, bit-for-bit
+        self.seg_emb = nn.Embedding(N_IND * N_SIZE, d) if seg_cross else None
         self.blocks = nn.ModuleList([Block(d, heads, ff) for _ in range(layers)])
         self.out = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, 1))
 
@@ -49,8 +52,15 @@ class PCRFM(nn.Module):
         eye = torch.eye(N, dtype=torch.bool, device=context.device)
         return context[:, None, :] | eye[None]
 
+    @staticmethod
+    def segment_id(x: torch.Tensor) -> torch.Tensor:
+        """Segment index from the industry / size one-hots at the start of every token."""
+        return x[..., :N_IND].argmax(-1) * N_SIZE + x[..., N_IND:N_IND + N_SIZE].argmax(-1)
+
     def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
         h = self.embed(x)
+        if self.seg_emb is not None:
+            h = h + self.seg_emb(self.segment_id(x))
         mask = self.attention_mask(context)
         for blk in self.blocks:
             h = blk(h, mask)

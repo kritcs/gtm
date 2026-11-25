@@ -174,3 +174,20 @@ def test_trust_mixture_prefers_oracle_component_for_oracle_founder():
     broad = replace(CPRConfig(), trust_mean=(0.0, 0.0), trust_sd=(0.5, 0.5))
     mix = fit_predict_mixture(*args, [(0.5, oracle), (0.5, broad)])
     assert mix.component_weights[0] > 0.5
+
+
+def test_pcrfm_seg_cross_default_off_and_segment_id():
+    import torch
+    from fprior.pfn.data import N_FEAT
+    from fprior.pfn.model import PCRFM
+    torch.manual_seed(0)
+    m0 = PCRFM(d=32, layers=1, heads=2, ff=64)
+    assert m0.seg_emb is None and not any("seg_emb" in k for k in m0.state_dict())
+    x = torch.zeros(1, 5, N_FEAT)
+    ind, siz = torch.tensor([0, 3, 7, 2, 5]), torch.tensor([0, 1, 3, 2, 0])
+    x[0, torch.arange(5), ind] = 1
+    x[0, torch.arange(5), 8 + siz] = 1
+    assert PCRFM.segment_id(x)[0].tolist() == (ind * 4 + siz).tolist()
+    m1 = PCRFM(d=32, layers=1, heads=2, ff=64, seg_cross=True)
+    ctx = torch.tensor([[True, True, False, False, False]])
+    assert m1(x, ctx).shape == (1, 5)

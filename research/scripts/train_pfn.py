@@ -62,6 +62,7 @@ def main():
     ap.add_argument("--tokens", action="store_true", help="founder as per-segment statement tokens with stated confidence (v0 prior only)")
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
+    ap.add_argument("--seg-cross", action="store_true", help="v0.3: explicit industry x size segment embedding (v0 prior only)")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=250)
@@ -87,6 +88,10 @@ def main():
         arch["encoder"] = True
     if a.tokens:
         arch["tokens"] = True
+    if a.seg_cross:
+        if a.tokens or a.relational:
+            raise SystemExit("--seg-cross is implemented for the plain v0 model only")
+        arch["seg_cross"] = True
     model = (PCRFMRel(**arch) if a.encoder else PCRFMTok(**arch) if a.tokens else PCRFM(**arch)).to(dev)
 
     def fwd(b):
