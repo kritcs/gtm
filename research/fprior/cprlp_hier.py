@@ -14,7 +14,7 @@ import numpy as np
 
 from .cprlp import CPRConfig, CPRResult, fit_predict
 
-MAIN_SD_GRID = (0.25, 0.5, 1.0)
+MAIN_SD_GRID = (0.0, 0.25, 0.5, 1.0)   # 0 = flat model; evidence chooses whether to pool
 
 
 def main_effect_features(industry: np.ndarray, size: np.ndarray, n_ind: int = 8, n_size: int = 4) -> np.ndarray:

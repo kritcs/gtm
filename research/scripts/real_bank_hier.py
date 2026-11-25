@@ -33,6 +33,7 @@ from fprior.sim import FounderConfig, OutreachConfig, make_founder, run_outreach
 RHOS = [1.0, 0.5, 0.0, -0.5]
 NS = [0, 1, 5, 10, 20, 50]
 SEEDS = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("results/real_bank_hier")
 
 
 def main():
@@ -72,8 +73,8 @@ def main():
         lines.append("")
     md = "\n".join(lines)
     print(md)
-    (ROOT / "results/real_bank_hier.md").write_text(md)
-    (ROOT / "results/real_bank_hier.json").write_text(json.dumps(rows))
+    (ROOT / OUT.with_suffix(".md")).write_text(md)
+    (ROOT / OUT.with_suffix(".json")).write_text(json.dumps(rows))
 
 
 if __name__ == "__main__":
