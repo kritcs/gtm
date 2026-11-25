@@ -81,3 +81,17 @@ def test_metrics():
     assert expected_auc(p, p) > 0.6
     assert abs(expected_auc(np.zeros(500), p) - 0.5) < 1e-9
     assert lift_at_k(p, p, 50, rng) > 1.5
+
+
+def test_omega_average_and_expected_p():
+    m = make_market(MarketConfig(n_accounts=600), np.random.default_rng(11))
+    f = make_founder(m, FounderConfig(reliability=0.8), np.random.default_rng(12))
+    out = run_outreach(m, f, OutreachConfig(n_customers=8), np.random.default_rng(13))
+    args = (m.segment, m.n_segments, m.graph_cov, f.segment_logit, out.contacted, out.outcome)
+    grid = CPRConfig().omega_grid
+    avg = fit_predict(*args, CPRConfig(omega_average=True, rank_by="p"))
+    assert min(grid) <= avg.omega <= max(grid)
+    assert np.all((avg.prob > 0) & (avg.prob < 1))
+    # averaged mean lies within the per-omega means, account by account
+    singles = np.array([fit_predict(*args, CPRConfig(omega_grid=None, omega=o)).logit for o in grid])
+    assert np.all(avg.logit >= singles.min(0) - 1e-9) and np.all(avg.logit <= singles.max(0) + 1e-9)

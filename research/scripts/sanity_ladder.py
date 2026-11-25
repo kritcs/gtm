@@ -52,7 +52,7 @@ def run_cell(market, rho, n, seed):
         "popularity": market.degree.astype(float),
         "prior_only": founder.segment_logit[market.segment],
         "oracle_p": market.true_logit,
-        **{k: v.logit for k, v in fits.items()},
+        **{k: v.score for k, v in fits.items()},
     }
     p_u = market.p[U]
     row = {"seed": seed, "rho": rho, "n": n, "contacts": int(len(out.contacted)),
