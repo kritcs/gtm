@@ -25,17 +25,20 @@ from fprior.cprlp import CPRConfig, fit_predict  # noqa: E402
 from fprior.metrics import expected_auc, lift_at_k  # noqa: E402
 from fprior.pfn.data import make_tokens  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
+from fprior.pfn.model_tok import PCRFMTok  # noqa: E402
+from fprior.pfn.data import founder_token_features  # noqa: E402
 from fprior.sim import (FounderConfig, MarketConfig, OutreachConfig, make_founder,  # noqa: E402
                         make_market, run_outreach)
 
 RHOS = [1.0, 0.75, 0.5, 0.25, 0.0, -0.5]
 NS = [0, 1, 5, 10, 20, 50]
 TOP_K = 100
+STATED_SD = 0.7   # neutral stated uncertainty for founders who state none (token models)
 
 
 def load(path, dev):
     ck = torch.load(path, map_location=dev)
-    m = PCRFM(**ck["arch"]).to(dev).eval()
+    m = (PCRFMTok if ck["arch"].get("tokens") else PCRFM)(**ck["arch"]).to(dev).eval()
     m.load_state_dict(ck["state"])
     return m
 
@@ -46,6 +49,15 @@ def pfn_scores(model, market, founder, out, use_founder, dev):
     ctx[out.contacted] = True
     outcome = np.zeros(market.n)
     outcome[out.contacted] = out.outcome
+    if isinstance(model, PCRFMTok):
+        # belief lives in founder tokens; this founder states no confidence -> neutral stated sd
+        x = make_tokens(t(market.industry), t(market.size),
+                        t(founder.segment_logit[market.segment], torch.float32),
+                        torch.tensor([0.0], device=dev), t(ctx, torch.bool), t(outcome, torch.float32))
+        fl = torch.as_tensor(founder.segment_logit, dtype=torch.float32, device=dev)[None]
+        ftok, fmask = founder_token_features(fl, torch.full_like(fl, STATED_SD), torch.zeros_like(fl, dtype=torch.bool),
+                                             torch.tensor([1.0 if use_founder else 0.0], device=dev))
+        return model.predict(x, t(ctx, torch.bool), ftok, fmask).cpu().numpy()
     x = make_tokens(t(market.industry), t(market.size),
                     t(founder.segment_logit[market.segment], torch.float32),
                     torch.tensor([1.0 if use_founder else 0.0], device=dev),

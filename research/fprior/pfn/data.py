@@ -39,6 +39,9 @@ class PriorConfig:
     base_rate_range: tuple[float, float] = (0.02, 0.2)  # log-uniform
     p_no_founder: float = 0.0          # 1.0 = ablation: founder features always zeroed
     random_seg_structure: bool = False # True: per-task Dirichlet mix of industry / size / interaction effects
+    founder_tokens: bool = False       # True: founder as per-segment tokens with stated confidence / "no idea"
+    stated_calib_range: tuple[float, float] = (0.3, 3.0)  # log-uniform: stated sd / actual error scale
+    p_noidea_max: float = 0.3          # per task, share of segments answered "no idea" ~ U(0, max)
 
 
 @dataclass
@@ -120,6 +123,19 @@ def founder_and_outreach(cfg, seg_part, c, segment, y, g, dev):
     e = (e - e.mean(1, keepdim=True)) / e.std(1, keepdim=True) * s
     belief = rho[:, None] * true + (1 - rho ** 2).clamp(min=0).sqrt()[:, None] * e
     f_logit = c[:, None] + bias[:, None] + kappa[:, None] * belief                # (B, K)
+    extra = {}
+    if cfg.founder_tokens:
+        # stated uncertainty: founder-level calibration x mix of overall and segment-specific error
+        err = f_logit - (c[:, None] + true)
+        rms = err.pow(2).mean(1, keepdim=True).sqrt().clamp_min(0.05)
+        lo_c, hi_c = math.log(cfg.stated_calib_range[0]), math.log(cfg.stated_calib_range[1])
+        calib = _u(lo_c, hi_c, (B,), g, dev).exp()[:, None]
+        awareness = torch.rand(B, 1, generator=g, device=dev)        # how much they know where they're unsure
+        stated_sd = calib * ((1 - awareness) * rms + awareness * err.abs().clamp_min(0.05)) \
+            * torch.exp(0.3 * torch.randn(B, K, generator=g, device=dev))
+        noidea = torch.rand(B, K, generator=g, device=dev) < cfg.p_noidea_max * torch.rand(B, 1, generator=g, device=dev)
+        f_logit = torch.where(noidea, c[:, None] + bias[:, None], f_logit)       # "no idea" -> their overall level
+        extra = dict(f_logit=f_logit, stated_sd=stated_sd, noidea=noidea, calib=calib.squeeze(1))
     f_acc = f_logit.gather(1, segment)
     has_founder = (torch.rand(B, generator=g, device=dev) >= cfg.p_no_founder).float()
 
@@ -136,7 +152,29 @@ def founder_and_outreach(cfg, seg_part, c, segment, y, g, dev):
     take = (found_before < n[:, None]) & (torch.arange(N, device=dev)[None] < N // 2)
     context = torch.zeros(B, N, dtype=torch.bool, device=dev).scatter(1, order, take)
 
-    return f_acc, has_founder, context, dict(rho=rho, n=n, alpha=alpha, eta=eta, has_founder=has_founder)
+    return f_acc, has_founder, context, dict(rho=rho, n=n, alpha=alpha, eta=eta, has_founder=has_founder, **extra)
+
+
+N_FTOK = N_IND + N_SIZE + 5
+
+
+def founder_token_features(f_logit, stated_sd, noidea, has_founder):
+    """(B, K) per-segment founder statements -> (B, K, N_FTOK) tokens and (B, K) validity mask.
+    Features: industry one-hot, size one-hot, belief logit, belief centred over answered segments,
+    log stated sd, "no idea" flag, constant."""
+    B, K = f_logit.shape
+    dev = f_logit.device
+    k = torch.arange(K, device=dev)
+    ind = torch.nn.functional.one_hot(k // N_SIZE, N_IND).float().expand(B, -1, -1)
+    siz = torch.nn.functional.one_hot(k % N_SIZE, N_SIZE).float().expand(B, -1, -1)
+    known = (~noidea).float()
+    mean_known = (f_logit * known).sum(1, keepdim=True) / known.sum(1, keepdim=True).clamp_min(1)
+    belief = torch.where(noidea, torch.zeros_like(f_logit), f_logit)
+    centred = torch.where(noidea, torch.zeros_like(f_logit), f_logit - mean_known)
+    lsd = torch.where(noidea, torch.zeros_like(f_logit), stated_sd.clamp_min(1e-3).log())
+    tok = torch.cat([ind, siz, torch.stack([belief, centred, lsd, noidea.float(), torch.ones_like(belief)], -1)], -1)
+    mask = has_founder[:, None].bool().expand(-1, K)
+    return tok, mask
 
 
 @torch.no_grad()
@@ -164,6 +202,11 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
 
     f_acc, has_founder, context, finfo = founder_and_outreach(cfg, seg_part, c, segment, y, g, dev)
 
-    x = make_tokens(industry, size, f_acc, has_founder, context, y)
+    if cfg.founder_tokens:   # the belief lives only in founder tokens, not on accounts
+        x = make_tokens(industry, size, f_acc, torch.zeros_like(has_founder), context, y)
+        finfo["f_tok"], finfo["f_mask"] = founder_token_features(finfo["f_logit"], finfo["stated_sd"],
+                                                                 finfo["noidea"], has_founder)
+    else:
+        x = make_tokens(industry, size, f_acc, has_founder, context, y)
     info = dict(w_seg=w_seg, base=base, **finfo)
     return Batch(x, context, p, y, info)

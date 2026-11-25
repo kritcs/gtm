@@ -28,6 +28,7 @@ from fprior.pfn.data import N_FEAT, PriorConfig, sample_batch  # noqa: E402
 from fprior.pfn.data_rel import N_FEAT_REL, RelPriorConfig, sample_rel_batch  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
 from fprior.pfn.model_rel import PCRFMRel, product_features  # noqa: E402
+from fprior.pfn.model_tok import PCRFMTok  # noqa: E402
 
 
 def pick_device(name: str) -> str:
@@ -57,6 +58,7 @@ def main():
     ap.add_argument("--layers", type=int, default=6)
     ap.add_argument("--no-founder", action="store_true")
     ap.add_argument("--random-seg", action="store_true", help="randomize segment effect structure per task")
+    ap.add_argument("--tokens", action="store_true", help="founder as per-segment statement tokens with stated confidence (v0 prior only)")
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
     ap.add_argument("--device", default="auto")
@@ -74,14 +76,20 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     PC = RelPriorConfig if a.relational else PriorConfig
     sample = sample_rel_batch if a.relational else sample_batch
+    if a.tokens and a.relational:
+        raise SystemExit("--tokens is implemented for the v0 prior only")
     prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0,
-               random_seg_structure=a.random_seg)
+               random_seg_structure=a.random_seg, founder_tokens=a.tokens)
     arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
     if a.encoder:
         arch["encoder"] = True
-    model = (PCRFMRel(**arch) if a.encoder else PCRFM(**arch)).to(dev)
+    if a.tokens:
+        arch["tokens"] = True
+    model = (PCRFMRel(**arch) if a.encoder else PCRFMTok(**arch) if a.tokens else PCRFM(**arch)).to(dev)
 
     def fwd(b):
+        if a.tokens:
+            return model(b.x, b.context, b.info["f_tok"], b.info["f_mask"])
         if a.encoder:
             ad, sm = b.info["adoption"], b.info["sim"]
             return model(b.x, b.context, ad, product_features(ad, sm))
