@@ -17,6 +17,17 @@ PRE-REGISTERED (written and committed before ID-GNN was trained):
 Metric: RelBench MAP@12 x100, computed exactly as in audit_relbench.relbench_map.
 
   python scripts/idgnn_slices.py runs/idgnn_hm/test_pred.csv     # RelBench write_prediction_table output
+
+EXTENSION (pre-registered 2026-11-25 ~14:20, before ID-GNN was trained on these tasks): the same scorer for the four
+contrast tasks of `audit_relbench_ext.py` (K = task eval_k; slices as defined there):
+  python scripts/idgnn_slices.py runs/idgnn_<task>/test_pred.csv rel-trial/condition-sponsor-run
+  J1 (reproduction): on each task our ID-GNN test MAP is within 1.0 of the published value (11.36, 19.00, 12.72,
+     10.83); tasks that fail are labelled "our ID-GNN run".
+  J2 (memorisation explains rel-trial): on both rel-trial tasks, > 50% of ID-GNN's correct hits are repeat or
+     cf-nbr positives.
+  J3 (rel-stack learns beyond memorisation): on user-post-comment, ID-GNN's novel-slice MAP is >= 1.0 and > 2x the
+     best heuristic's novel-slice MAP (heuristics: audit_relbench_ext.json).
+  J4 (novel pairs are hard for ID-GNN too): on every task, ID-GNN's novel-slice MAP < half its overall MAP.
 """
 
 from __future__ import annotations
@@ -31,7 +42,11 @@ import scipy.sparse as sp
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from audit_relbench import DATA, K, TASKS, TOPN_CF, relbench_map, top_items  # noqa: E402
+import audit_relbench as A  # noqa: E402
+from audit_relbench import DATA, TASKS, TOPN_CF, relbench_map, top_items  # noqa: E402
+from audit_relbench_ext import TASKS as EXT_TASKS  # noqa: E402
+
+TASKS = {**TASKS, **EXT_TASKS}
 
 NAME = "rel-hm/user-item-purchase"
 
@@ -45,7 +60,7 @@ def slice_labels(cfg):
     h = pd.read_parquet(DATA / cfg["hist"], columns=[cfg["u"], cfg["i"], cfg["t"]])
     h = h[h[cfg["t"]] <= T]
     h.columns = ["u", "i", "t"]
-    recent = top_items(h.loc[h["t"] > T - pd.Timedelta(days=cfg["recent_days"]), "i"], K)
+    recent = top_items(h.loc[h["t"] > T - pd.Timedelta(days=cfg["recent_days"]), "i"], A.K)
     hu = h[h["u"].isin(set(test[cfg["tu"]].tolist()))]
     w = h[h["t"] > T - pd.Timedelta(days=cfg["cf_days"])][["u", "i"]].drop_duplicates()
     deg = w.groupby("u").size()
@@ -82,15 +97,21 @@ def slice_labels(cfg):
 
 
 def main():
-    cfg = TASKS[NAME]
+    name = sys.argv[2] if len(sys.argv) > 2 else NAME
+    cfg = TASKS[name]
+    A.K = K = cfg.get("k", 12)
     test, P, recent = slice_labels(cfg)
     T = pd.read_parquet(DATA / cfg["test"])["timestamp"].max()
     pdf = pd.read_csv(sys.argv[1])
     if "timestamp" in pdf:
         pdf = pdf[pd.to_datetime(pdf["timestamp"]) == T]
     users = pdf[cfg["tu"]].values
-    pred_raw = np.stack([np.asarray(json.loads(x), dtype=np.int64)[:K] for x in pdf[cfg["ti"]].values])
-    ref = next(r for r in json.loads((ROOT / "results/audit_relbench.json").read_text()) if r["task"] == NAME)
+    pcol = cfg["ti"] if cfg["ti"] in pdf else pdf.columns[-1]
+    pred_raw = np.stack([np.asarray(json.loads(x), dtype=np.int64)[:K] for x in pdf[pcol].values])
+    refs = json.loads((ROOT / "results/audit_relbench.json").read_text())
+    if name != NAME:
+        refs = json.loads((ROOT / "results/audit_relbench_ext.json").read_text())
+    ref = next(r for r in refs if r["task"] == name)
     for c in ["repeat", "cf_nbr", "novel"]:
         assert abs(P[c].mean() - ref["shares"][c]) < 1e-9, f"slice share mismatch for {c}"
     row = {u: k for k, u in enumerate(users)}
@@ -114,22 +135,35 @@ def main():
     out["hits"] = hits
     tot = max(1, sum(hits.values()))
     o, nov = out["overall"]["idgnn"], out["slices"]["novel"]
-    verdict = [
+    verdict = [] if name != NAME else [
         ("I1 reproduction", abs(o - 2.81) <= 0.5, f"MAP {o:.2f} vs published 2.81"),
         ("I2 novel ≤ 2× recent popularity", nov["idgnn"] <= 2 * nov["recent_popularity"],
          f"novel MAP {nov['idgnn']:.2f} vs recent-pop {nov['recent_popularity']:.2f}"),
         ("I3 hits mostly repeat/cf-nbr", (hits["repeat"] + hits["cf_nbr"]) / tot > 0.5,
          f"{hits['repeat']} repeat, {hits['cf_nbr']} cf-nbr, {hits['novel']} novel hits"),
     ]
-    lines = [f"# ID-GNN per-slice audit, {NAME}", "", "MAP@12 x100.", "",
+    if name != NAME:
+        pub = A.PUBLISHED[name]["RDL (ID-GNN)"]
+        hb = max(ref["overall"], key=ref["overall"].get)
+        hnov = ref["slices"]["novel"].get(hb, 0.0)
+        verdict = [("J1 reproduction within 1.0", abs(o - pub) <= 1.0, f"MAP {o:.2f} vs published {pub:.2f}"),
+                   ("J4 novel MAP < half overall", nov["idgnn"] < 0.5 * o, f"novel {nov['idgnn']:.2f} vs overall {o:.2f}")]
+        if name.startswith("rel-trial"):
+            verdict.append(("J2 hits mostly repeat/cf-nbr", (hits["repeat"] + hits["cf_nbr"]) / tot > 0.5,
+                            f"{hits['repeat']} repeat, {hits['cf_nbr']} cf-nbr, {hits['novel']} novel hits"))
+        if name == "rel-stack/user-post-comment":
+            verdict.append(("J3 novel MAP >= 1.0 and > 2x best heuristic", nov["idgnn"] >= 1.0 and nov["idgnn"] > 2 * hnov,
+                            f"novel {nov['idgnn']:.2f} vs {hb} {hnov:.2f}"))
+    lines = [f"# ID-GNN per-slice audit, {name}", "", f"MAP@{K} x100.", "",
              "| slice | users | ID-GNN | recent popularity |", "|---|---|---|---|",
              f"| overall | {len(test)} | {o:.2f} | {out['overall']['recent_popularity']:.2f} |"]
     lines += [f"| {k} | {v['users']} | {v['idgnn']:.2f} | {v['recent_popularity']:.2f} |" for k, v in out["slices"].items()]
     lines += ["", "## Mechanical scoring", ""] + [f"- {'HOLDS' if h else 'FAILS'} — {n}: {d}" for n, h, d in verdict]
     md = "\n".join(lines)
     print(md)
-    (ROOT / "results/idgnn_slices.md").write_text(md + "\n")
-    (ROOT / "results/idgnn_slices.json").write_text(json.dumps(out, indent=1, default=str))
+    stem = "idgnn_slices" if name == NAME else "idgnn_slices_" + name.split("/")[1]
+    (ROOT / f"results/{stem}.md").write_text(md + "\n")
+    (ROOT / f"results/{stem}.json").write_text(json.dumps(out, indent=1, default=str))
 
 
 if __name__ == "__main__":
