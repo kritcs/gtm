@@ -61,6 +61,8 @@ def main():
     a = ap.parse_args()
 
     dev = pick_device(a.device)
+    torch.backends.cuda.matmul.allow_tf32 = True  # A100/L4/H100: TF32 matmuls
+    torch.backends.cudnn.allow_tf32 = True
     torch.manual_seed(a.seed)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
