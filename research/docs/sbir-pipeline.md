@@ -120,3 +120,21 @@ should give roughly 575 buying firms and ~900 purchase labels, of which ~400 are
 3. Build the belief extractor: keyword map (abstract terms → agencies/missions) first; then a pre-T0 LLM.
 4. Define the candidate set (all sub-agencies with ≥ N purchases in the cohort) and the evaluation split
    (by T0 year), then run CPR-LP / PC-RFM with the funding agency as a given feature.
+
+## Label hand-check and evaluation results (2026-11-25, Claude)
+
+Hand-check of 50 "purchase" records (random sample, `random_state=0`, from 9,320 purchase-flagged rows of
+`sbir_outcomes_detail.csv.gz`; judged from PSC description, NAICS, award type, amount):
+- **0 / 50 are R&D or SBIR** in disguise. 41 / 50 are clearly products or operational services (microcircuits,
+  lab supplies, test kits, motors, ship repair, building repair, IT).
+- 5 / 50 are professional support services (PSC R4xx/R6xx: "operations research", "program management",
+  "other professional support"). These are purchases, but could be study-like work; in the whole set R-codes are
+  9.8% of purchases and B-codes ("special studies") 1.9%. Upper bound on residual research-like labels ≈ 12%.
+- 4 / 50 have $0 obligated (order modifications / IDV orders). They still mark a buyer relationship.
+- All 50 are name-matched to the firm. Some look odd for an SBIR firm (food-service equipment, large-calibre gun
+  parts) — likely real (manufacturers sell outside their SBIR topic) but name collisions cannot be ruled out from
+  these fields.
+
+Evaluation: `results/sbir_eval.md` (pre-registered SB1–SB3, scored). Keyword "founder" beliefs add nothing beyond
+funding agency + popularity; on purchases from new agencies (56% of test purchases) popularity is best.
+Simulator placement: `results/sim_calibration.md` (base rate ~9× below the PC-RFM training range over all firms).
