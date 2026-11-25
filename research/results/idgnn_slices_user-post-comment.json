@@ -1,0 +1,43 @@
+{
+ "overall": {
+  "idgnn": 13.382351181350286,
+  "recent_popularity": 0.017118984797085058
+ },
+ "slices": {
+  "repeat": {
+   "users": 132,
+   "idgnn": 31.76671827560522,
+   "recent_popularity": 0.10204942858686172
+  },
+  "cf_nbr": {
+   "users": 16,
+   "idgnn": 12.413848938785002,
+   "recent_popularity": 0.0
+  },
+  "novel": {
+   "users": 681,
+   "idgnn": 9.498253104256035,
+   "recent_popularity": 0.0
+  },
+  "cold_user": {
+   "users": 138,
+   "idgnn": 17.693236714975843,
+   "recent_popularity": 0.0
+  },
+  "new_item": {
+   "users": 354,
+   "idgnn": 11.520389980782754,
+   "recent_popularity": 0.0
+  },
+  "head10": {
+   "users": 94,
+   "idgnn": 4.822234693172155,
+   "recent_popularity": 0.14912407043195527
+  }
+ },
+ "hits": {
+  "repeat": 132,
+  "cf_nbr": 7,
+  "novel": 130
+ }
+}

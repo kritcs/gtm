@@ -1,0 +1,7 @@
+{
+ "positives": 1517,
+ "own_thread_share": 0.25313117996044826,
+ "own_thread_heuristic_map": 10.40788680321511,
+ "idgnn_hits": 269,
+ "idgnn_hits_own_thread_share": 0.9107806691449815
+}
