@@ -97,7 +97,7 @@ def main():
             return model(b.x, b.context, ad, product_features(ad, sm))
         return model(b.x, b.context)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
-    warm = min(1000, a.steps // 10)
+    warm = max(1, min(1000, a.steps // 10))
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(s, a.steps) / a.steps)))
     g = torch.Generator(device=dev).manual_seed(a.seed + 1)
