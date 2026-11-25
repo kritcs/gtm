@@ -58,6 +58,7 @@ def main():
     ap.add_argument("--layers", type=int, default=6)
     ap.add_argument("--no-founder", action="store_true")
     ap.add_argument("--random-seg", action="store_true", help="randomize segment effect structure per task")
+    ap.add_argument("--rho-min", type=float, default=-0.5, help="lower end of training founder reliability")
     ap.add_argument("--tokens", action="store_true", help="founder as per-segment statement tokens with stated confidence (v0 prior only)")
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
@@ -79,7 +80,8 @@ def main():
     if a.tokens and a.relational:
         raise SystemExit("--tokens is implemented for the v0 prior only")
     prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0,
-               random_seg_structure=a.random_seg, founder_tokens=a.tokens)
+               random_seg_structure=a.random_seg, founder_tokens=a.tokens,
+               rho_range=(a.rho_min, 1.0))
     arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
     if a.encoder:
         arch["encoder"] = True
