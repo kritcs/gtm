@@ -83,33 +83,14 @@ def make_tokens(industry, size, founder_logit_acc, has_founder, context, outcome
     return torch.cat([ind, siz, founder_features(founder_logit_acc, has_founder), state], -1)
 
 
-@torch.no_grad()
-def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Batch:
-    N, I, S, K = cfg.n_accounts, N_IND, N_SIZE, N_IND * N_SIZE
-    industry = torch.randint(0, I, (B, N), generator=g, device=dev)
-    size = torch.multinomial(SIZE_P.to(dev).expand(B, -1), N, replacement=True, generator=g)
-    segment = industry * S + size
+def founder_and_outreach(cfg, seg_part, c, segment, y, g, dev):
+    """Founder beliefs (as in sim.make_founder) and founder-steered outreach (as in sim.run_outreach).
 
-    # segment effects: industry + size main effects + interaction (as in sim.make_market)
-    gi = torch.randn(B, I, 1, generator=g, device=dev)
-    gs = torch.randn(B, 1, S, generator=g, device=dev)
-    gis = torch.randn(B, I, S, generator=g, device=dev)
-    eff = (0.7 * gi + 0.5 * gs + 0.5 * gis).reshape(B, K)
-    acc = eff.gather(1, segment)
-    seg_std = (eff - acc.mean(1, keepdim=True)) / acc.std(1, keepdim=True)
-
-    logit_sd = _u(*cfg.logit_sd_range, (B,), g, dev)
-    w_seg = _u(*cfg.w_seg_range, (B,), g, dev)
-    seg_part = (logit_sd * w_seg.sqrt())[:, None] * seg_std                       # (B, K)
-    latent = (logit_sd * (1 - w_seg).sqrt())[:, None] * torch.randn(B, N, generator=g, device=dev)
-    z = seg_part.gather(1, segment) + latent
-    lb = torch.tensor(cfg.base_rate_range, device=dev).log()
-    base = _u(lb[0].item(), lb[1].item(), (B,), g, dev).exp()
-    c = _solve_intercept(z, base)
-    p = torch.sigmoid(c[:, None] + z)
-    y = (torch.rand(B, N, generator=g, device=dev) < p).float()
-
-    # founder (as in sim.make_founder)
+    seg_part: (B, K) true segment effects without intercept; c: (B,) intercept.
+    Returns founder logit per account, has_founder flag, context mask, and knob info.
+    """
+    B, K = seg_part.shape
+    N = segment.shape[1]
     rho = _u(*cfg.rho_range, (B,), g, dev)
     rho = torch.where(torch.rand(B, generator=g, device=dev) < cfg.p_oracle, torch.ones_like(rho), rho)
     lo, hi = math.log(cfg.overconf_range[0]), math.log(cfg.overconf_range[1])
@@ -140,6 +121,37 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
     take = (found_before < n[:, None]) & (torch.arange(N, device=dev)[None] < N // 2)
     context = torch.zeros(B, N, dtype=torch.bool, device=dev).scatter(1, order, take)
 
+    return f_acc, has_founder, context, dict(rho=rho, n=n, alpha=alpha, eta=eta, has_founder=has_founder)
+
+
+@torch.no_grad()
+def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Batch:
+    N, I, S, K = cfg.n_accounts, N_IND, N_SIZE, N_IND * N_SIZE
+    industry = torch.randint(0, I, (B, N), generator=g, device=dev)
+    size = torch.multinomial(SIZE_P.to(dev).expand(B, -1), N, replacement=True, generator=g)
+    segment = industry * S + size
+
+    # segment effects: industry + size main effects + interaction (as in sim.make_market)
+    gi = torch.randn(B, I, 1, generator=g, device=dev)
+    gs = torch.randn(B, 1, S, generator=g, device=dev)
+    gis = torch.randn(B, I, S, generator=g, device=dev)
+    eff = (0.7 * gi + 0.5 * gs + 0.5 * gis).reshape(B, K)
+    acc = eff.gather(1, segment)
+    seg_std = (eff - acc.mean(1, keepdim=True)) / acc.std(1, keepdim=True)
+
+    logit_sd = _u(*cfg.logit_sd_range, (B,), g, dev)
+    w_seg = _u(*cfg.w_seg_range, (B,), g, dev)
+    seg_part = (logit_sd * w_seg.sqrt())[:, None] * seg_std                       # (B, K)
+    latent = (logit_sd * (1 - w_seg).sqrt())[:, None] * torch.randn(B, N, generator=g, device=dev)
+    z = seg_part.gather(1, segment) + latent
+    lb = torch.tensor(cfg.base_rate_range, device=dev).log()
+    base = _u(lb[0].item(), lb[1].item(), (B,), g, dev).exp()
+    c = _solve_intercept(z, base)
+    p = torch.sigmoid(c[:, None] + z)
+    y = (torch.rand(B, N, generator=g, device=dev) < p).float()
+
+    f_acc, has_founder, context, finfo = founder_and_outreach(cfg, seg_part, c, segment, y, g, dev)
+
     x = make_tokens(industry, size, f_acc, has_founder, context, y)
-    info = dict(rho=rho, n=n, alpha=alpha, eta=eta, w_seg=w_seg, base=base, has_founder=has_founder)
+    info = dict(w_seg=w_seg, base=base, **finfo)
     return Batch(x, context, p, y, info)

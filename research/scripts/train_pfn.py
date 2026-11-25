@@ -24,7 +24,8 @@ import torch.nn.functional as F
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from fprior.pfn.data import PriorConfig, sample_batch  # noqa: E402
+from fprior.pfn.data import N_FEAT, PriorConfig, sample_batch  # noqa: E402
+from fprior.pfn.data_rel import N_FEAT_REL, RelPriorConfig, sample_rel_batch  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
 
 
@@ -54,6 +55,7 @@ def main():
     ap.add_argument("--d", type=int, default=128)
     ap.add_argument("--layers", type=int, default=6)
     ap.add_argument("--no-founder", action="store_true")
+    ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=250)
@@ -66,8 +68,10 @@ def main():
     torch.manual_seed(a.seed)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    prior = PriorConfig(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0)
-    arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d)
+    PC = RelPriorConfig if a.relational else PriorConfig
+    sample = sample_rel_batch if a.relational else sample_batch
+    prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0)
+    arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
     model = PCRFM(**arch).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
     warm = min(1000, a.steps // 10)
@@ -75,7 +79,7 @@ def main():
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(s, a.steps) / a.steps)))
     g = torch.Generator(device=dev).manual_seed(a.seed + 1)
     g_val = torch.Generator(device=dev).manual_seed(10_000 + a.seed)
-    val = [sample_batch(prior, a.batch, g_val, dev) for _ in range(8)]
+    val = [sample(prior, a.batch, g_val, dev) for _ in range(8)]
     meta = dict(args=vars(a), prior=asdict(prior), arch=arch, device=dev,
                 n_params=sum(p.numel() for p in model.parameters()))
     (out / "config.json").write_text(json.dumps(meta, indent=1))
@@ -85,7 +89,7 @@ def main():
 
     for step in range(1, a.steps + 1):
         model.train()
-        b = sample_batch(prior, a.batch, g, dev)
+        b = sample(prior, a.batch, g, dev)
         logits = model(b.x, b.context)
         mask = (~b.context).float()
         loss = (F.binary_cross_entropy_with_logits(logits, b.target_p, reduction="none") * mask).sum() / mask.sum()

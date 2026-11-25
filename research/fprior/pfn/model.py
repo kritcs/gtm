@@ -36,9 +36,9 @@ class Block(nn.Module):
 
 
 class PCRFM(nn.Module):
-    def __init__(self, d: int = 128, layers: int = 6, heads: int = 4, ff: int = 256):
+    def __init__(self, d: int = 128, layers: int = 6, heads: int = 4, ff: int = 256, n_feat: int = N_FEAT):
         super().__init__()
-        self.embed = nn.Sequential(nn.Linear(N_FEAT, d), nn.GELU(), nn.Linear(d, d))
+        self.embed = nn.Sequential(nn.Linear(n_feat, d), nn.GELU(), nn.Linear(d, d))
         self.blocks = nn.ModuleList([Block(d, heads, ff) for _ in range(layers)])
         self.out = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, 1))
 
