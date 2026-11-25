@@ -81,7 +81,7 @@ class LoopConfig:
 
 def run_policy(market: Market, founder: Founder, policy: str, eta: float, cfg: LoopConfig,
                rng: np.random.Generator, cpr: CPRConfig = CPRConfig()):
-    """policy in {greedy, thompson, founder, oracle}, optionally suffixed "-robust" (Student-t segment
+    """policy in {greedy, thompson, thompsonseg, founder, oracle}, optionally suffixed "-robust" (Student-t segment
     deviations, nu = robust_nu); eta = share of each batch spent on stratified exploration
     (uniform segment, then uniform account within it)."""
     robust_nu = None
@@ -93,7 +93,7 @@ def run_policy(market: Market, founder: Founder, policy: str, eta: float, cfg: L
     for t in range(cfg.rounds):
         c = np.array(contacted, dtype=int)
         o = np.array(outcome, dtype=float)
-        if policy in ("greedy", "thompson"):
+        if policy in ("greedy", "thompson", "thompsonseg"):
             mean, var, trust = posterior(market, founder.segment_logit, c, o, cpr, cfg.omega, robust_nu)
         else:
             mean, var, trust = founder.segment_logit[market.segment].astype(float), None, np.array([np.nan, np.nan])
@@ -122,7 +122,13 @@ def run_policy(market: Market, founder: Founder, policy: str, eta: float, cfg: L
             score = founder.segment_logit[market.segment[left]] + 1e-6 * rng.random(len(left))
         elif policy == "greedy":
             score = mean[left]
-        else:  # thompson, marginal draws
+        elif policy == "thompsonseg":
+            # segment-level Thompson: one draw per segment, scaled by the segment-level posterior sd
+            # (per-account variance minus the irreducible nugget and graph variance)
+            seg_var = np.maximum(var - cpr.nugget_sd ** 2 - cpr.graph_sd ** 2 * np.diag(market.graph_cov), 1e-6)
+            z = rng.standard_normal(market.n_segments)
+            score = mean[left] + np.sqrt(seg_var[left]) * z[market.segment[left]]
+        else:  # thompson, marginal per-account draws
             score = mean[left] + np.sqrt(var[left]) * rng.standard_normal(len(left))
         picks += left[np.argsort(-score)[: cfg.batch - len(picks)]].tolist()
         for v in picks:
