@@ -61,14 +61,15 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
 ### C4. Benchmarks measure memorization, not finding new customers (audit)
 - A no-learning repeat + popularity heuristic reaches 93% / 88% of the best published RelBench MAP. ✅ `audit_relbench.md`
 - 82–93% of test positives are novel pairs; heuristics and learned recommenders score ≈ popularity or below there. ✅ `audit_relbench.md`, `audit_models_subsample.md`
-- Published ID-GNN per-slice scores. ⬜ needs Colab
+- Published ID-GNN (reproduced exactly, 2.81) gets 99.8% of its hits from repeat purchases; novel-pair MAP 0.00 (popularity 0.58), cold users 0.00. Its whole edge over the heuristic is better ordering of repeats. ✅ `idgnn_slices.md`
+- Across six RelBench recommendation tasks (adds rel-trial ×2, rel-stack ×2) repeat + popularity reaches 40–107% of the best published MAP (beats ID-GNN on site-sponsor-run); heuristics ≈ 0 on novel pairs everywhere. RelBench's own Past Visit baseline understates memorisability on rel-stack (1.42 vs our 5.10). ✅ `audit_relbench_ext.md` (E1–E3 fail as pre-registered, E4 holds)
 - Pre-registered claim A1 ("most positives memorizable") failed — report it.
 
 ### C5. An evaluation protocol for settings without public outreach data
 Ladder: simulation → sim-to-sim stress → real outcomes + simulated founder → real B2B backtest → prospective cohort.
 - Real outcomes (UCI Bank Marketing), all three pre-registered predictions hold. ✅ `real_bank.md`
 - Placebo priors as a standard control. ✅
-- SBIR → USAspending first customers (real B2B, beliefs from firms' own pre-award text). 🟡 pipeline built, full pull running; ⬜ `sbir_eval.py` (pre-registered SB1–SB3)
+- SBIR → USAspending first customers (real B2B, beliefs from firms' own pre-award text). ✅ `sbir_eval.md`: negative for keyword priors (SB1 fails, SB2 partly, SB3 point estimate only); on new-agency purchases (56%) popularity is best. Labels hand-checked (0/50 R&D). Base rate ~9× below the sim range (`sim_calibration.md`).
 - Prospective founder cohort. ⬜ drafts in `docs/cohort/`; needs sponsor + IRB
 
 ## 3. Related work positioning (from `novelty-check.md`)
@@ -82,6 +83,6 @@ Ladder: simulation → sim-to-sim stress → real outcomes + simulated founder �
 1. Real founders (archival SBIR text is a proxy; the cohort is the real thing).
 2. PC-RFM's founder-specific advantage over CPR-LP is unproven after the placebo correction (confirmed again for
    the token model). The defensible PC-RFM claims are: adaptive pooling, relational transfer, and use of stated confidence.
-3. The published-GNN audit slice (ID-GNN on Colab); a graph-aware v0 to test the S2 explanation.
+3. ID-GNN per-slice on rel-trial / rel-stack (where its gap over memorisation is large); a graph-aware v0 to test the S2 explanation.
 4. EXNEX original not read; several theory references cited but not read in full.
 5. All CPR-LP hyperparameters were set by hand on simulations; need a principled selection protocol.
