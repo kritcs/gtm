@@ -68,6 +68,13 @@ Prior-only ranking · global and segment popularity · CN/AA/RA/Katz through pro
 - Metrics: MAP@10/Recall@K with within-segment hard negatives; lift over popularity; novel-customer recall; calibration (ECE); per-stratum results.
 - Real tiers (see research map "Evaluation and data"): USAspending backtests; Amazon new brands (B2C); archival founder priors; chronologically clean LLM priors (ChronoGPT-style); prospective founder cohort.
 - Hierarchical bootstrap over sellers; ≥5 seeds; report every run.
+- **Added 2026-11-24 — how each data source is used** (simulation results alone are optimistic: the simulator and both models share assumptions):
+  1. *Sim-to-sim stress tests:* train on the default simulator, test on deliberately different worlds (other buying rules, heavy-tailed founder errors, other outreach). Measures sensitivity to simulator mismatch.
+  2. *Real outcomes + simulated founder:* real contacted/converted logs with interpretable attributes (candidates: Hillstrom email, UCI Bank Marketing, Open Bandit; being verified in `docs/datasets-real-outcomes.md`). Founder beliefs simulated from a disjoint slice/time window, reliability ρ controlled. Randomized logs allow unbiased offline evaluation of exploration policies (H4).
+  3. *Benchmark audit (contribution):* on RelBench-style link/recommendation tasks, stratify test answers by memorizability (in the seller's / similar products' neighbourhood, popular head, new vs established seller). Prediction: standard scores are dominated by the memorizable slice, and leaderboard models fall to near-popularity on the new-seller / novel-customer slice. Benchmarks are used as a competence check and as evidence for this critique, not as the headline.
+  4. *Real B2B public backtest:* USAspending first awards of new small vendors; beliefs from pre-award documents (registration, Wayback) or chronologically clean LLMs.
+  5. *Prospective founder cohort:* priors recorded before outcomes; needs IRB / data agreement; start early.
+  - Model both ways: CPR-LP (no simulator training) vs PC-RFM (simulator-trained) on every real tier; the gap measures the sim-to-real problem. Add founder-belief tokens / learned conditioning and a fine-tuning stage on real-outcome tasks.
 
 ## 6. Milestones
 
