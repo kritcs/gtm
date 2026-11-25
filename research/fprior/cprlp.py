@@ -75,6 +75,7 @@ class CPRResult:
     prob: np.ndarray | None = None   # posterior E[p] per account (probit approximation)
     rank_by: str = "logit"
     coef: np.ndarray | None = None   # posterior mean of extra-regressor coefficients, if any
+    log_evidence: float = float("nan")  # Laplace log p(y) under the omega hyperprior (nan without labels)
 
     @property
     def score(self) -> np.ndarray:
@@ -274,4 +275,33 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
         beta += wj * (mu + S @ H[c].T @ grad)
     omega_used = float(w @ np.array([f[1] for f in fits]))
     trust = beta[:p0] if cfg.use_founder else None
-    return CPRResult(logit, trust, omega_used, prob, cfg.rank_by, beta[p0:] if q else None)
+    if cfg.omega_average:   # uniform hyperprior over the grid
+        log_ev = float(log_zs.max() + np.log(np.exp(log_zs - log_zs.max()).mean()))
+    else:
+        log_ev = float(log_zs.max())
+    return CPRResult(logit, trust, omega_used, prob, cfg.rank_by, beta[p0:] if q else None, log_ev)
+
+
+def fit_predict_mixture(segment, n_segments, graph_cov, founder_segment_logit, contacted, outcome,
+                        components, extra_features=None) -> CPRResult:
+    """Bayesian model averaging over trust-prior components [(weight, CPRConfig), ...].
+
+    Each component is a full CPR-LP fit; posterior component weights are prior weight x Laplace
+    evidence (prior weights only when there are no labels). Returns the weighted mixture of logits
+    and trust means; `omega` is the evidence-weighted omega and `log_evidence` the mixture evidence.
+    """
+    fits = [(wt, fit_predict(segment, n_segments, graph_cov, founder_segment_logit, contacted, outcome,
+                             cfg, extra_features=extra_features)) for wt, cfg in components]
+    lw = np.array([np.log(wt) for wt, _ in fits])
+    if len(contacted):
+        lw = lw + np.array([r.log_evidence for _, r in fits])
+    w = np.exp(lw - lw.max())
+    w /= w.sum()
+    logit = sum(wj * r.logit for wj, (_, r) in zip(w, fits))
+    trust = (sum(wj * r.trust for wj, (_, r) in zip(w, fits)) if fits[0][1].trust is not None else None)
+    prob = (sum(wj * r.prob for wj, (_, r) in zip(w, fits)) if fits[0][1].prob is not None else None)
+    log_ev = float(lw.max() + np.log(np.exp(lw - lw.max()).sum())) if len(contacted) else float("nan")
+    res = CPRResult(logit, trust, float(sum(wj * r.omega for wj, (_, r) in zip(w, fits))), prob,
+                    fits[0][1].rank_by, None, log_ev)
+    res.component_weights = w      # type: ignore[attr-defined]
+    return res

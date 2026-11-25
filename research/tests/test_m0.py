@@ -150,3 +150,27 @@ def test_robust_prior_corrects_a_confidently_wrong_segment():
             assert np.all(np.isfinite(mean)) and np.all(var > 0)
             errs[nu].append(abs(mean[m.segment == hid].mean() - m.segment_logit[hid]))
     assert np.mean(errs[3.0]) < np.mean(errs[None]) - 0.3
+
+
+def test_trust_mixture_single_component_matches_fit_predict():
+    from fprior.cprlp import fit_predict_mixture
+    m = market(3)
+    f = make_founder(m, FounderConfig(reliability=0.7), np.random.default_rng(31))
+    out = run_outreach(m, f, OutreachConfig(n_customers=6), np.random.default_rng(32))
+    args = (m.segment, m.n_segments, m.graph_cov, f.segment_logit, out.contacted, out.outcome)
+    single = fit_predict(*args, CPRConfig())
+    mix = fit_predict_mixture(*args, [(1.0, CPRConfig())])
+    assert np.allclose(single.logit, mix.logit) and np.isfinite(single.log_evidence)
+
+
+def test_trust_mixture_prefers_oracle_component_for_oracle_founder():
+    from dataclasses import replace
+    from fprior.cprlp import fit_predict_mixture
+    mk = make_market(MarketConfig(n_accounts=800), np.random.default_rng(33))
+    f = make_founder(mk, FounderConfig(reliability=1.0), np.random.default_rng(34))
+    out = run_outreach(mk, f, OutreachConfig(n_customers=40), np.random.default_rng(35))
+    args = (mk.segment, mk.n_segments, mk.graph_cov, f.segment_logit, out.contacted, out.outcome)
+    oracle = replace(CPRConfig(), trust_mean=(0.0, 1.0), trust_sd=(0.02, 0.02), omega_grid=(0.05,))
+    broad = replace(CPRConfig(), trust_mean=(0.0, 0.0), trust_sd=(0.5, 0.5))
+    mix = fit_predict_mixture(*args, [(0.5, oracle), (0.5, broad)])
+    assert mix.component_weights[0] > 0.5
