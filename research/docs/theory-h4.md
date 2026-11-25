@@ -198,3 +198,11 @@ those contacts count roughly twice as much (P4).
   *Existence verified via search; not read.*
 - B. Efron (2011). Tweedie's formula and selection bias. *JASA* 106(496), 1602–1614, doi:10.1198/jasa.2011.tm11181
   (formula first reported by Robbins, 1956). *Bibliographic details verified; full text not read.*
+
+## Erratum / open item (2026-11-24, after results/explore_h4_seg.md)
+
+P2a's escape-time bound is for selecting one segment per round against its best competitor. The empirical test with
+segment-level Thompson sampling and batches of 25 accounts spread across segments reached the hidden segment in 5/10
+seeds within 40 rounds, far sooner than the ≈ 4,900-round estimate. A batched version is needed: with batch B spread
+over the top-r segments of the draw, the relevant gap is to the r-th order statistic, not the maximum. Until derived,
+quote P2a only for the single-selection setting.
