@@ -60,3 +60,7 @@ $C stop -s pfn-f
 - Real-data tiers must randomly relabel category indices per market (PC-RFM can otherwise score by index coincidence).
 - `research/data/` is gitignored (SBIR CSV 367 MB, RelBench, Bank). Never commit data.
 - If the Mac was set to no-sleep: `sudo pmset -a disablesleep 0` to undo.
+
+## Work log (append only; every agent)
+
+- 2026-11-24 22:50 — Claude: handed SBIR (track A) and benchmark-audit extension (track B) to Codex; see docs/handoff-codex.md. Claude keeps PC-RFM / Colab (v1/v2 eval + M2 scoring, round 2: v0.1 random-seg, no-founder, founder tokens, rho-min -1).
