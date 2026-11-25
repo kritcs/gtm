@@ -10,3 +10,4 @@ dist/
 *.egg-info/
 research/runs/
 research/docs/papers/
+research/data/

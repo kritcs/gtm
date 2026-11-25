@@ -1,0 +1,112 @@
+"""Real-outcome tier 1: UCI Bank Marketing (Moro, Cortez & Rita 2014; CC BY 4.0).
+
+41,188 real telemarketing contacts with real outcomes (term-deposit subscription, ~11%).
+Only the founder is simulated. Segments = 8 job groups x 4 age bands (32, the same shape as
+fprior.sim, so PC-RFM v0 runs unchanged).
+
+Leakage control: the pool is split once at random into
+  A — the "founder's experience": segment rates estimated here become the founder's beliefs;
+  B — the market pool: each seed samples a market from B and reveals B's real outcomes.
+Fields used: age, job, y. Dropped: duration (leaks the outcome), call timing, macro indicators.
+The original calls were targeted, not randomized; every row was contacted, so every account in
+our markets has a real outcome.
+"""
+
+from __future__ import annotations
+
+import csv
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+from scipy.special import logit
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CSV = ROOT / "data/raw/bank/bank-additional/bank-additional-full.csv"
+
+JOB_GROUP = {
+    "admin.": 0, "blue-collar": 1, "technician": 2, "services": 3, "housemaid": 3,
+    "management": 4, "entrepreneur": 4, "self-employed": 4, "retired": 5,
+    "student": 6, "unemployed": 6, "unknown": 7,
+}
+N_GROUPS, N_BANDS = 8, 4
+
+
+def age_band(age: int) -> int:
+    return 0 if age < 30 else 1 if age < 45 else 2 if age < 60 else 3
+
+
+@dataclass
+class BankPool:
+    group: np.ndarray
+    band: np.ndarray
+    y: np.ndarray
+
+    @property
+    def segment(self) -> np.ndarray:
+        return self.group * N_BANDS + self.band
+
+
+def load_bank(path: Path = DEFAULT_CSV) -> BankPool:
+    g, b, y = [], [], []
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh, delimiter=";"):
+            g.append(JOB_GROUP[row["job"]])
+            b.append(age_band(int(row["age"])))
+            y.append(1.0 if row["y"] == "yes" else 0.0)
+    return BankPool(np.array(g), np.array(b), np.array(y))
+
+
+@dataclass
+class BankMarket:
+    """Duck-types fprior.sim.Market for make_founder / run_outreach / CPR-LP / PC-RFM."""
+    industry: np.ndarray
+    size: np.ndarray
+    segment: np.ndarray
+    n_segments: int
+    intercept: float
+    segment_logit: np.ndarray      # founder's best possible knowledge: rates estimated on split A
+    y: np.ndarray                  # real outcomes
+    graph_cov: np.ndarray
+
+    @property
+    def n(self) -> int:
+        return len(self.segment)
+
+    @property
+    def p(self) -> np.ndarray:     # metrics take "p"; here it is the realized outcome
+        return self.y
+
+
+def split_pool(pool: BankPool, seed: int = 12345):
+    idx = np.random.default_rng(seed).permutation(len(pool.y))
+    return idx[: len(idx) // 2], idx[len(idx) // 2:]
+
+
+def experience_logits(pool: BankPool, A: np.ndarray, prior_n: float = 2.0) -> tuple[np.ndarray, float]:
+    """Segment logits estimated on split A, shrunk toward the overall rate."""
+    K = N_GROUPS * N_BANDS
+    seg, y = pool.segment[A], pool.y[A]
+    base = y.mean()
+    pos = np.bincount(seg, weights=y, minlength=K)
+    cnt = np.bincount(seg, minlength=K)
+    rate = (pos + prior_n * base) / (cnt + prior_n)
+    return logit(rate), float(logit(base))
+
+
+def make_bank_market(pool: BankPool, A: np.ndarray, B: np.ndarray, n_accounts: int,
+                     rng: np.random.Generator) -> BankMarket:
+    """Category indices shown to models are randomly relabelled per market (industry / size
+    one-hots), so a model cannot score well by an accidental match between our numbering of
+    job groups / age bands and its training-time habits. Segment identity is unchanged."""
+    seg_logit, c = experience_logits(pool, A)
+    idx = rng.choice(B, size=n_accounts, replace=False)
+    pg, pb = rng.permutation(N_GROUPS), rng.permutation(N_BANDS)
+    g, b = pg[pool.group[idx]], pb[pool.band[idx]]
+    seg = g * N_BANDS + b
+    # re-index the founder's segment logits to the relabelled segments
+    old = np.arange(N_GROUPS * N_BANDS)
+    new = pg[old // N_BANDS] * N_BANDS + pb[old % N_BANDS]
+    relabelled = np.empty_like(seg_logit)
+    relabelled[new] = seg_logit
+    return BankMarket(g, b, seg, N_GROUPS * N_BANDS, c, relabelled, pool.y[idx], np.eye(n_accounts))
