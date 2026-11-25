@@ -2,7 +2,9 @@
 
 A go-to-market engine that starts from the founder's instinct and lets market data correct it.
 
-Early-stage companies have two weak data sources. Their own data is a handful of customers, which is too thin to learn from. Public data is broad but noisy, and a traditional knowledge graph needs a lot of volume before it says anything useful. The founder's judgment about who buys and why is the strongest signal they have. This project treats that judgment as a **prior**, tests it against a **heterogeneous market graph**, and **updates** it as replies come in.
+Early-stage companies have two weak data sources. Their own data is a handful of customers (typically 5–50), while commercial lead scoring needs roughly 50–1,000+ outcomes before it learns anything. Public data is broad but shows who *could* buy, not who *will*. In graph terms, the startup is a new node with almost no edges: a cold-start link-prediction problem in which its future customers are rarely near anything it has touched.
+
+The founder's judgment about who buys and why is the strongest signal they have, but founders are also often wrong about their customer segment. This project treats that judgment as a **revisable prior**, tests it against a **heterogeneous market graph**, and **updates** it as replies come in, so the data can overrule the founder where they are wrong.
 
 **Live demo:** https://kritcs.github.io/gtm/
 
@@ -92,7 +94,22 @@ The combination beats both parts on the point estimate, but the intervals overla
 
 `sim/build.py` (`make sim`) also runs, on the same synthetic market: LightGCN against an ALS baseline, a `logit(founder prior) + correction` model fit by IRLS across a time split, and Thompson sampling with founder priors. Results are in the app's Results tab.
 
+## From hackathon build to research method
+
+The demo proves the loop works end to end. Several of its pieces are hand-set heuristics, and the follow-up research in [`research/`](research/) replaces each with something principled. The use case stays the same.
+
+| Demo (this build) | Problem with it | Research version |
+|---|---|---|
+| Founder wording sets fixed Beta pseudo-counts | Founders are overconfident in ways their wording doesn't reveal; nothing learns how far to trust them | Calibrated founder prior `logit p = a + b·logit(m)`, with trust `(a, b)` learned from outcomes and pooled across segments, so 5–50 labels are enough |
+| Ranking blends percentiles with a hand-set weight `λ(c)` | A fixed weight lets a wrong founder dominate forever | A Bayesian posterior over the market graph centred on the founder prior; the founder's weight per account falls as nearby labels arrive |
+| A reply credits beliefs with `α += 1` | Outreach is chosen *by* the prior, so labels are biased toward segments the founder already likes, and a wrong belief about an avoided segment is never tested | Logged contact propensities, a minimum exploration rate, and a selection-aware positive-unlabeled loss |
+| LightGCN plus a cold-start fold-in | The new seller has almost no edges, so graph propagation from it carries little signal | Graph structure on the account side; segment-level scoring carries the founder signal |
+| One backtest, seed 7, overlapping CIs | Can't show *when* the founder helps | Simulated sweeps over founder reliability, label count and exposure bias, starting with a sanity check that an oracle founder must help |
+
+The end goal is a model pretrained on many simulated markets and founders that learns in context how much to trust a new founder. See [`research/PLAN.md`](research/PLAN.md) and [`research/docs/research-map.md`](research/docs/research-map.md).
+
 ## Honest limits
+- Founder trust is set by wording, not learned, and outreach selection bias is not corrected (see the table above).
 - The market is simulated. Swapping in the real corpus means replacing `simulate.generate()` with a loader for `brusic/hacker-news-who-is-hiring-posts` (updated 2026-11-21). The post → triple → graph path stays the same.
 - The interviewer and extractor are rule-based, so they're deterministic and run offline. A Claude-backed extractor can be added behind the same `absorb()` interface.
 - The "LLM baseline" is a description-match stand-in. A real LLM baseline must only be scored on months after its training cutoff.
@@ -108,8 +125,9 @@ The combination beats both parts on the point estimate, but the intervals overla
 | `api/gtm/` | Reviewer, accounts, outreach |
 | `api/integrations/` | Band and Flexprice clients |
 | `api/engine.py`, `api/main.py` | Session state and agents; FastAPI + SSE |
-| `apps/web/` | UI (vanilla JS, three.js, no build step). Read `docs/design-guide.md` before changing it. |
+| `apps/web/` | UI (vanilla JS, three.js, no build step) |
 | `scripts/build_static.py` | Records the demo flow for the static GitHub Pages copy |
+| `research/` | Follow-up research: plan, research map, simulator and principled baselines |
 
 ## Run it
 
