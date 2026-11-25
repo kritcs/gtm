@@ -8,6 +8,7 @@ Full research map (thesis, literature, math, sources): `docs/research-map.md`
 Live version of that doc: https://claude.ai/artifact/RhgqPzhgoEiU6nQjxfYi2t
 Hackathon origin (AI GTM Engine, won): https://claude.ai/artifact/N4Kk66aGDENDDMGeu9z84k
 Execution plan for the chosen direction: `PLAN.md`
+**Current status, running jobs and how to pick up: `docs/status.md` (read first in a new session).**
 
 ## Core thesis (do not lose)
 
