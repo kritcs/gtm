@@ -32,12 +32,14 @@ from fprior.sim import Founder, FounderConfig, OutreachConfig, make_founder, run
 RHOS = [1.0, 0.5, 0.0, -0.5]
 NS = [0, 1, 5, 10, 20, 50]
 SEEDS = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+CKPT = sys.argv[2] if len(sys.argv) > 2 else str(ROOT / "runs/pfn_v0/model.pt")
+OUT = sys.argv[3] if len(sys.argv) > 3 else "results/bank_noise_control"   # path stem, .md/.json appended
 
 
 def main():
     pool = load_bank()
     A, B = split_pool(pool)
-    pfn = load(ROOT / "runs/pfn_v0/model.pt", "cpu")
+    pfn = load(CKPT, "cpu")
     rows = []
     for seed in range(SEEDS):
         market = make_bank_market(pool, A, B, 3000, np.random.default_rng([seed, 5]))
@@ -69,8 +71,8 @@ def main():
         lines.append(f"| {rho} | " + " | ".join(cells) + " |")
     md = "\n".join(lines)
     print(md)
-    (ROOT / "results/bank_noise_control.md").write_text(md)
-    (ROOT / "results/bank_noise_control.json").write_text(json.dumps(rows))
+    (ROOT / f"{OUT}.md").write_text(md)
+    (ROOT / f"{OUT}.json").write_text(json.dumps(rows))
 
 
 if __name__ == "__main__":
