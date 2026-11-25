@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from fprior.cprlp import CPRConfig, fit_predict  # noqa: E402
+from fprior.cprlp_hier import fit_predict_hier  # noqa: E402
 from fprior.metrics import expected_auc, lift_at_k  # noqa: E402
 from fprior.pfn.data import make_tokens  # noqa: E402
 from fprior.pfn.data_rel import rel_features  # noqa: E402
@@ -82,7 +83,7 @@ def main():
         models["pcrfm_v1"] = (*load(a.ckpt_v1, dev), True)
     if a.ckpt_v0:
         models["pcrfm_v0"] = (*load(a.ckpt_v0, dev), True)
-    base_methods = ["prior_only", "similar_adopters", "fusion", "labels_only", "cpr_lp", "cpr_lp_rel"]
+    base_methods = ["prior_only", "similar_adopters", "fusion", "labels_only", "cpr_lp", "cpr_lp_rel", "cpr_lp_hier_rel"]
     methods = base_methods + list(models) + [f"{k}_noise" for k, v in models.items() if v[2]]
     rows = []
     for e in NOVELTY:
@@ -104,6 +105,9 @@ def main():
                     sc = {"prior_only": prior, "similar_adopters": sa,
                           "fusion": (prior - prior.mean()) / max(prior.std(), 1e-9) + z(sa),
                           "cpr_lp_rel": fit_predict(*args, CPRConfig(), extra_features=X).score,
+                          # exploratory (added after pre-registration): main effects + relational regressors
+                          "cpr_lp_hier_rel": fit_predict(*args, CPRConfig(),
+                                                         extra_features=np.column_stack([X, np.eye(8)[market.industry], np.eye(4)[market.size]])).score,
                           "labels_only": fit_predict(*args, replace(CPRConfig(), use_founder=False)).score,
                           "cpr_lp": fit_predict(*args, CPRConfig()).score}
                     noise_models = {f"{k}_noise": v for k, v in models.items() if v[2]}
@@ -126,7 +130,7 @@ def main():
             print(f"novelty {e} seed {seed} done", flush=True)
 
     ms = lambda v: f"{np.mean(v):.2f} ± {np.std(v, ddof=1) / np.sqrt(len(v)):.2f}"  # noqa: E731
-    diffs = [("cpr_lp", "PC-RFM − CPR-LP"), ("cpr_lp_rel", "PC-RFM − CPR-LP-rel"),
+    diffs = [("cpr_lp", "PC-RFM − CPR-LP"), ("cpr_lp_rel", "PC-RFM − CPR-LP-rel"), ("cpr_lp_hier_rel", "PC-RFM − CPR-LP-hier-rel"),
              ("fusion", "PC-RFM − fusion"), ("similar_adopters", "PC-RFM − adopters")]
     diffs += [(k, f"PC-RFM − {k}") for k in models if k != "pcrfm"]
     diffs += [("pcrfm_noise", "PC-RFM − same model, noise beliefs")]
