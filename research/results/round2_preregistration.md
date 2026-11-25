@@ -43,3 +43,33 @@ Rule unless stated: paired mean difference over seeds has the predicted sign and
 - Q3a fails → the inverted-founder cost is not a training-range problem; the Student-t CPR-LP (BF1) remains
   the recommendation for adversarial founders.
 - Any regression in Q1c / Q2 → keep v0 as the headline PC-RFM and report v0.1 as an ablation.
+
+## Scoring (written after the run, 2026-11-25 ~08:45)
+
+All four models trained at commit `8919ff2`, 20k steps, seed 1. Result files: `stress_sim_v01.md`,
+`real_bank_v01.md`, `bank_noise_control_v02_rho{,_segnoise}.md`, `m1_pfn_v01.md`, `m1_pfn_v02_rho.md`,
+`m2_pfn_v2_full.md`. Q2 for `pfn_tok` is in `real_bank_tok.md` (holds).
+
+| prediction | result | detail |
+|---|---|---|
+| Q1a S2: v0.1 − CPR-LP > −0.10 | **FAILS** | −0.14 ± 0.05 (v0: −0.22 ± 0.06) — improved, not enough |
+| Q1b S2 worst cell ≥ −0.5 | **FAILS** | −0.54 (v0: −0.76) — improved, narrowly short |
+| Q1c S0 \|v0.1 − CPR-LP\| ≤ 0.10 | **HOLDS** | −0.07 ± 0.04 |
+| Q2a/b bank R1, R2, R3 for v0.1 | **HOLDS** | R1 all n > 2 SE (+2.37 … +0.73); R2 worst +0.07; R3 23/24 cells not worse than CPR-LP by > 0.2 (worst −0.22) |
+| Q3a NC3 for v0.2-rho | **FAILS (opposite direction)** | ρ = −0.5: true − noise = +0.63 / +0.87 / +0.22 at n = 5 / 10 / 20 (account noise); similar with segment noise |
+| Q3b NC1 for v0.2-rho | **HOLDS** | +2.33 … +0.62 at n = 0 … 20, all > 2 SE |
+| Q3c v0.2-rho − v0.1 ≥ −0.10 at ρ ≥ 0.5, every n | **FAILS** | −0.18 ± 0.17, −0.19 ± 0.17 (ρ = 0.75, n = 1 / 5), −0.22 ± 0.15 (ρ = 0.5, n = 50); all within ~1.3 SE of zero |
+| Q4 P1 rule applied to v2 | **HOLDS** | 16/30 cells > 2 SE; gap e = 1 +0.50 vs e = 0 +0.32 (driven by n = 0: +2.73 at e = 1, ρ = 1) |
+
+Readings:
+- **Random-seg (Q1) moves S2 in the right direction but does not close it.** The S2 gap to CPR-LP shrinks by
+  ~35%; per the plan, segment structure is only part of the cause. Next suspect: CPR-LP's per-segment deviations
+  capture interactions directly, PC-RFM sees industry and size as separate one-hots.
+- **Q3a fails in an informative way.** The cost of an inverted founder did not just disappear — it became a
+  *gain*: trained on ρ down to −1, the model learns to read an inverted founder's beliefs upside down once it
+  has a few labels (+0.87 at n = 10). Bayes-correct under the prior, but a strong behavioural assumption for
+  real founders (systematically inverted beliefs are rare; ρ ≈ 0 is the realistic bad case). The price shows in
+  Q3c: small, noisy losses with good founders. **Keep `rho_min = −0.5` as default**; report v0.2-rho as the
+  "adversarial founder" ablation.
+- **Q4: with a learned encoder, founder value is larger in new categories,** which is what M2 P1 predicted for
+  v1. The e = 1, n = 0 cell (+2.73) is where v1 failed (`m2_preregistration.md`).
