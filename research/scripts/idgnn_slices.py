@@ -16,7 +16,7 @@ PRE-REGISTERED (written and committed before ID-GNN was trained):
      those are only 17.5% of all test positives.
 Metric: RelBench MAP@12 x100, computed exactly as in audit_relbench.relbench_map.
 
-  python scripts/idgnn_slices.py runs/idgnn_hm/test_pred.npy runs/idgnn_hm/test_users.npy
+  python scripts/idgnn_slices.py runs/idgnn_hm/test_pred.csv     # RelBench write_prediction_table output
 """
 
 from __future__ import annotations
@@ -82,10 +82,14 @@ def slice_labels(cfg):
 
 
 def main():
-    pred_raw = np.load(sys.argv[1])
-    users = np.load(sys.argv[2])
     cfg = TASKS[NAME]
     test, P, recent = slice_labels(cfg)
+    T = pd.read_parquet(DATA / cfg["test"])["timestamp"].max()
+    pdf = pd.read_csv(sys.argv[1])
+    if "timestamp" in pdf:
+        pdf = pdf[pd.to_datetime(pdf["timestamp"]) == T]
+    users = pdf[cfg["tu"]].values
+    pred_raw = np.stack([np.asarray(json.loads(x), dtype=np.int64)[:K] for x in pdf[cfg["ti"]].values])
     ref = next(r for r in json.loads((ROOT / "results/audit_relbench.json").read_text()) if r["task"] == NAME)
     for c in ["repeat", "cf_nbr", "novel"]:
         assert abs(P[c].mean() - ref["shares"][c]) < 1e-9, f"slice share mismatch for {c}"
