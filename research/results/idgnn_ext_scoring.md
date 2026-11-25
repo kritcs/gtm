@@ -33,3 +33,11 @@ existing pair (repeat slice 93.5). The general statement after rel-hm and rel-st
 wins by finding the target in the entity's immediate neighbourhood (its own past links or own content), and is
 near popularity on pairs that are genuinely new.** What "neighbourhood" means is schema-specific, which is why a
 fixed "repeat" definition under-counts it.
+
+## rel-trial, first attempt (2026-11-25 ~15:30) — INVALID RUN, not scored
+
+Both rel-trial runs trained with `Train loss: nan` from epoch 1 and constant validation MAP (test MAP 0.33 and
+0.14 vs published 11.36 and 19.00; logs kept locally in `runs/idgnn_ext/`). They loaded materialised tensor
+frames from the cache written by the first, OOM-killed concurrent attempt; a partially written cache is the
+suspected cause (not verified). Rerun on a fresh session with an empty cache, one task at a time; predictions
+unchanged. If the rerun also gives NaN, J1/J2 are reported as "could not reproduce" and not scored on slices.
