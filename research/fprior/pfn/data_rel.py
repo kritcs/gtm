@@ -21,7 +21,7 @@ from dataclasses import dataclass
 import torch
 
 from .data import (N_FEAT, N_IND, N_SIZE, SIZE_P, Batch, PriorConfig, _solve_intercept, _u,
-                   founder_and_outreach, make_tokens)
+                   founder_and_outreach, make_tokens, segment_effects)
 
 N_REL = 6
 N_FEAT_REL = N_FEAT + N_REL
@@ -109,7 +109,7 @@ def sample_rel_batch(cfg: RelPriorConfig, B: int, g: torch.Generator, dev="cpu")
     rel = _z(torch.einsum("bnd,bd->bn", taste, u_s))
 
     # segment effects + variance shares (Dirichlet(1,1,1) over segment / relational / latent)
-    eff = (0.7 * rn(B, I, 1) + 0.5 * rn(B, 1, S) + 0.5 * rn(B, I, S)).reshape(B, K)
+    eff = segment_effects(cfg, B, I, S, g, dev)
     acc = eff.gather(1, segment)
     seg_std = (eff - acc.mean(1, keepdim=True)) / acc.std(1, keepdim=True)
     w = -torch.log(torch.rand(B, 3, generator=g, device=dev).clamp_min(1e-12))

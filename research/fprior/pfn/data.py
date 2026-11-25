@@ -38,6 +38,7 @@ class PriorConfig:
     logit_sd_range: tuple[float, float] = (0.8, 2.5)
     base_rate_range: tuple[float, float] = (0.02, 0.2)  # log-uniform
     p_no_founder: float = 0.0          # 1.0 = ablation: founder features always zeroed
+    random_seg_structure: bool = False # True: per-task Dirichlet mix of industry / size / interaction effects
 
 
 @dataclass
@@ -81,6 +82,20 @@ def make_tokens(industry, size, founder_logit_acc, has_founder, context, outcome
     state[..., 1] = (context & (outcome < 0.5)).float()
     state[..., 2] = (context & (outcome > 0.5)).float()
     return torch.cat([ind, siz, founder_features(founder_logit_acc, has_founder), state], -1)
+
+
+def segment_effects(cfg, B, I, S, g, dev):
+    """Segment effects (B, I*S). Default recipe 0.7 industry + 0.5 size + 0.5 interaction (as in
+    sim.make_market); with random_seg_structure the three variance shares are Dirichlet(1,1,1) per
+    task, so some markets are pure main effects and others pure interactions (see stress_sim S2)."""
+    gi = torch.randn(B, I, 1, generator=g, device=dev)
+    gs = torch.randn(B, 1, S, generator=g, device=dev)
+    gis = torch.randn(B, I, S, generator=g, device=dev)
+    if not cfg.random_seg_structure:
+        return (0.7 * gi + 0.5 * gs + 0.5 * gis).reshape(B, I * S)
+    w = -torch.log(torch.rand(B, 3, generator=g, device=dev).clamp_min(1e-12))
+    w = (w / w.sum(1, keepdim=True)).sqrt()
+    return (w[:, 0, None, None] * gi + w[:, 1, None, None] * gs + w[:, 2, None, None] * gis).reshape(B, I * S)
 
 
 def founder_and_outreach(cfg, seg_part, c, segment, y, g, dev):
@@ -132,10 +147,7 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
     segment = industry * S + size
 
     # segment effects: industry + size main effects + interaction (as in sim.make_market)
-    gi = torch.randn(B, I, 1, generator=g, device=dev)
-    gs = torch.randn(B, 1, S, generator=g, device=dev)
-    gis = torch.randn(B, I, S, generator=g, device=dev)
-    eff = (0.7 * gi + 0.5 * gs + 0.5 * gis).reshape(B, K)
+    eff = segment_effects(cfg, B, I, S, g, dev)
     acc = eff.gather(1, segment)
     seg_std = (eff - acc.mean(1, keepdim=True)) / acc.std(1, keepdim=True)
 

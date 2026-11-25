@@ -56,6 +56,7 @@ def main():
     ap.add_argument("--d", type=int, default=128)
     ap.add_argument("--layers", type=int, default=6)
     ap.add_argument("--no-founder", action="store_true")
+    ap.add_argument("--random-seg", action="store_true", help="randomize segment effect structure per task")
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
     ap.add_argument("--device", default="auto")
@@ -73,7 +74,8 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     PC = RelPriorConfig if a.relational else PriorConfig
     sample = sample_rel_batch if a.relational else sample_batch
-    prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0)
+    prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0,
+               random_seg_structure=a.random_seg)
     arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
     if a.encoder:
         arch["encoder"] = True
