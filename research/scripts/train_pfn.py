@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 from fprior.pfn.data import N_FEAT, PriorConfig, sample_batch  # noqa: E402
 from fprior.pfn.data_rel import N_FEAT_REL, RelPriorConfig, sample_rel_batch  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
+from fprior.pfn.model_rel import PCRFMRel, product_features  # noqa: E402
 
 
 def pick_device(name: str) -> str:
@@ -56,6 +57,7 @@ def main():
     ap.add_argument("--layers", type=int, default=6)
     ap.add_argument("--no-founder", action="store_true")
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
+    ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=250)
@@ -63,6 +65,7 @@ def main():
     a = ap.parse_args()
 
     dev = pick_device(a.device)
+    a.relational = a.relational or a.encoder
     torch.backends.cuda.matmul.allow_tf32 = True  # A100/L4/H100: TF32 matmuls
     torch.backends.cudnn.allow_tf32 = True
     torch.manual_seed(a.seed)
@@ -72,7 +75,15 @@ def main():
     sample = sample_rel_batch if a.relational else sample_batch
     prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0)
     arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
-    model = PCRFM(**arch).to(dev)
+    if a.encoder:
+        arch["encoder"] = True
+    model = (PCRFMRel(**arch) if a.encoder else PCRFM(**arch)).to(dev)
+
+    def fwd(b):
+        if a.encoder:
+            ad, sm = b.info["adoption"], b.info["sim"]
+            return model(b.x, b.context, ad, product_features(ad, sm))
+        return model(b.x, b.context)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
     warm = min(1000, a.steps // 10)
     sched = torch.optim.lr_scheduler.LambdaLR(
@@ -90,7 +101,7 @@ def main():
     for step in range(1, a.steps + 1):
         model.train()
         b = sample(prior, a.batch, g, dev)
-        logits = model(b.x, b.context)
+        logits = fwd(b)
         mask = (~b.context).float()
         loss = (F.binary_cross_entropy_with_logits(logits, b.target_p, reduction="none") * mask).sum() / mask.sum()
         opt.zero_grad(set_to_none=True)
@@ -102,7 +113,7 @@ def main():
         if step % a.log_every == 0 or step == a.steps:
             model.eval()
             with torch.no_grad():
-                kl = [excess_loss(model(v.x, v.context), v.target_p, (~v.context).float()).item() for v in val]
+                kl = [excess_loss(fwd(v), v.target_p, (~v.context).float()).item() for v in val]
             rec = dict(step=step, loss=run, val_excess=sum(kl) / len(kl), lr=sched.get_last_lr()[0],
                        sec=round(time.time() - t0, 1))
             print(json.dumps(rec), flush=True)

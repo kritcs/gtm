@@ -127,5 +127,6 @@ def sample_rel_batch(cfg: RelPriorConfig, B: int, g: torch.Generator, dev="cpu")
     f_acc, has_founder, context, finfo = founder_and_outreach(cfg, seg_part, c, segment, y, g, dev)
     x = torch.cat([make_tokens(industry, size, f_acc, has_founder, context, y),
                    rel_features(adoption, sim, context, y)], -1)
-    info = dict(novelty=e.squeeze(1), w_seg=w[:, 0], w_rel=w[:, 1], base=base, **finfo)
+    info = dict(novelty=e.squeeze(1), w_seg=w[:, 0], w_rel=w[:, 1], base=base,
+                adoption=adoption, sim=sim, **finfo)
     return Batch(x, context, p, y, info)

@@ -26,6 +26,7 @@ from fprior.metrics import expected_auc, lift_at_k  # noqa: E402
 from fprior.pfn.data import make_tokens  # noqa: E402
 from fprior.pfn.data_rel import rel_features  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
+from fprior.pfn.model_rel import PCRFMRel, product_features  # noqa: E402
 from fprior.sim import FounderConfig, OutreachConfig, make_founder, run_outreach  # noqa: E402
 from fprior.sim_rel import RelMarketConfig, make_rel_market, similar_adopter_score  # noqa: E402
 
@@ -37,7 +38,7 @@ TOP_K = 100
 
 def load(path, dev):
     ck = torch.load(path, map_location=dev)
-    m = PCRFM(**ck["arch"]).to(dev).eval()
+    m = (PCRFMRel if ck["arch"].get("encoder") else PCRFM)(**ck["arch"]).to(dev).eval()
     m.load_state_dict(ck["state"])
     return m, ck["arch"].get("n_feat")
 
@@ -64,6 +65,7 @@ def main():
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--ckpt-nf", default=None)
     ap.add_argument("--ckpt-v0", default=None, help="no-graph v0 model, as an ablation")
+    ap.add_argument("--ckpt-v1", default=None, help="v1 (features only), as an ablation of the v2 encoder")
     ap.add_argument("--seeds", type=int, default=10)
     ap.add_argument("--n-accounts", type=int, default=3000)
     ap.add_argument("--device", default="cpu")
@@ -73,6 +75,8 @@ def main():
     models = {"pcrfm": (*load(a.ckpt, dev), True)}
     if a.ckpt_nf:
         models["pcrfm_nofounder"] = (*load(a.ckpt_nf, dev), False)
+    if a.ckpt_v1:
+        models["pcrfm_v1"] = (*load(a.ckpt_v1, dev), True)
     if a.ckpt_v0:
         models["pcrfm_v0"] = (*load(a.ckpt_v0, dev), True)
     base_methods = ["prior_only", "similar_adopters", "labels_only", "cpr_lp"]
@@ -97,7 +101,12 @@ def main():
                     for name, (m, n_feat, uf) in models.items():
                         relational = n_feat is not None and n_feat > 18
                         x, ctx = tokens(market, founder, out, uf, relational, dev)
-                        sc[name] = m.predict(x, ctx).cpu().numpy()
+                        if isinstance(m, PCRFMRel):
+                            ad = torch.as_tensor(market.adoption.toarray(), dtype=torch.float32, device=dev)[None]
+                            sm = torch.as_tensor(market.seller_similarity, dtype=torch.float32, device=dev)[None]
+                            sc[name] = m.predict(x, ctx, ad, product_features(ad, sm)).cpu().numpy()
+                        else:
+                            sc[name] = m.predict(x, ctx).cpu().numpy()
                     er = np.random.default_rng([seed, 7])
                     row = {"novelty": e, "seed": seed, "rho": rho, "n": n}
                     for k in methods:
