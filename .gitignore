@@ -8,3 +8,4 @@ node_modules/
 .next/
 dist/
 *.egg-info/
+research/runs/
