@@ -230,4 +230,29 @@ for eta in (0.05, 0.1, 0.2):
     p(f"- η = {eta}: rate {rate:.3f} contacts/round → Gaussian needs n = {nG:.0f} ({nG / rate:.0f} rounds from "
       f"exploration alone); Student-t needs n = {nT} ({nT / rate:.0f} rounds)")
 
+# Batched segment-level Thompson (P2a′) and post-contact washout: from the diagnostics, if they have been run
+bj = ROOT / "results/diag_theory_batched.json"
+if bj.exists():
+    rows_b = json.load(open(bj))
+    P = np.array([r["P_exact"] for r in rows_b])
+    p("")
+    p("**P2a′ (batched segment-level Thompson, depletion) vs results/explore_h4_seg.md** "
+      "(scripts/diag_theory_batched.py; hidden segment withheld = 'not yet contacted' path).")
+    p("")
+    p("| seed | P(reach k* ≤ 40), exact | product formula | single selection vs best available | observed first contact | s_k* (round 0) | rounds to deplete accounts above k* |")
+    p("|---|---|---|---|---|---|---|")
+    for r in rows_b:
+        p(f"| {r['seed']} | {r['P_exact']:.2f} | {r['P_prod']:.2f} | {r['P_single']:.2f} | {r['first_obs']} | "
+          f"{r['s_h0']:.2f} | {r['acc_above0'] / 25:.0f} |")
+    p("")
+    p(f"Expected seeds reaching k* within 40 rounds: exact {P.sum():.2f} (sd {np.sqrt((P * (1 - P)).sum()):.2f}), "
+      f"product {sum(r['P_prod'] for r in rows_b):.2f}, single selection {sum(r['P_single'] for r in rows_b):.2f}; "
+      f"observed 5. Mean per-round hazard by 10-round block: "
+      f"{np.round(np.mean([r['p_by_decile'] for r in rows_b], axis=0), 4).tolist()}.")
+pc = ROOT / "results/diag_theory_postcontact.md"
+if pc.exists():
+    p("")
+    p("**P4 applied to segment-level Thompson (why the error stays near −1.9)** (scripts/diag_theory_postcontact.py):")
+    p("")
+    out.extend(pc.read_text().rstrip().split("\n"))
 (ROOT / "results/theory_check_h4.md").write_text("\n".join(out) + "\n")

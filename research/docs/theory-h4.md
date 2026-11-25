@@ -57,8 +57,10 @@ error (Lemma 1).
 
 ## P2 — Thompson sampling: escape time depends on *which* variance is sampled
 
-**(a) Segment-level TS** (one draw per segment from its posterior, contact the top segment) **[proven for the
-frozen-prior phase; sketch overall]**. While k* is unsampled its draw is N(m_{k*}, ω²). Against a single
+**(a) Segment-level TS, single selection** (one draw per segment from its posterior, contact the *one* top
+segment per round, segments never depleted) **[proven for the frozen-prior phase; sketch overall]**. *Scope:
+this is not our experimental setting, where each round takes B accounts and contacted accounts are used up;
+see (a′).* While k* is unsampled its draw is N(m_{k*}, ω²). Against a single
 runner-up j with posterior N(μ_j, v_j), P(k* chosen) = Φ(−z), z = (μ_j − m_{k*})/√(ω² + v_j). At round 0
 (v_j = ω²) and gap g = μ_j − m_{k*}: z = g/(√2 ω). With more competitors the probability is smaller (k* must
 beat all), so Φ(−z) is an upper bound. The first-sampling time is then stochastically larger than a geometric
@@ -67,8 +69,60 @@ part is a sketch because v_j shrinks as competitors are sampled, which raises z 
 This matches research-map.md's "linear regret until ≈ e^{z²/2}".
 
 *Check.* Two-segment simulation: P = 1.69e-2 vs Φ(−z) = 1.69e-2 (z = 2.12); 3.83e-2 vs 3.85e-2 (z = 1.77);
-2.8e-4 vs 2.0e-4 (z = 3.54, Monte Carlo noise at 200k draws). **In our setting (Δ_eff ≈ 2.5, ω = 0.5,
-z ≈ 3.5) segment-level TS would need ≈ 4,900 rounds.**
+2.8e-4 vs 2.0e-4 (z = 3.54, Monte Carlo noise at 200k draws). With our round-0 numbers (Δ_eff ≈ 2.5,
+ω = 0.5, z ≈ 3.5) single selection would need ≈ 4,900 rounds. **This does not transfer to our experiment:**
+segment-level TS with batches reached k* in 5/10 seeds within 40 rounds (`results/explore_h4_seg.md`).
+(a′) explains why.
+
+**(a′) Segment-level TS, batched, with depletion** (what policy `thompsonseg` does) **[exact characterisation;
+the hazard bound is a sketch]**. Each round, segment k gets one draw u_k = μ_k + s_k z_k (z_k iid N(0,1)), every
+remaining account v in k is scored μ_v + s_k z_k, and the top B accounts are contacted; contacted accounts are
+removed. Write R_j(t) for the accounts remaining in segment j and, for simplicity, let accounts in a segment share
+the segment's mean (in CPR-LP they differ slightly through the graph term; the numerical check uses the real
+per-account means).
+
+*Exact selection condition.* k* is contacted in round t iff the remaining accounts of the segments drawn above it
+number fewer than B:
+
+  k* contacted ⇔ Σ_{j≠k*} R_j(t) · 1[u_j > u_{k*}] < B.
+
+Conditioning on z_{k*} = z, the indicators are independent Bernoulli(q_j(z)), q_j(z) = Φ((μ_j − μ_{k*} − s_{k*} z)/s_j), so
+
+  p_t = ∫ φ(z) · P( Σ_j R_j(t) X_j(z) < B ) dz,  X_j(z) ~ Bernoulli(q_j(z)) independent.
+
+*The r(B) view.* If every competitor still has R_j ≥ B, a single segment drawn above k* fills the batch, so k*
+must be the top draw among the non-exhausted segments A_t = {j: R_j(t) ≥ B}:
+
+  p_t ≥ p_t^prod = ∫ φ(z) Π_{j∈A_t} Φ((μ_{k*} + s_{k*} z − μ_j)/s_j) dz,
+
+with equality when no segment is partially depleted (0 < R_j < B). So with segments much larger than B
+(here ≈ 94 accounts vs B = 25), **batching by itself does not lower the bar**: r(B) = 1. What lowers it:
+
+1. **Depletion.** Contacting a segment uses it up. The founder's favourite segments empty first, so the best
+   competitor still available drifts down toward μ_{k*} and A_t shrinks. A deterministic ceiling: k* is reached
+   no later than T_dep = (accounts whose mean exceeds μ_{k*})/B rounds, the point where greedy itself would get
+   there. Here T_dep = 65–98 rounds, which is why greedy needs more than 40 rounds.
+2. **Partially depleted segments** (0 < R_j < B) only block part of the batch; the exact p_t includes them,
+   p_t^prod does not.
+3. **The draw's scale.** The segment-level posterior sd of k* is s_{k*} ≈ 0.71–0.92, not ω = 0.5. It also
+   includes trust-slope uncertainty, s_b²(ℓ_{k*} − ℓ̄)², which is large because the founder's belief about k* is
+   extreme.
+
+First contact then has survival Π_{τ≤t}(1 − p_τ), with p_t increasing over time through depletion. The
+e^{z²/2} behaviour of (a) holds round by round with a z_t that shrinks as competitors deplete.
+
+*Check (`scripts/diag_theory_batched.py`).* Each seed is replayed with k* withheld (the "not yet contacted"
+path), and p_t is computed by Monte Carlo with the real posterior means, segment sds and remaining accounts.
+
+| | Expected seeds reaching k* within 40 rounds | Observed |
+|---|---|---|
+| Exact p_t | 3.87 (sd 1.43) | 5 |
+| Product formula p_t^prod (ignores partial depletion) | 2.76 | 5 |
+| Single selection against the best available competitor, sd ω | 6.30 (wrong: it ignores every other competitor) | 5 |
+
+- **Hazard over time:** p_t rises from about 0.001–0.006 per round in rounds 1–10 to 0.006–0.063 in rounds 31–40.
+- **Timing:** 77% of the predicted first contacts fall in rounds 21–40. Observed first contacts: rounds 23, 28,
+  28, 31, 34.
 
 **(b) Account-level marginal TS (what `fprior/explore.py` does)** **[sketch: mean-field order statistics]**.
 Each account gets an independent draw μ_v + s_v ε_v, where s_v² is the account's *predictive* variance: the
@@ -86,11 +140,16 @@ orders of magnitude larger than Φ(−z) in (a).
 batch: 1.3 of 10; observed 2. Geometric median first round at rate λ₀: 5; observed median 3 (first-contact
 rounds 1, 1, 2, 2, 2, 4, 8, 8, 10, 29).
 
-**Interpretation.** Our Thompson sampler escapes in a few rounds not because posterior uncertainty about
-θ_{k*} is large, but because it samples irreducible account-level noise — "accidental exploration". This is
-a property of marginal per-account draws, not of Thompson sampling per se; a segment-level or correctly
-correlated sampler would be stuck for thousands of rounds (a). The research-map statement is right for (a)
-and does not describe our implementation.
+**Interpretation.** There are two escape routes, and they work on different time scales:
+
+1. **Account-level marginal TS (b)** reaches k* in a few rounds (median 3). It does so because it samples
+   irreducible account-level noise, not because it is unsure about θ_{k*}: "accidental exploration".
+2. **Segment-level TS (a′)** draws only segment uncertainty. It reaches k* late (rounds 23–34) and in about
+   half the seeds, mostly because the founder's favourite segments are used up (depletion), helped by
+   trust-slope uncertainty widening k*'s draw.
+
+Single-selection (a), the research-map "≈ e^{z²/2}" statement, describes neither our account-level sampler nor
+our batched segment-level sampler. It only holds when the top competitor never runs out of accounts.
 
 ## P3 — Stratified η-exploration gives consistency [proven]
 
@@ -152,6 +211,28 @@ Contrast at n = 40: Gaussian bias −1.00 (Δ = 3) and −2.00 (Δ = 6); Student
   the Gaussian formula at the same n would give −1.09. Per-seed errors scatter more (e.g. observed +0.33 vs
   predicted −0.08 at n = 108), because the EM/Laplace CPR-LP also has trust pooling and graph terms.
 
+*Why segment-level Thompson stays near −1.9 even with the Student-t prior (`scripts/diag_theory_postcontact.py`,
+`results/diag_theory_postcontact.md`).* **Mainly contact count.** The −1.96 (Gaussian) / −1.90 (Student-t) averages
+mix three groups of seeds:
+
+| Group (Gaussian / Student-t run) | Seeds | Error at round 39 | What the formula predicts |
+|---|---|---|---|
+| Never contacted | 5 / 5 | The prior error: −2.2 to −2.9 | The prior error (Lemma 1) |
+| Contacted late with 1–8 contacts (first contact at rounds 28–34) | 3 / 3 | −1.4 to −2.7 | Gaussian −1.97 to −2.67; Student-t −1.27 to −2.55 |
+| About 90–120 contacts | 2 / 2 | Gaussian −0.49 / −0.34; Student-t −0.33 / −0.09 | Student-t −0.07 / −0.10 |
+
+At each seed's actual n, the formulas reproduce the means: Gaussian −2.02 vs observed −1.96; Student-t −1.84 vs
+observed −1.90. The account-level robust run reaches −0.62 because its contacts come early and in volume (median
+50, 6/10 seeds with ≥ 20), not because the prior differs.
+
+- **ω** sets the Gaussian half-life n = σ²/ω² ≈ 25 contacts. It explains why Student-t matters once n ≳ 20, not
+  the −1.9 average.
+- **Trust slope b** absorbs part of the correction in the Gaussian runs but not the Student-t runs. In the two
+  heavily sampled seeds the Gaussian model's b falls from ~0.8 to 0.50, so evidence about k* lowers trust in
+  the founder everywhere. The Student-t model keeps b at 0.83 / 0.70 and moves the correction into k*'s own
+  deviation, so the evidence is attributed where it belongs. This affects the other segments, not the mean
+  error on k*.
+
 ## P5 — The combined statement [proven pieces + sketch]
 
 Combining P1, P3 and P4 under A1–A5, for a founder who is Δ-wrong about the truly best segment:
@@ -167,8 +248,9 @@ Combining P1, P3 and P4 under A1–A5, for a founder who is Δ-wrong about the t
 In our setting (Δ_eff = 2.5, σ² = 6.2, ω = 0.5, ε = 0.5): 99 contacts (Gaussian) vs 22 contacts (Student-t,
 exact 1-D). From exploration alone at η = 0.1 that is ≈ 1,266 vs ≈ 282 rounds. **This explains the
 pre-registered E2 failure:** 40 rounds of stratified exploration add only ≈ 3 contacts to k*, far too few; the
-contacts that did the work came from Thompson's accidental exploration (P2b), and the Student-t prior made
-those contacts count roughly twice as much (P4).
+contacts that did the work came from Thompson's accidental exploration (P2b) or, for segment-level Thompson,
+from depletion late in the horizon (P2a′); the Student-t prior made those contacts count roughly twice as much once
+there were ≳ 20 of them (P4).
 
 ## What the theorems do and don't cover
 
@@ -198,11 +280,3 @@ those contacts count roughly twice as much (P4).
   *Existence verified via search; not read.*
 - B. Efron (2011). Tweedie's formula and selection bias. *JASA* 106(496), 1602–1614, doi:10.1198/jasa.2011.tm11181
   (formula first reported by Robbins, 1956). *Bibliographic details verified; full text not read.*
-
-## Erratum / open item (2026-11-24, after results/explore_h4_seg.md)
-
-P2a's escape-time bound is for selecting one segment per round against its best competitor. The empirical test with
-segment-level Thompson sampling and batches of 25 accounts spread across segments reached the hidden segment in 5/10
-seeds within 40 rounds, far sooner than the ≈ 4,900-round estimate. A batched version is needed: with batch B spread
-over the top-r segments of the draw, the relevant gap is to the r-th order statistic, not the maximum. Until derived,
-quote P2a only for the single-selection setting.
