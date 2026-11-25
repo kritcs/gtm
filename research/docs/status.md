@@ -64,3 +64,4 @@ $C stop -s pfn-f
 ## Work log (append only; every agent)
 
 - 2026-11-24 22:50 — Claude: handed SBIR (track A) and benchmark-audit extension (track B) to Codex; see docs/handoff-codex.md. Claude keeps PC-RFM / Colab (v1/v2 eval + M2 scoring, round 2: v0.1 random-seg, no-founder, founder tokens, rho-min -1).
+- 2026-11-25 00:55 — Claude: SBIR pipeline (outcomes → details → stats) finished for the full cohort; data in data/interim/ — Track A ready for Codex. Colab session pfn-f was reclaimed before v1/v2 checkpoints were downloaded (lost ~11.6 units). Relaunched v1, v1-nf, v2, founder-tokens on new L4 session pfn-r (commit f505a52; note: not dda1d0e as pre-registered — sampler refactor, same distribution) with checkpoint sync every 20 min to runs/<name>.sync/.
