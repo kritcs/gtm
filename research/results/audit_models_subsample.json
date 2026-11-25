@@ -1,0 +1,112 @@
+{
+ "task": "rel-hm/user-item-purchase",
+ "T": "2020-09-14",
+ "args": {
+  "max_users": 20000,
+  "extra_users": 100000,
+  "window_days": 90,
+  "epochs": 10,
+  "dim": 64,
+  "batch": 16384,
+  "reg": 0.0001,
+  "device": "cpu",
+  "seed": 0,
+  "out": "results/audit_models_subsample"
+ },
+ "test_users": 20000,
+ "positives": 61601,
+ "shares": {
+  "repeat": 0.03813249784906089,
+  "cf_nbr": 0.13543611305011283,
+  "novel": 0.8264313891008263,
+  "cold_user": 0.10324507719030535,
+  "new_item": 0.04202853849775166,
+  "head10": 0.416632846869369
+ },
+ "overall": {
+  "recent_popularity": 0.9320740084700854,
+  "repeat_then_recent_pop": 2.6653765292652873,
+  "item_cf": 0.4402817143229345,
+  "bpr_mf": 1.147134745341739,
+  "lightgcn": 0.9253806004346183,
+  "repeat+item_cf": 2.6263981908213236,
+  "repeat+bpr_mf": 2.630629094601186,
+  "repeat+lightgcn": 2.651102464209972
+ },
+ "slices": {
+  "repeat": {
+   "users": 1863,
+   "recent_popularity": 0.925009527062667,
+   "repeat_then_recent_pop": 42.2927575124221,
+   "item_cf": 3.3918527002694243,
+   "bpr_mf": 13.314001867846473,
+   "lightgcn": 7.11027360420141,
+   "repeat+item_cf": 42.2927575124221,
+   "repeat+bpr_mf": 42.2927575124221,
+   "repeat+lightgcn": 42.2927575124221
+  },
+  "cf_nbr": {
+   "users": 5374,
+   "recent_popularity": 2.354121017993145,
+   "repeat_then_recent_pop": 0.079501350900681,
+   "item_cf": 0.9086160956508927,
+   "bpr_mf": 0.5881740439914054,
+   "lightgcn": 1.7949986159952136,
+   "repeat+item_cf": 0.16103737679844862,
+   "repeat+bpr_mf": 0.0711616000506957,
+   "repeat+lightgcn": 0.1708716840369241
+  },
+  "novel": {
+   "users": 18241,
+   "recent_popularity": 0.595586445014147,
+   "repeat_then_recent_pop": 0.1525763879972805,
+   "item_cf": 0.10158669311813329,
+   "bpr_mf": 0.22108961979047945,
+   "lightgcn": 0.2598835637568372,
+   "repeat+item_cf": 0.0893504176972737,
+   "repeat+bpr_mf": 0.11466196874411884,
+   "repeat+lightgcn": 0.11781616941353248
+  },
+  "cold_user": {
+   "users": 2133,
+   "recent_popularity": 0.7021699368159753,
+   "repeat_then_recent_pop": 0.7021699368159753,
+   "item_cf": 0.7021699368159753,
+   "bpr_mf": 0.7021699368159753,
+   "lightgcn": 0.7021699368159753,
+   "repeat+item_cf": 0.7021699368159753,
+   "repeat+bpr_mf": 0.7021699368159753,
+   "repeat+lightgcn": 0.7021699368159753
+  },
+  "new_item": {
+   "users": 1795,
+   "recent_popularity": 0.0,
+   "repeat_then_recent_pop": 0.0,
+   "item_cf": 0.0,
+   "bpr_mf": 0.0,
+   "lightgcn": 0.0,
+   "repeat+item_cf": 0.0,
+   "repeat+bpr_mf": 0.0,
+   "repeat+lightgcn": 0.0
+  },
+  "head10": {
+   "users": 13160,
+   "recent_popularity": 2.045269648493704,
+   "repeat_then_recent_pop": 3.0239833574851755,
+   "item_cf": 0.5101682549420554,
+   "bpr_mf": 1.750129248428568,
+   "lightgcn": 1.7478723374884633,
+   "repeat+item_cf": 2.9181153624332357,
+   "repeat+bpr_mf": 2.9530210568116293,
+   "repeat+lightgcn": 2.9930434447158554
+  }
+ },
+ "published": {
+  "Global Popularity": 0.3,
+  "Past Visit": 0.89,
+  "LightGBM": 0.38,
+  "RDL (GraphSAGE)": 0.8,
+  "RDL (ID-GNN)": 2.81
+ },
+ "seconds": 130.2
+}
