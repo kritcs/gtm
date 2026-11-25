@@ -1,5 +1,8 @@
 # Handoff brief for Codex (2026-11-24, ~22:50)
 
+> **2026-11-25 13:50 — superseded.** Codex never started; Claude took Tracks A and B back (see `status.md` work log).
+> Kept for the task lists below, which are still the plan.
+
 You are taking over two CPU-only tracks of a research project while Claude continues the GPU / PC-RFM track in
 parallel. Read `../AGENTS.md`, `../CLAUDE.md` and `status.md` first. Results so far are summarized in
 `paper-outline.md`.

@@ -1,0 +1,298 @@
+[
+ {
+  "task": "rel-trial/condition-sponsor-run",
+  "T": "2021-01-01",
+  "test_users": 2057,
+  "positives": 25694,
+  "shares": {
+   "repeat": 0.3852261228302327,
+   "cf_nbr": 0.16295633221763836,
+   "novel": 0.4518175449521289,
+   "cold_user": 0.0016346228691523313,
+   "new_item": 0.17599439557873434,
+   "head1": 0.2956721413559586,
+   "head10": 0.6146571183933992
+  },
+  "two_hop": {
+   "sample_users": 300,
+   "share_positives_2hop_not_repeat": 0.46308724832214765,
+   "median_share_of_catalogue_reachable": 0.9829658149574145
+  },
+  "overall": {
+   "global_popularity": 2.26048481835342,
+   "recent_popularity": 3.026951115616127,
+   "repeat_then_recent_pop": 7.149056301430886
+  },
+  "slices": {
+   "repeat": {
+    "users": 1202,
+    "global_popularity": 4.050306053277291,
+    "recent_popularity": 5.081376219989444,
+    "repeat_then_recent_pop": 18.799967976652667
+   },
+   "cf_nbr": {
+    "users": 1105,
+    "global_popularity": 1.2809724317077258,
+    "recent_popularity": 2.6892295094676046,
+    "repeat_then_recent_pop": 0.11398405516052573
+   },
+   "novel": {
+    "users": 1721,
+    "global_popularity": 0.047764312000221354,
+    "recent_popularity": 0.04922848473109949,
+    "repeat_then_recent_pop": 0.028245851894893148
+   },
+   "cold_user": {
+    "users": 32,
+    "global_popularity": 1.1495535714285716,
+    "recent_popularity": 1.519097222222222,
+    "repeat_then_recent_pop": 1.519097222222222
+   },
+   "new_item": {
+    "users": 980,
+    "global_popularity": 0.0,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "head10": {
+    "users": 1843,
+    "global_popularity": 2.7608099368040455,
+    "recent_popularity": 3.7924743283097277,
+    "repeat_then_recent_pop": 7.1953184777658965
+   }
+  },
+  "published": {
+   "Global Popularity": 2.52,
+   "Past Visit": 8.42,
+   "LightGBM": 4.82,
+   "RDL (GraphSAGE)": 2.89,
+   "RDL (ID-GNN)": 11.36
+  },
+  "best_published": 11.36,
+  "repeat_heuristic_share_of_best": 0.6293183363935639,
+  "seconds": 4.9,
+  "k": 10
+ },
+ {
+  "task": "rel-trial/site-sponsor-run",
+  "T": "2021-01-01",
+  "test_users": 27428,
+  "positives": 50635,
+  "shares": {
+   "repeat": 0.23327737730818604,
+   "cf_nbr": 0.08209736348375629,
+   "novel": 0.6846252592080576,
+   "cold_user": 0.4340080971659919,
+   "new_item": 0.1456897402982127,
+   "head1": 0.36089661301471315,
+   "head10": 0.6517231164214476
+  },
+  "two_hop": {
+   "sample_users": 300,
+   "share_positives_2hop_not_repeat": 0.4246575342465753,
+   "median_share_of_catalogue_reachable": 0.3823210647244982
+  },
+  "overall": {
+   "global_popularity": 2.4265538308034635,
+   "recent_popularity": 4.633223952265429,
+   "repeat_then_recent_pop": 20.243371178978666
+  },
+  "slices": {
+   "repeat": {
+    "users": 8002,
+    "global_popularity": 4.991057204677163,
+    "recent_popularity": 7.668927207131198,
+    "repeat_then_recent_pop": 73.54214757125784
+   },
+   "cf_nbr": {
+    "users": 3171,
+    "global_popularity": 4.962255850866924,
+    "recent_popularity": 9.982846781096544,
+    "repeat_then_recent_pop": 2.2807428097557394
+   },
+   "novel": {
+    "users": 20866,
+    "global_popularity": 1.185405981833184,
+    "recent_popularity": 2.8031247004696636,
+    "repeat_then_recent_pop": 2.740938039841359
+   },
+   "cold_user": {
+    "users": 14169,
+    "global_popularity": 1.6394027164900196,
+    "recent_popularity": 3.9548078635787713,
+    "repeat_then_recent_pop": 3.9548078635787713
+   },
+   "new_item": {
+    "users": 4489,
+    "global_popularity": 0.0,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "head10": {
+    "users": 21470,
+    "global_popularity": 3.2310459654544426,
+    "recent_popularity": 6.160824919852189,
+    "repeat_then_recent_pop": 23.42659916137443
+   }
+  },
+  "published": {
+   "Global Popularity": 3.75,
+   "Past Visit": 17.31,
+   "LightGBM": 8.4,
+   "RDL (GraphSAGE)": 10.7,
+   "RDL (ID-GNN)": 19.0
+  },
+  "best_published": 19.0,
+  "repeat_heuristic_share_of_best": 1.0654405883672982,
+  "seconds": 7.9,
+  "k": 10
+ },
+ {
+  "task": "rel-stack/user-post-comment",
+  "T": "2021-01-01",
+  "test_users": 758,
+  "positives": 1517,
+  "shares": {
+   "repeat": 0.14700065919578115,
+   "cf_nbr": 0.013843111404087014,
+   "novel": 0.8391562294001318,
+   "cold_user": 0.1034937376400791,
+   "new_item": 0.3684904416611734,
+   "head1": 0.023731048121292023,
+   "head10": 0.0922874093605801
+  },
+  "two_hop": {
+   "sample_users": 300,
+   "share_positives_2hop_not_repeat": 0.13406593406593406,
+   "median_share_of_catalogue_reachable": 0.17627278626629697
+  },
+  "overall": {
+   "global_popularity": 0.005991644678979771,
+   "recent_popularity": 0.017118984797085058,
+   "repeat_then_recent_pop": 5.100309651988306
+  },
+  "slices": {
+   "repeat": {
+    "users": 132,
+    "global_popularity": 0.012836700336700334,
+    "recent_popularity": 0.10204942858686172,
+    "repeat_then_recent_pop": 35.23805524048536
+   },
+   "cf_nbr": {
+    "users": 16,
+    "global_popularity": 0.0,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "novel": {
+    "users": 681,
+    "global_popularity": 0.0054267281231304716,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "cold_user": {
+    "users": 138,
+    "global_popularity": 0.002012882447665056,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "new_item": {
+    "users": 354,
+    "global_popularity": 0.0,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "head10": {
+    "users": 94,
+    "global_popularity": 0.09244483845547675,
+    "recent_popularity": 0.14912407043195527,
+    "repeat_then_recent_pop": 6.395314988313701
+   }
+  },
+  "published": {
+   "Global Popularity": 0.02,
+   "Past Visit": 1.42,
+   "LightGBM": 0.04,
+   "RDL (GraphSAGE)": 0.11,
+   "RDL (ID-GNN)": 12.72
+  },
+  "best_published": 12.72,
+  "repeat_heuristic_share_of_best": 0.40096773993618756,
+  "seconds": 3.0,
+  "k": 100
+ },
+ {
+  "task": "rel-stack/post-post-related",
+  "T": "2021-01-01",
+  "test_users": 258,
+  "positives": 359,
+  "shares": {
+   "repeat": 0.0807799442896936,
+   "cf_nbr": 0.016713091922005572,
+   "novel": 0.9025069637883009,
+   "cold_user": 0.6295264623955432,
+   "new_item": 0.2479108635097493,
+   "head1": 0.11977715877437325,
+   "head10": 0.35376044568245124
+  },
+  "two_hop": {
+   "sample_users": 258,
+   "share_positives_2hop_not_repeat": 0.09774436090225563,
+   "median_share_of_catalogue_reachable": 0.0006342792708137568
+  },
+  "overall": {
+   "global_popularity": 0.6043254505006393,
+   "recent_popularity": 0.575550174239747,
+   "repeat_then_recent_pop": 8.236208361021626
+  },
+  "slices": {
+   "repeat": {
+    "users": 23,
+    "global_popularity": 1.751750529229767,
+    "recent_popularity": 0.4917184265010351,
+    "repeat_then_recent_pop": 92.3913043478261
+   },
+   "cf_nbr": {
+    "users": 6,
+    "global_popularity": 4.430272108843538,
+    "recent_popularity": 6.25,
+    "repeat_then_recent_pop": 3.570707070707071
+   },
+   "novel": {
+    "users": 234,
+    "global_popularity": 0.45166444259437777,
+    "recent_popularity": 0.46160578836608646,
+    "repeat_then_recent_pop": 0.46018880934189393
+   },
+   "cold_user": {
+    "users": 166,
+    "global_popularity": 0.4619715567333371,
+    "recent_popularity": 0.6191260174730191,
+    "repeat_then_recent_pop": 0.6191260174730191
+   },
+   "new_item": {
+    "users": 78,
+    "global_popularity": 0.0,
+    "recent_popularity": 0.0,
+    "repeat_then_recent_pop": 0.0
+   },
+   "head10": {
+    "users": 97,
+    "global_popularity": 1.8308230964783117,
+    "recent_popularity": 2.1425036706029235,
+    "repeat_then_recent_pop": 16.461802385142015
+   }
+  },
+  "published": {
+   "Global Popularity": 1.46,
+   "Past Visit": 1.74,
+   "LightGBM": 2.0,
+   "RDL (GraphSAGE)": 0.07,
+   "RDL (ID-GNN)": 10.83
+  },
+  "best_published": 10.83,
+  "repeat_heuristic_share_of_best": 0.7604993869826063,
+  "seconds": 0.2,
+  "k": 100
+ }
+]
