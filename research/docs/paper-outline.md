@@ -63,6 +63,7 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
 - 82–93% of test positives are novel pairs; heuristics and learned recommenders score ≈ popularity or below there. ✅ `audit_relbench.md`, `audit_models_subsample.md`
 - Published ID-GNN (reproduced exactly, 2.81) gets 99.8% of its hits from repeat purchases; novel-pair MAP 0.00 (popularity 0.58), cold users 0.00. Its whole edge over the heuristic is better ordering of repeats. ✅ `idgnn_slices.md`
 - Across six RelBench recommendation tasks (adds rel-trial ×2, rel-stack ×2) repeat + popularity reaches 40–107% of the best published MAP (beats ID-GNN on site-sponsor-run); heuristics ≈ 0 on novel pairs everywhere. RelBench's own Past Visit baseline understates memorisability on rel-stack (1.42 vs our 5.10). ✅ `audit_relbench_ext.md` (E1–E3 fail as pre-registered, E4 holds)
+- ID-GNN on rel-stack (reproduced: 13.38, 10.89): on user-post-comment 91% of its hits are the user's own threads (posts table), and a no-learning own-thread heuristic reaches 78% of it (exploratory); on post-post-related its score is the 8% re-linked pairs (repeat slice 93.5, novel 3.28). "Neighbourhood" is schema-specific. ✅ `idgnn_ext_scoring.md`; rel-trial 🟡 running
 - Pre-registered claim A1 ("most positives memorizable") failed — report it.
 
 ### C5. An evaluation protocol for settings without public outreach data
