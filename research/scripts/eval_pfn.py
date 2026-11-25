@@ -79,8 +79,8 @@ def main():
                 args = (market.segment, market.n_segments, market.graph_cov, founder.segment_logit,
                         out.contacted, out.outcome)
                 sc = {"prior_only": founder.segment_logit[market.segment],
-                      "labels_only": fit_predict(*args, replace(CPRConfig(), use_founder=False)).logit,
-                      "cpr_lp": fit_predict(*args, CPRConfig()).logit}
+                      "labels_only": fit_predict(*args, replace(CPRConfig(), use_founder=False)).score,
+                      "cpr_lp": fit_predict(*args, CPRConfig()).score}
                 for name, (m, uf) in models.items():
                     sc[name] = pfn_scores(m, market, founder, out, uf, dev)
                 er = np.random.default_rng([seed, 7])

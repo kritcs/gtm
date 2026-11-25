@@ -53,6 +53,8 @@ Pre-register:
   - v0: no graph; segments + features + founder tokens + labels (TabPFN-like). Proves learned trust.
   - v1: + graph features.
   - v2: + learned relational encoder.
+- **Decision (2026-11-24): the graph side follows relational deep learning (RDL), not knowledge-graph embedding.** The market is a relational database (accounts, products, adoptions, later people/employment and events), and the encoder is an RDL-style heterogeneous GNN / relational graph transformer over sampled subgraphs (RelBench, RelGNN, KumoRFM lineage). KG-embedding methods (TransE-style triple scoring) are out of scope except as baselines if a reviewer asks.
+- Prerequisite found in M0/M1: the v0 simulator's account-account graph carries almost no signal at 5–50 labels, so an RDL model has nothing to learn. Simulator v1 must add the relational structure the thesis is about: a product table, an account–product adoption table, and a seller–product similarity, with the emergence knob controlling whether the "similar-product adopters" path exists.
 - Also train an ablation without founder tokens (same compute) — the cleanest test of the claim.
 
 ## 4. Baselines (equal tuning budget)
