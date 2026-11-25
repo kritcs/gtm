@@ -79,7 +79,7 @@ def main():
         models["pcrfm_v1"] = (*load(a.ckpt_v1, dev), True)
     if a.ckpt_v0:
         models["pcrfm_v0"] = (*load(a.ckpt_v0, dev), True)
-    base_methods = ["prior_only", "similar_adopters", "labels_only", "cpr_lp"]
+    base_methods = ["prior_only", "similar_adopters", "fusion", "labels_only", "cpr_lp", "cpr_lp_rel"]
     methods = base_methods + list(models)
     rows = []
     for e in NOVELTY:
@@ -87,6 +87,8 @@ def main():
             market = make_rel_market(RelMarketConfig(n_accounts=a.n_accounts, novelty=e),
                                      np.random.default_rng(seed))
             sa = similar_adopter_score(market)
+            z = lambda v: (v - v.mean()) / v.std()  # noqa: E731
+            X = np.column_stack([z(sa), z(np.log1p(market.degree))])
             for rho in RHOS:
                 for n in NS:
                     rng = np.random.default_rng([seed, int(round(rho * 100)) + 1000, n])
@@ -95,7 +97,10 @@ def main():
                     U = np.setdiff1d(np.arange(market.n), out.contacted)
                     args = (market.segment, market.n_segments, market.graph_cov, founder.segment_logit,
                             out.contacted, out.outcome)
-                    sc = {"prior_only": founder.segment_logit[market.segment], "similar_adopters": sa,
+                    prior = founder.segment_logit[market.segment]
+                    sc = {"prior_only": prior, "similar_adopters": sa,
+                          "fusion": (prior - prior.mean()) / max(prior.std(), 1e-9) + z(sa),
+                          "cpr_lp_rel": fit_predict(*args, CPRConfig(), extra_features=X).score,
                           "labels_only": fit_predict(*args, replace(CPRConfig(), use_founder=False)).score,
                           "cpr_lp": fit_predict(*args, CPRConfig()).score}
                     for name, (m, n_feat, uf) in models.items():
@@ -116,7 +121,8 @@ def main():
             print(f"novelty {e} seed {seed} done", flush=True)
 
     ms = lambda v: f"{np.mean(v):.2f} ± {np.std(v, ddof=1) / np.sqrt(len(v)):.2f}"  # noqa: E731
-    diffs = [("cpr_lp", "PC-RFM − CPR-LP"), ("similar_adopters", "PC-RFM − adopters")]
+    diffs = [("cpr_lp", "PC-RFM − CPR-LP"), ("cpr_lp_rel", "PC-RFM − CPR-LP-rel"),
+             ("fusion", "PC-RFM − fusion"), ("similar_adopters", "PC-RFM − adopters")]
     diffs += [(k, f"PC-RFM − {k}") for k in models if k != "pcrfm"]
     lines = [f"# PC-RFM v1 (relational) on sim_rel markets ({a.seeds} seeds, {a.n_accounts} accounts)", "",
              f"Expected lift@{TOP_K} on uncontacted accounts, mean ± SE over seeds; Δ columns paired.", ""]
