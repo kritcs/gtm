@@ -56,6 +56,8 @@ class CPRConfig:
     # "logit": rank by posterior mean logit. "p": rank by posterior E[sigmoid(x)], the
     # Bayes action for an expected-hit-rate metric such as lift@k.
     rank_by: str = "logit"
+    # prior sd of the coefficient on each optional extra regressor (fit_predict extra_features)
+    extra_sd: float = 0.5
 
 
 @dataclass
@@ -65,6 +67,7 @@ class CPRResult:
     omega: float = float("nan")  # omega used (argmax), or its posterior mean (averaging)
     prob: np.ndarray | None = None   # posterior E[p] per account (probit approximation)
     rank_by: str = "logit"
+    coef: np.ndarray | None = None   # posterior mean of extra-regressor coefficients, if any
 
     @property
     def score(self) -> np.ndarray:
@@ -121,7 +124,11 @@ def _expected_p(mean: np.ndarray, var: np.ndarray) -> np.ndarray:
 
 def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
                 founder_segment_logit: np.ndarray | None, contacted: np.ndarray,
-                outcome: np.ndarray, cfg: CPRConfig) -> CPRResult:
+                outcome: np.ndarray, cfg: CPRConfig,
+                extra_features: np.ndarray | None = None) -> CPRResult:
+    """extra_features: optional (N, q) standardized public regressors (e.g. relational scores).
+    Each enters the mean linearly with coefficient ~ N(0, extra_sd^2), integrated out exactly
+    like the founder trust (appended columns of H, block of S). None = original model."""
     N = len(segment)
     if cfg.use_founder:
         if founder_segment_logit is None:
@@ -141,6 +148,17 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
         S = np.array([[cfg.intercept_sd ** 2]])
         m = np.full(N, cfg.intercept_mean)
 
+    p0, q = len(mu), 0
+    if extra_features is not None:
+        X = np.asarray(extra_features, dtype=float).reshape(N, -1)
+        q = X.shape[1]
+        H = np.column_stack([H, X])
+        mu = np.concatenate([mu, np.zeros(q)])          # zero prior mean: m is unchanged
+        S2 = np.zeros((p0 + q, p0 + q))
+        S2[:p0, :p0] = S
+        S2[p0:, p0:] = cfg.extra_sd ** 2 * np.eye(q)
+        S = S2
+
     grid = tuple(cfg.omega_grid) if cfg.omega_grid else (cfg.omega,)
     need_var = cfg.rank_by == "p"
     # prior variance of each account's logit, excluding the omega term
@@ -153,7 +171,8 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
         w = np.full(len(omegas), 1.0 / len(omegas))
         prob = (sum(wj * _expected_p(m, prior_var_rest + o ** 2) for wj, o in zip(w, omegas))
                 if need_var else None)
-        return CPRResult(m, mu if cfg.use_founder else None, float(w @ omegas), prob, cfg.rank_by)
+        return CPRResult(m, mu[:p0] if cfg.use_founder else None, float(w @ omegas), prob, cfg.rank_by,
+                         mu[p0:] if q else None)
 
     c = contacted
     same_seg = (segment[:, None] == segment[c][None, :]).astype(float)
@@ -174,7 +193,7 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
 
     logit = np.zeros(N)
     prob = np.zeros(N) if need_var else None
-    trust = np.zeros(len(mu)) if cfg.use_founder else None
+    beta = np.zeros(len(mu))
     for wj, (_, omega, grad, K_all_c, sW, Lc) in zip(w, fits):
         if wj == 0.0:
             continue
@@ -184,7 +203,7 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
             V = cho_solve((Lc, True), (sW[:, None] * K_all_c.T))  # (n, N)
             var_j = prior_var_rest + omega ** 2 - np.einsum("ij,ij->j", sW[:, None] * K_all_c.T, V)
             prob += wj * _expected_p(mean_j, var_j)
-        if cfg.use_founder:
-            trust += wj * (mu + S @ H[c].T @ grad)
+        beta += wj * (mu + S @ H[c].T @ grad)
     omega_used = float(w @ np.array([f[1] for f in fits]))
-    return CPRResult(logit, trust, omega_used, prob, cfg.rank_by)
+    trust = beta[:p0] if cfg.use_founder else None
+    return CPRResult(logit, trust, omega_used, prob, cfg.rank_by, beta[p0:] if q else None)

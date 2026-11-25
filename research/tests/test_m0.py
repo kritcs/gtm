@@ -95,3 +95,27 @@ def test_omega_average_and_expected_p():
     # averaged mean lies within the per-omega means, account by account
     singles = np.array([fit_predict(*args, CPRConfig(omega_grid=None, omega=o)).logit for o in grid])
     assert np.all(avg.logit >= singles.min(0) - 1e-9) and np.all(avg.logit <= singles.max(0) + 1e-9)
+
+
+def test_extra_features_zero_prior_equals_default():
+    # a regressor whose coefficient prior has zero variance must leave the model unchanged
+    m = market()
+    f = make_founder(m, FounderConfig(reliability=0.7), np.random.default_rng(14))
+    out = run_outreach(m, f, OutreachConfig(n_customers=8), np.random.default_rng(15))
+    args = (m.segment, m.n_segments, m.graph_cov, f.segment_logit, out.contacted, out.outcome)
+    base = fit_predict(*args, CPRConfig())
+    x = np.random.default_rng(16).standard_normal((m.n, 2))
+    same = fit_predict(*args, CPRConfig(extra_sd=0.0), extra_features=x)
+    assert np.allclose(base.logit, same.logit) and np.allclose(base.trust, same.trust)
+    assert base.coef is None and np.allclose(same.coef, 0.0)
+
+
+def test_extra_feature_coefficient_learned_positive():
+    from fprior.sim_rel import RelMarketConfig, make_rel_market
+    rm = make_rel_market(RelMarketConfig(n_accounts=800, novelty=0.0), np.random.default_rng(17))
+    f = make_founder(rm, FounderConfig(reliability=0.0), np.random.default_rng(18))
+    out = run_outreach(rm, f, OutreachConfig(n_customers=40), np.random.default_rng(19))
+    x = (rm.relational - rm.relational.mean()) / rm.relational.std()   # truly predictive (hidden)
+    res = fit_predict(rm.segment, rm.n_segments, rm.graph_cov, f.segment_logit,
+                      out.contacted, out.outcome, CPRConfig(), extra_features=x[:, None])
+    assert res.coef[0] > 0.2
