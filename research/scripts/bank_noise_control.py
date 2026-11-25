@@ -34,6 +34,10 @@ NS = [0, 1, 5, 10, 20, 50]
 SEEDS = int(sys.argv[1]) if len(sys.argv) > 1 else 30
 CKPT = sys.argv[2] if len(sys.argv) > 2 else str(ROOT / "runs/pfn_v0/model.pt")
 OUT = sys.argv[3] if len(sys.argv) > 3 else "results/bank_noise_control"   # path stem, .md/.json appended
+# "account" (default, original control): scramble belief values across accounts.
+# "segment": shuffle the K segment beliefs across segments (the only noise a founder-token model can be fed,
+#            since tokens are per segment; weaker than "account" because beliefs stay segment-constant).
+NOISE = sys.argv[4] if len(sys.argv) > 4 else "account"
 
 
 def main():
@@ -52,19 +56,23 @@ def main():
                 with torch.no_grad():
                     s_true = pfn_scores(pfn, market, founder, out, True, "cpu")
                     # noise: scramble the per-account belief values across accounts
-                    acc = founder.segment_logit[market.segment]
-                    perm = np.random.default_rng([seed, 79, n]).permutation(acc)
-                    seg_backup = market.segment
-                    market.segment = np.arange(market.n)          # one "segment" per account
-                    s_noise = pfn_scores(pfn, market, Founder(founder.cfg, perm), out, True, "cpu")
-                    market.segment = seg_backup
+                    if NOISE == "segment":
+                        perm = np.random.default_rng([seed, 79, n]).permutation(founder.segment_logit)
+                        s_noise = pfn_scores(pfn, market, Founder(founder.cfg, perm), out, True, "cpu")
+                    else:
+                        acc = founder.segment_logit[market.segment]
+                        perm = np.random.default_rng([seed, 79, n]).permutation(acc)
+                        seg_backup = market.segment
+                        market.segment = np.arange(market.n)          # one "segment" per account
+                        s_noise = pfn_scores(pfn, market, Founder(founder.cfg, perm), out, True, "cpu")
+                        market.segment = seg_backup
                 er = lambda: np.random.default_rng([seed, 7])  # noqa: E731
                 rows.append({"seed": seed, "rho": rho, "n": n,
                              "true": lift_at_k(s_true[U], market.y[U], 100, er()),
                              "noise": lift_at_k(s_noise[U], market.y[U], 100, er())})
         print(f"seed {seed} done", flush=True)
     ms = lambda v: f"{np.mean(v):+.2f} ± {np.std(v, ddof=1) / np.sqrt(len(v)):.2f}"  # noqa: E731
-    lines = [__doc__.strip(), "", f"## Results ({SEEDS} seeds): PC-RFM v0, true beliefs − noise beliefs (lift@100)", "",
+    lines = [__doc__.strip(), "", f"## Results ({SEEDS} seeds): {CKPT}, noise = {NOISE}; true beliefs − noise beliefs (lift@100)", "",
              "| ρ | " + " | ".join(f"n = {n}" for n in NS) + " |", "|---|" + "---|" * len(NS)]
     for rho in RHOS:
         cells = [ms([r["true"] - r["noise"] for r in rows if r["rho"] == rho and r["n"] == n]) for n in NS]
