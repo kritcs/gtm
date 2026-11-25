@@ -43,14 +43,17 @@ def load(path, dev):
     return m, ck["arch"].get("n_feat")
 
 
-def tokens(market, founder, out, use_founder, relational, dev):
+def tokens(market, founder, out, use_founder, relational, dev, noise_rng=None):
     t = lambda a, dt=torch.long: torch.as_tensor(np.asarray(a), dtype=dt, device=dev)[None]  # noqa: E731
     ctx = np.zeros(market.n, dtype=bool)
     ctx[out.contacted] = True
     outcome = np.zeros(market.n)
     outcome[out.contacted] = out.outcome
+    belief = founder.segment_logit[market.segment]
+    if noise_rng is not None:   # control: same values scrambled across accounts (no information)
+        belief = noise_rng.permutation(belief)
     x = make_tokens(t(market.industry), t(market.size),
-                    t(founder.segment_logit[market.segment], torch.float32),
+                    t(belief, torch.float32),
                     torch.tensor([1.0 if use_founder else 0.0], device=dev),
                     t(ctx, torch.bool), t(outcome, torch.float32))
     if relational:
@@ -80,7 +83,7 @@ def main():
     if a.ckpt_v0:
         models["pcrfm_v0"] = (*load(a.ckpt_v0, dev), True)
     base_methods = ["prior_only", "similar_adopters", "fusion", "labels_only", "cpr_lp", "cpr_lp_rel"]
-    methods = base_methods + list(models)
+    methods = base_methods + list(models) + [f"{k}_noise" for k, v in models.items() if v[2]]
     rows = []
     for e in NOVELTY:
         for seed in range(a.seeds):
@@ -103,9 +106,11 @@ def main():
                           "cpr_lp_rel": fit_predict(*args, CPRConfig(), extra_features=X).score,
                           "labels_only": fit_predict(*args, replace(CPRConfig(), use_founder=False)).score,
                           "cpr_lp": fit_predict(*args, CPRConfig()).score}
-                    for name, (m, n_feat, uf) in models.items():
+                    noise_models = {f"{k}_noise": v for k, v in models.items() if v[2]}
+                    for name, (m, n_feat, uf) in {**models, **noise_models}.items():
                         relational = n_feat is not None and n_feat > 18
-                        x, ctx = tokens(market, founder, out, uf, relational, dev)
+                        nr = np.random.default_rng([seed, 79, n]) if name.endswith("_noise") else None
+                        x, ctx = tokens(market, founder, out, uf, relational, dev, nr)
                         if isinstance(m, PCRFMRel):
                             ad = torch.as_tensor(market.adoption.toarray(), dtype=torch.float32, device=dev)[None]
                             sm = torch.as_tensor(market.seller_similarity, dtype=torch.float32, device=dev)[None]
@@ -124,6 +129,7 @@ def main():
     diffs = [("cpr_lp", "PC-RFM − CPR-LP"), ("cpr_lp_rel", "PC-RFM − CPR-LP-rel"),
              ("fusion", "PC-RFM − fusion"), ("similar_adopters", "PC-RFM − adopters")]
     diffs += [(k, f"PC-RFM − {k}") for k in models if k != "pcrfm"]
+    diffs += [("pcrfm_noise", "PC-RFM − same model, noise beliefs")]
     lines = [f"# PC-RFM v1 (relational) on sim_rel markets ({a.seeds} seeds, {a.n_accounts} accounts)", "",
              f"Expected lift@{TOP_K} on uncontacted accounts, mean ± SE over seeds; Δ columns paired.", ""]
     for e in NOVELTY:
