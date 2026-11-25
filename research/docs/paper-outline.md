@@ -1,4 +1,4 @@
-# Paper outline (working draft, 2026-11-24)
+# Paper outline (working draft, updated 2026-11-25)
 
 **Working title:** *Learning to Trust Founders: Revisable Priors for Customer Discovery with 5–50 Labels*
 
@@ -36,11 +36,27 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
   `diag_learner_gap.md`, `matched_prior.md`. Against a hierarchical CPR-LP the two are within 0.2 in 19/24 cells;
   PC-RFM still leads by ~+0.25 with good founders at n = 1–10, because a fixed hierarchy over-pools there. ✅
   `real_bank_hier.md`. **Refined claim: PC-RFM adapts how much to pool to the situation.**
-- Against its own no-information mode, the founder benefit is large with good founders and shrinks with labels,
-  but inverted founders are under-discounted (~0.2–0.3 at n = 10–20). ✅ `bank_noise_control.md`
-- Robust to most simulator shifts; weak when segment effects are pure interactions (fix in training prior). ✅ `stress_sim.md`; ⬜ retrained v0.1
-- Founder-statement tokens with stated confidence. ⬜ implemented, training queued
-- Relational versions v1 (features) / v2 (encoder). ⬜ training; pre-registered P1–P6 in `m2_preregistration.md`
+- Against its own no-information mode, the founder benefit is large with good founders and shrinks with labels. ✅
+  `bank_noise_control.md`. The "inverted founders under-discounted" cost (~0.2–0.3) appears against an
+  account-scrambled null but **vanishes against a segment-shuffled null** (`bank_noise_control_tok.md`): a wrong
+  founder is no worse than a random one; it is just harder to spot than obvious noise. Report both nulls.
+- Training on founders down to ρ = −1 turns inverted founders into a *gain* (+0.6–0.9) once labels exist, at a
+  small noisy cost with good founders; kept as an "adversarial founder" ablation, default stays ρ ≥ −0.5. ✅
+  `round2_preregistration.md` (Q3)
+- Robust to most simulator shifts; a stable ~−0.13 gap to CPR-LP when segments are pure interactions. Random
+  segment structure in training closes ~35% of it; an explicit segment embedding closes none; it does not depend
+  on training seed. Likely cause: CPR-LP sees the account graph, PC-RFM v0.x does not. ✅ `stress_sim*.md`,
+  `round2/3_preregistration.md`
+- Founder-statement tokens: stated confidence is used in the right direction (reversing it costs up to 1.9 lift)
+  and matters most for mediocre founders with ≤ 1 label; "no idea" answers did not help (T1, T3 failed as
+  pre-registered). With neutral statements it matches v0. Its extra bank lift with bad founders is learner
+  quality, not founder use. ✅ `m2_pfn_tok.md`, `real_bank_tok.md`, `bank_noise_control_tok.md`
+- Relational v1: product relations help strongly in familiar categories (+0.8–1.9 vs v0) and v1 matches or beats
+  CPR-LP / CPR-LP-rel in 66/72 cells; founder value is *not* larger in new categories (P1 fails) and a useless
+  founder costs up to 0.33 at n = 5 (P3 fails). Weak spot: new categories with zero labels (−1.0 to −1.2 vs v0).
+  ✅ `m2_preregistration.md`; all verdicts replicate with a second training seed ✅ `round3_preregistration.md` (S4)
+- Learned encoder v2: little gain where predicted (P5 fails) but fixes v1's zero-label new-category weak spot
+  (+0.7–0.8), and with v2 founder value *is* larger in new categories (+0.50 vs +0.32). ✅ `m2_pfn_v2*.md`, round 2 Q4
 
 ### C4. Benchmarks measure memorization, not finding new customers (audit)
 - A no-learning repeat + popularity heuristic reaches 93% / 88% of the best published RelBench MAP. ✅ `audit_relbench.md`
@@ -64,7 +80,8 @@ Ladder: simulation → sim-to-sim stress → real outcomes + simulated founder �
 
 ## 4. Biggest gaps before submission
 1. Real founders (archival SBIR text is a proxy; the cohort is the real thing).
-2. PC-RFM's founder-specific advantage over CPR-LP is unproven after the placebo correction.
-3. Relational results (v1/v2) and the published-GNN audit slice.
+2. PC-RFM's founder-specific advantage over CPR-LP is unproven after the placebo correction (confirmed again for
+   the token model). The defensible PC-RFM claims are: adaptive pooling, relational transfer, and use of stated confidence.
+3. The published-GNN audit slice (ID-GNN on Colab); a graph-aware v0 to test the S2 explanation.
 4. EXNEX original not read; several theory references cited but not read in full.
 5. All CPR-LP hyperparameters were set by hand on simulations; need a principled selection protocol.
