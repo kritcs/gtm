@@ -32,6 +32,12 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
 - Bad founders cost little once labels exist. ✅ same
 - **Correction from placebo tests:** its edge over CPR-LP with bad founders is mostly better few-label
   learning, not better trust learning. ✅ `placebo_bank.md`, `diag_placebo_selection.md`
+- That edge is mostly pooling through industry/size main effects (not noise level, not the trust prior). ✅
+  `diag_learner_gap.md`, `matched_prior.md`. Against a hierarchical CPR-LP the two are within 0.2 in 19/24 cells;
+  PC-RFM still leads by ~+0.25 with good founders at n = 1–10, because a fixed hierarchy over-pools there. ✅
+  `real_bank_hier.md`. **Refined claim: PC-RFM adapts how much to pool to the situation.**
+- Against its own no-information mode, the founder benefit is large with good founders and shrinks with labels,
+  but inverted founders are under-discounted (~0.2–0.3 at n = 10–20). ✅ `bank_noise_control.md`
 - Robust to most simulator shifts; weak when segment effects are pure interactions (fix in training prior). ✅ `stress_sim.md`; ⬜ retrained v0.1
 - Founder-statement tokens with stated confidence. ⬜ implemented, training queued
 - Relational versions v1 (features) / v2 (encoder). ⬜ training; pre-registered P1–P6 in `m2_preregistration.md`
