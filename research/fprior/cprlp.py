@@ -58,6 +58,13 @@ class CPRConfig:
     rank_by: str = "logit"
     # prior sd of the coefficient on each optional extra regressor (fit_predict extra_features)
     extra_sd: float = 0.5
+    # Heavy-tailed segment deviations: xi_k ~ N(0, omega_k^2), omega_k^2 ~ Inv-Gamma(nu/2, nu*omega^2/2),
+    # i.e. a Student-t(nu) prior with scale omega (the grid value). None = Gaussian (original model).
+    robust_nu: float | None = None
+    robust_iters: int = 15
+    # cap on each segment's deviation sd under robust_nu (a truncated hyperprior). Without it, heavy
+    # tails (nu = 1 tried) let EM inflate the scale of a quasi-separated segment without bound.
+    robust_max_sd: float = 3.0
 
 
 @dataclass
@@ -91,8 +98,16 @@ def laplace_bernoulli_evidence(K: np.ndarray, m: np.ndarray, y: np.ndarray,
     return grad, log_z
 
 
-def _laplace(K, m, y, iters=100, tol=1e-9):
-    """Returns (grad, log_z, sqrt(W), chol(I + sW K sW)) at the mode."""
+def _psi(a, f, m, y):
+    """Laplace objective: log p(y | f) - 0.5 a^T (f - m), with f = K a + m."""
+    return float(np.sum(y * f - np.logaddexp(0.0, f))) - 0.5 * float(a @ (f - m))
+
+
+def _laplace(K, m, y, iters=100, tol=1e-9, damped=False):
+    """Returns (grad, log_z, sqrt(W), chol(I + sW K sW)) at the mode.
+
+    damped=True adds step-halving on the Laplace objective (needed when K has large blocks, e.g.
+    robust segment scales); the default undamped path is unchanged (GPML Algorithm 3.1)."""
     n = len(y)
     f = m.copy()
     a = np.zeros(n)
@@ -103,8 +118,16 @@ def _laplace(K, m, y, iters=100, tol=1e-9):
         B = np.eye(n) + sW[:, None] * K * sW[None, :]
         Lc = np.linalg.cholesky(B)
         b = W * (f - m) + (y - pi)
-        a = b - sW * cho_solve((Lc, True), sW * (K @ b))
-        f_new = K @ a + m
+        a_new = b - sW * cho_solve((Lc, True), sW * (K @ b))
+        f_new = K @ a_new + m
+        if damped:
+            psi_old = _psi(a, f, m, y)
+            t = 1.0
+            while _psi(a_new, f_new, m, y) < psi_old - 1e-12 and t > 1e-6:
+                t *= 0.5
+                a_new = a + t * (a_new - a)
+                f_new = K @ a_new + m
+        a = a_new
         done = np.max(np.abs(f_new - f)) < tol
         f = f_new
         if done:
@@ -115,6 +138,42 @@ def _laplace(K, m, y, iters=100, tol=1e-9):
     loglik = float(np.sum(y * np.log(pi + 1e-300) + (1 - y) * np.log(1 - pi + 1e-300)))
     log_z = -0.5 * float(a @ (f - m)) + loglik - float(np.sum(np.log(np.diag(Lc))))
     return y - pi, log_z, sW, Lc
+
+
+def robust_segment_scales(seg_c: np.ndarray, n_segments: int, rest_cc: np.ndarray, m_c: np.ndarray,
+                          y: np.ndarray, omega0: float, nu: float, iters: int = 15, tol: float = 1e-6,
+                          max_sd: float = 3.0):
+    """EM for Student-t segment deviations (scale mixture of normals).
+
+    Kernel on contacted accounts: K = sum_k omega_k^2 z_k z_k^T + rest, z_k = indicator of segment k.
+    Under the Laplace approximation, xi_k is jointly Gaussian with f_c, so
+        E[xi_k | y]   = omega_k^2 z_k^T g                     (g = grad log p(y | f_hat))
+        Var[xi_k | y] = omega_k^2 - omega_k^4 z_k^T (K + W^-1)^-1 z_k
+                      = omega_k^2 - omega_k^4 || L^-1 (sqrt(W) z_k) ||^2,   L L^T = I + sW K sW
+    M-step (inverse-gamma hyperprior): omega_k^2 <- (nu omega0^2 + E[xi_k^2]) / (nu + 1).
+    Segments without contacts stay at omega0^2. omega_k is capped at max_sd (truncated hyperprior).
+    Returns (omega_k^2 for all segments, final fit).
+    """
+    om2 = np.full(n_segments, omega0 ** 2)
+    present = np.unique(seg_c)
+    Z = (seg_c[:, None] == present[None, :]).astype(float)            # (n, |present|)
+    same = (seg_c[:, None] == seg_c[None, :]).astype(float)
+    fit = None
+    for _ in range(iters):
+        K = same * om2[seg_c][None, :] + rest_cc
+        grad, log_z, sW, Lc = _laplace(K, m_c, y, iters=200, damped=True)
+        fit = (grad, log_z, sW, Lc, K)
+        mk = om2[present] * (Z.T @ grad)
+        A = np.linalg.solve(Lc, sW[:, None] * Z)                       # L^-1 sW Z
+        vk = om2[present] - om2[present] ** 2 * np.sum(A * A, axis=0)
+        new = np.minimum((nu * omega0 ** 2 + mk ** 2 + np.maximum(vk, 0.0)) / (nu + 1.0), max_sd ** 2)
+        done = np.max(np.abs(new - om2[present])) < tol
+        om2[present] = new
+        if done:
+            break
+    K = same * om2[seg_c][None, :] + rest_cc
+    grad, log_z, sW, Lc = _laplace(K, m_c, y, iters=200, damped=True)
+    return om2, (grad, log_z, sW, Lc, K)
 
 
 def _expected_p(mean: np.ndarray, var: np.ndarray) -> np.ndarray:
@@ -180,9 +239,17 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
     rest[c, np.arange(len(c))] += cfg.nugget_sd ** 2
     fits = []
     for omega in grid:
-        K_all_c = omega ** 2 * same_seg + rest
-        grad, log_z, sW, Lc = _laplace(K_all_c[c], m[c], outcome)
-        fits.append((log_z, omega, grad, K_all_c, sW, Lc))
+        if cfg.robust_nu is None:
+            K_all_c = omega ** 2 * same_seg + rest
+            grad, log_z, sW, Lc = _laplace(K_all_c[c], m[c], outcome)
+            om_acc = None
+        else:
+            om2, (grad, log_z, sW, Lc, _) = robust_segment_scales(
+                segment[c], n_segments, rest[c], m[c], outcome, omega, cfg.robust_nu, cfg.robust_iters,
+                max_sd=cfg.robust_max_sd)
+            K_all_c = same_seg * om2[segment[c]][None, :] + rest
+            om_acc = om2[segment]                                       # per-account omega^2
+        fits.append((log_z, omega, grad, K_all_c, sW, Lc, om_acc))
     log_zs = np.array([f[0] for f in fits])
     if cfg.omega_average:
         w = np.exp(log_zs - log_zs.max())
@@ -194,14 +261,15 @@ def fit_predict(segment: np.ndarray, n_segments: int, graph_cov: np.ndarray,
     logit = np.zeros(N)
     prob = np.zeros(N) if need_var else None
     beta = np.zeros(len(mu))
-    for wj, (_, omega, grad, K_all_c, sW, Lc) in zip(w, fits):
+    for wj, (_, omega, grad, K_all_c, sW, Lc, om_acc) in zip(w, fits):
         if wj == 0.0:
             continue
         mean_j = m + K_all_c @ grad
         logit += wj * mean_j
         if need_var:
             V = cho_solve((Lc, True), (sW[:, None] * K_all_c.T))  # (n, N)
-            var_j = prior_var_rest + omega ** 2 - np.einsum("ij,ij->j", sW[:, None] * K_all_c.T, V)
+            om_term = omega ** 2 if om_acc is None else om_acc
+            var_j = prior_var_rest + om_term - np.einsum("ij,ij->j", sW[:, None] * K_all_c.T, V)
             prob += wj * _expected_p(mean_j, var_j)
         beta += wj * (mu + S @ H[c].T @ grad)
     omega_used = float(w @ np.array([f[1] for f in fits]))

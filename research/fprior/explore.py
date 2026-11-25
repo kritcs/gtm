@@ -17,13 +17,14 @@ import numpy as np
 from scipy.linalg import cho_factor, cho_solve
 from scipy.special import expit
 
-from .cprlp import CPRConfig, laplace_bernoulli_evidence
+from .cprlp import CPRConfig, laplace_bernoulli_evidence, robust_segment_scales
 from .sim import Founder, FounderConfig, Market
 
 
 def posterior(market: Market, founder_segment_logit: np.ndarray, contacted: np.ndarray,
-              outcome: np.ndarray, cfg: CPRConfig, omega: float):
-    """Per-account Laplace posterior mean and variance of the logit, and posterior mean trust (a, b)."""
+              outcome: np.ndarray, cfg: CPRConfig, omega: float, robust_nu: float | None = None):
+    """Per-account Laplace posterior mean and variance of the logit, and posterior mean trust (a, b).
+    robust_nu: Student-t segment deviations (EM over per-segment scales, see cprlp.robust_segment_scales)."""
     seg = market.segment
     N = market.n
     ell = founder_segment_logit[seg]
@@ -38,11 +39,19 @@ def posterior(market: Market, founder_segment_logit: np.ndarray, contacted: np.n
     if len(contacted) == 0:
         return m, prior_var, mu
     c = contacted
-    K_all_c = (omega ** 2 * (seg[:, None] == seg[c][None, :]) + cfg.graph_sd ** 2 * market.graph_cov[:, c]
-               + H @ S @ H[c].T)
-    K_all_c[c, np.arange(len(c))] += cfg.nugget_sd ** 2
-    K_cc = K_all_c[c]
-    grad, _ = laplace_bernoulli_evidence(K_cc, m[c], outcome)
+    rest = cfg.graph_sd ** 2 * market.graph_cov[:, c] + H @ S @ H[c].T
+    rest[c, np.arange(len(c))] += cfg.nugget_sd ** 2
+    same = (seg[:, None] == seg[c][None, :])
+    if robust_nu is None:
+        K_all_c = omega ** 2 * same + rest
+        K_cc = K_all_c[c]
+        grad, _ = laplace_bernoulli_evidence(K_cc, m[c], outcome)
+    else:
+        om2, (grad, _, _, _, K_cc) = robust_segment_scales(seg[c], market.n_segments, rest[c], m[c], outcome,
+                                                          omega, robust_nu, cfg.robust_iters,
+                                                          max_sd=cfg.robust_max_sd)
+        K_all_c = same * om2[seg[c]][None, :] + rest
+        prior_var = prior_var - omega ** 2 + om2[seg]
     mean = m + K_all_c @ grad
     f_c = mean[c]
     W = expit(f_c) * (1 - expit(f_c))
@@ -67,12 +76,17 @@ class LoopConfig:
     rounds: int = 40
     batch: int = 25
     omega: float = 0.5
+    robust_nu: float = 3.0
 
 
 def run_policy(market: Market, founder: Founder, policy: str, eta: float, cfg: LoopConfig,
                rng: np.random.Generator, cpr: CPRConfig = CPRConfig()):
-    """policy in {greedy, thompson, founder, oracle}; eta = share of each batch spent on stratified
-    exploration (uniform segment, then uniform account within it)."""
+    """policy in {greedy, thompson, founder, oracle}, optionally suffixed "-robust" (Student-t segment
+    deviations, nu = robust_nu); eta = share of each batch spent on stratified exploration
+    (uniform segment, then uniform account within it)."""
+    robust_nu = None
+    if policy.endswith("-robust"):
+        policy, robust_nu = policy[: -len("-robust")], cfg.robust_nu
     hidden = int(np.argmax(founder.segment_logit - market.segment_logit < -1.0))   # the wrongly believed segment
     remaining = np.ones(market.n, dtype=bool)
     contacted, outcome, log = [], [], []
@@ -80,7 +94,7 @@ def run_policy(market: Market, founder: Founder, policy: str, eta: float, cfg: L
         c = np.array(contacted, dtype=int)
         o = np.array(outcome, dtype=float)
         if policy in ("greedy", "thompson"):
-            mean, var, trust = posterior(market, founder.segment_logit, c, o, cpr, cfg.omega)
+            mean, var, trust = posterior(market, founder.segment_logit, c, o, cpr, cfg.omega, robust_nu)
         else:
             mean, var, trust = founder.segment_logit[market.segment].astype(float), None, np.array([np.nan, np.nan])
         # how the model currently sees the hidden segment

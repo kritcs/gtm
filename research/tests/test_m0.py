@@ -119,3 +119,34 @@ def test_extra_feature_coefficient_learned_positive():
     res = fit_predict(rm.segment, rm.n_segments, rm.graph_cov, f.segment_logit,
                       out.contacted, out.outcome, CPRConfig(), extra_features=x[:, None])
     assert res.coef[0] > 0.2
+
+
+def test_robust_large_nu_matches_gaussian():
+    """Student-t with nu -> infinity keeps every segment at omega0: same as the Gaussian model."""
+    m = make_market(MarketConfig(n_accounts=600), np.random.default_rng(21))
+    f = make_founder(m, FounderConfig(reliability=0.7), np.random.default_rng(22))
+    out = run_outreach(m, f, OutreachConfig(n_customers=10), np.random.default_rng(23))
+    args = (m.segment, m.n_segments, m.graph_cov, f.segment_logit, out.contacted, out.outcome)
+    g = fit_predict(*args, CPRConfig())
+    r = fit_predict(*args, CPRConfig(robust_nu=1e9))
+    assert np.max(np.abs(g.logit - r.logit)) < 1e-4
+
+
+def test_robust_prior_corrects_a_confidently_wrong_segment():
+    """Founder believes the best segment is 3 logits worse; 30 contacts there + 150 elsewhere.
+    The Student-t prior must leave a much smaller error on that segment than the Gaussian prior."""
+    from fprior.explore import pessimistic_founder, posterior
+    errs = {None: [], 3.0: []}
+    for seed in range(3):
+        m = make_market(MarketConfig(n_accounts=1200), np.random.default_rng(seed))
+        f = pessimistic_founder(m)
+        hid = int(np.argmax(f.segment_logit - m.segment_logit < -1.0))
+        rng = np.random.default_rng(seed + 100)
+        in_h = np.flatnonzero(m.segment == hid)
+        c = np.concatenate([rng.choice(in_h, size=min(30, len(in_h)), replace=False),
+                            rng.choice(np.flatnonzero(m.segment != hid), 150, replace=False)])
+        for nu in errs:
+            mean, var, _ = posterior(m, f.segment_logit, c, m.y[c], CPRConfig(), 0.5, nu)
+            assert np.all(np.isfinite(mean)) and np.all(var > 0)
+            errs[nu].append(abs(mean[m.segment == hid].mean() - m.segment_logit[hid]))
+    assert np.mean(errs[3.0]) < np.mean(errs[None]) - 0.3
