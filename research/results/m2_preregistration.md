@@ -38,3 +38,34 @@ least half of the cells named; it **fails** otherwise. Every result is reported 
 ## Exploratory (not pre-registered)
 
 Per-cell tables, AUC, v2-nf, behaviour at n = 50, and anything about why a prediction failed.
+
+## Scoring (written after the run, 2026-11-25 ~05:30)
+
+Deviations: models trained at commit `f505a52` (not `dda1d0e`; sampler refactor between them, same distribution),
+seed 1 (not 0); v2-nf was not trained this round (Colab session lost), so v2 founder value is round-2 Q4.
+Mechanical scoring by `scripts/score_m2.py` (committed before results). Files: `m2_pfn_v1.{md,json}`,
+`m2_pfn_v2.{md,json}`.
+
+| prediction | result | detail |
+|---|---|---|
+| P1 founder value | **FAILS** | 16/30 cells > 2 SE (enough), but the gap is *not* larger in new categories: e = 1 +0.33 vs e = 0 +0.39 |
+| P2 relational value | **HOLDS** | e = 0: 20/20 cells > 2 SE (v1 − v0 ≈ +0.8 to +1.9); e = 1: 20/20 within 2 SE |
+| P3 bounded harm | **FAILS** | worst cell −0.33 (e = 1, ρ = 0, n = 5); other ρ ≤ 0, n ≥ 5 cells within −0.2 |
+| P4 beats fixed fusion at e = 1 | **HOLDS** | 6/6 cells > 2 SE (up to +1.5 at n = 50) |
+| P5 learned encoder | **FAILS** | e = 0, n ≥ 10: 2/12 > 2 SE (v2 − v1 mostly +0.0 to +0.3); e = 1: 10/12 within 2 SE |
+| P6 vs principled baseline | **HOLDS** | 66/72 cells within 0.2 of, or better than, the best of {CPR-LP, CPR-LP-rel} |
+
+Notes (exploratory):
+- **Biggest single weakness:** e = 1, ρ ∈ {1, 0.5}, n = 0: v1 is 1.0–1.2 lift *below* v0 and CPR-LP. With no
+  labels, v1 cannot tell whether product similarity is informative and appears to hedge toward it (the training
+  prior mixes novelty levels); one label removes most of the gap. v2 recovers +0.84 / +0.68 of it in exactly
+  these cells, the largest v2 − v1 differences anywhere — so v2's value is the opposite of what P5 predicted
+  (zero-label new categories, not label flow at n ≥ 10).
+- **P1 interpretation:** founder value is similar in old and new categories because v1's relational feature
+  already does most of the founder's job when categories are familiar *and* the founder still adds ≈ +0.3 there.
+  The prediction assumed the two signals substitute; they look additive.
+- **Same-model noise control** (v1 with founder beliefs scrambled across accounts): ρ = 1: +1.83 / +0.67 / +0.59 at
+  n = 0 / 5 / 20 (e = 0), similar at e = 1 — founder value survives the control. ρ = −0.5: −0.77 at n = 0, within
+  ±0.1 from n = 5.
+- v1 beats CPR-LP-hier-rel (best closed-form baseline) in nearly every e ≤ 0.5 cell by 0.1–1.9; at e = 1 the two
+  are within ±0.3 except n = 0 above.
