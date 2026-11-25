@@ -133,7 +133,7 @@ Existing trust mechanisms learn trust one parameter at a time from a decent-size
 - **Experts and LLMs are overconfident.** Typical 90% intervals capture only about 40–60% of outcomes (cited in Clemen & Lichtendahl). Some LLMs gave Beta priors worth 1,000+ pseudo-observations (Selby et al.). In Agentic-Priors the LLM's stated uncertainty was too narrow to use.
 - **Fixed-strength priors can hurt at scale.** A NAVER WEBTOON A/B test with \~595k users per arm found an LLM-derived Beta prior lifted CTR 9.5% on cold items but cost 5.7% overall.
 - **LLM priors help most at very few labels.** AutoElicit: \~10× lower error at n = 5, parity by n = 20. Agentic-Priors: a prior worth about 6–40 surveyed users.
-- **Per-source trust is unidentifiable at small n.** Commensurate priors gave a log-trust interval of (1.6, 82) even with 60 historical points (Hobbs 2011); power-prior exponents go bimodal at N = 100–200.
+- **Per-source trust is unidentifiable at small n.** Commensurate priors gave a 95% posterior interval for log τ (the commensurability precision) of (1.59, 82.00) in the case study with 171 historical and 270 current observations (Hobbs et al. 2011, Table 3; corrected 2026-11-24 after reading the paper — an earlier note said "60 historical points", which is the simulation setting); power-prior exponents go bimodal at N = 100–200.
 - **Calibration can be learned as a slope.** Extremizing aggregated forecasts improved Brier scores 21–29% in the Good Judgment Project (Baron et al. 2014); a founder's logit-scale slope is the same parameter.
 - **Founders' stated rankings may not match their real preferences** (OPEN, 2024), so pairwise consistency checks matter.
 

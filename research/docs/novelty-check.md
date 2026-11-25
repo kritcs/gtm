@@ -64,3 +64,21 @@ Date: 2026-11-24. Searches were done with a web-search tool and pages fetched wi
 4. The KG/recommender search covered only rule-confidence and human-feature work. A deeper search is needed on "knowledge-aware recommendation with trust", "Bayesian cold-start with expert priors" and "weak supervision on graphs".
 5. Bandits with expert advice (Exp4-style) and Bayesian elicitation-with-calibration (e.g., calibrating experts, Cooke's method) were not searched in depth. The second is a likely older anticipator for the "calibrate the expert" idea in A.
 6. Check PU-learning "selected at random vs. not at random" literature (SAR-PU, Bekker and Davis) for D.
+
+## Addendum (2026-11-24): Hobbs et al. 2011, commensurate priors — read in full
+
+Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC3134568 (author manuscript, Biometrics 67(3):1047–1056), full text
+read; Web Appendices not read.
+- **Mechanism:** θ ~ N(θ₀, 1/τ); τ ("commensurability") gets a vague prior (simulations: Cauchy(0, 30) on log τ) and
+  is learned from current data (Sec. 2.2, Eq. 4; Sec. 3).
+- **Scope:** one scalar τ for the whole historical source; in the regression version τ multiplies the identity, so
+  one τ governs all coefficients (Sec. 2.4). No per-stratum commensurability; no pooled learning of trust across
+  strata; the only mixture (Sec. 3, Eq. 17) uses fixed (τ_j, γ_j) pairs.
+- **No calibration slope:** shrinkage is toward equality (θ ≈ θ₀), never θ ≈ a + b·θ₀.
+- **No prior-driven selection:** the historical data do not steer which units are observed (adaptive allocation is
+  only mentioned as future work in Sec. 6).
+- **Correction:** the "(1.6, 82)" figure is the 95% CI of **log τ** in the case study (n₀ = 171, n = 270; Table 3),
+  not a trust interval with 60 historical points. `research-map.md` corrected.
+
+**Effect on claim A:** strengthens the defensible differences — continuous calibration slope (not equality
+shrinkage), trust pooled across many segments, inside a graph model, with prior-steered labels.
