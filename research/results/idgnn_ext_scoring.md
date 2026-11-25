@@ -41,3 +41,30 @@ Both rel-trial runs trained with `Train loss: nan` from epoch 1 and constant val
 frames from the cache written by the first, OOM-killed concurrent attempt; a partially written cache is the
 suspected cause (not verified). Rerun on a fresh session with an empty cache, one task at a time; predictions
 unchanged. If the rerun also gives NaN, J1/J2 are reported as "could not reproduce" and not scored on slices.
+
+## rel-trial, rerun (2026-11-25 ~16:30) — could not reproduce
+
+Fresh L4 session, empty cache, one task at a time: `Train loss: nan` again from epoch 1 (condition-sponsor-run,
+stopped at epoch 8 to save units; site-sponsor-run not started). So the cache was not the cause. Ruled out from the
+data: no inf / constant numeric columns in any rel-trial table; no empty or null target lists in train / val.
+Stack: RelBench v3.1.0 example, torch 2.14.1+cu130, torch_geometric 2.8.1, pytorch_frame (latest), pyg_lib
+built for torch 2.14.0. rel-hm and rel-stack trained normally on the same stack.
+
+| prediction | task | result |
+|---|---|---|
+| J1 reproduction within 1.0 | condition-sponsor-run, site-sponsor-run | **FAILS — could not reproduce (NaN training)** |
+| J2 rel-trial hits mostly repeat/cf-nbr | both | **not scored** (no valid model) |
+| J4 novel MAP < ½ overall | both | **not scored** |
+
+Not pursued further: locating the NaN needs debugging inside RelBench / PyG on GPU time, and the heuristic audit
+already answers the main rel-trial question (repeat + popularity = 107% of published ID-GNN on site-sponsor-run,
+63% on condition-sponsor-run; `audit_relbench_ext.md`).
+
+## Summary across tasks
+
+| task | ID-GNN (ours / published) | hits from immediate neighbourhood | ID-GNN novel-slice MAP | no-learning heuristic / ID-GNN |
+|---|---|---|---|---|
+| rel-hm user-item-purchase | 2.81 / 2.81 | 99.8% repeat purchases | 0.00 (popularity 0.58) | 93% |
+| rel-stack user-post-comment | 13.38 / 12.72 | 91% own threads (exploratory) | 9.50 by comment history; own-thread explains it | 78% (own-thread heuristic, exploratory) |
+| rel-stack post-post-related | 10.89 / 10.83 | repeat slice MAP 93.5 | 3.28 | 76% |
+| rel-trial (×2) | NaN training | — | — | 63% / 107% of published |
