@@ -64,3 +64,38 @@ Rule unless stated: paired mean over market seeds, predicted sign, beyond 2 SE.
   bit-identical to an uninterrupted run. This is reported with every result that uses them (G1, G2, G5, G7).
   Checkpoints now also store optimizer, scheduler and RNG state, so later resumes are exact. Colab is not training
   a seed-1 founder model in this round, so `runs/local_v0g` (MPS, `b99ddd1`) is the main v0g model.
+
+## Scoring, part 1 (written after the run, 2026-11-26 ~03:30)
+
+Main model `runs/local_v0g` (seed 1, MPS, commit `b99ddd1`; final val excess 0.061). `eval_v0g.py`, 20 seeds →
+`results/eval_v0g.{md,json}`. G1, G2, G5, G6 and G7 need the Colab models and are scored in part 2.
+
+| prediction | result | detail (seed-level mean ± SE, lift@100) |
+|---|---|---|
+| G3 v0g beats v0.1 on S0 (n ≥ 5) | **FAILS** | +0.024 ± 0.015 |
+| G4 true graph beats permuted graph on S0 (n ≥ 5) | **FAILS** | +0.004 ± 0.014 (S2, not a prediction: −0.001 ± 0.016) |
+
+Per the plan, a G4 failure means the neighbour features are ignored, and that must be checked before any further
+claim. Diagnostics (exploratory, `scripts/diag/`):
+
+1. **v0g ignores the graph even on its own training prior.** On 256 prior tasks, shuffling the 4 graph features
+   across accounts (equivalent to a permuted graph) or zeroing them changes the excess loss by about 0.0001
+   (0.0580 vs 0.0581), at every w_graph level, including w_graph > 0.5.
+2. **The cause is not feature scaling. The features carry almost no signal.** Among unlabelled accounts with at
+   least one labelled neighbour (about 45% of them), the neighbour buy share correlates only **+0.045** with the
+   true logit, and still +0.045 when w_graph > 0.5.
+3. **Why so weak.** Three factors multiply:
+   - The field r is only moderately smooth: corr(r, neighbour mean of r) ≈ 0.45–0.53 for γ ∈ [1, 100].
+   - The field makes up only part of the logit variance: √(w_graph·(1 − w_seg)).
+   - Each labelled neighbour is a single noisy Bernoulli outcome at a base rate near 10%, and a typical
+     account has 1–2 of them.
+   Ignoring these features is close to the Bayes-optimal response under this prior.
+
+**Reading.** In this design, one-hop neighbour-label counts are too weak a channel for the graph. G1 is therefore
+expected to fail too. That would place the S2 gap with CPR-LP in its exact per-segment posterior or in
+multi-hop propagation, not in missing one-hop features. CPR-LP propagates over the whole graph. A graph-aware
+PC-RFM needs multi-hop information, for example:
+- propagated label features: a personalised-PageRank or (I + γL)⁻¹ smoothing of the visible labels, given as
+  input;
+- or graph-masked attention.
+That would be a new, separately pre-registered round; v0g is not adopted.
