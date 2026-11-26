@@ -1,7 +1,7 @@
 # Founder priors for low-label customer discovery
 
 Research project (work in progress) by Peem Puangmaha, Stanford CS. It grew out of *Intuition in a bottle*, a
-hackathon go-to-market engine (repository root).
+hackathon go-to-market engine built with Krittat Phaisamran ([demo](https://kritcs.github.io/gtm/)).
 
 **Problem.** A startup looking for its first customers has 5–50 labelled outcomes; commercial lead scoring needs
 50–1,000+. Its most predictive information is what the founder believes about who will buy, which is often wrong.
