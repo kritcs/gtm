@@ -119,3 +119,18 @@ Bayesian model that knows the true graph covariance. So:
 - (c) With 5–20 labels, a graph can help only if neighbourhoods are very predictive, or if the founder's knowledge
   is itself relational (e.g. "customers of X buy"). In this simulator neither holds. Whether real B2B graphs do
   is an empirical question for the RDL tier, not something the simulator can show.
+
+**Addendum 2: where the graph helps** (exploratory, `results/diag_graph_regime.md`). Sweep over graph share,
+smoothness, degree and n (24 cells, 8 seeds): CPR-LP − no-graph is within 2 SE of 0 in 23 / 24 cells. The exception
+is the strongest corner (w_graph 0.6, γ = 50, avg degree 10, about 430 contacts): +0.23 ± 0.09. A bug check with
+w_graph 0.7, γ = 50 gives +0.43 ± 0.16 at about 180 contacts. **The implementation works; the graph pays off only
+when it is strong and smooth.** The default simulator (w_graph 0.3, γ = 5) and v0g's training prior
+(γ ∈ [1, 10], w_graph ≤ 0.8 of the non-segment variance) both sit in the weak-graph regime. So did eval S0/S2.
+
+Implication for any later graph round (not pre-registered here):
+- Train over a prior that covers strong, smooth graphs (γ up to about 100).
+- Give the model multi-hop propagated label features.
+- Evaluate on a strong-graph shift, where CPR-LP's graph is known to help (+0.4). A graph-aware PC-RFM should
+  match that gain.
+
+Whether real B2B graphs are in the strong regime is the empirical question.
