@@ -68,6 +68,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=250)
     ap.add_argument("--out", default="runs/pfn_v0")
+    ap.add_argument("--resume", default=None, help="checkpoint to continue from (exact if it has opt state; else weights only, schedule fast-forwarded)")
     a = ap.parse_args()
 
     dev = pick_device(a.device)
@@ -117,10 +118,24 @@ def main():
                 n_params=sum(p.numel() for p in model.parameters()))
     (out / "config.json").write_text(json.dumps(meta, indent=1))
     print(json.dumps(meta), flush=True)
+    start = 1
+    if a.resume:
+        ck = torch.load(a.resume, map_location=dev)
+        model.load_state_dict(ck["state"])
+        start = ck["step"] + 1
+        if "opt" in ck:
+            opt.load_state_dict(ck["opt"])
+            sched.load_state_dict(ck["sched"])
+            g.set_state(ck["g"].cpu())
+        else:  # weights-only checkpoint: fresh AdamW moments, LR schedule fast-forwarded, new batch stream
+            for _ in range(ck["step"]):
+                sched.step()
+            g.manual_seed(a.seed + 1 + ck["step"])
+        print(json.dumps({"resumed_from": a.resume, "step": ck["step"], "exact": "opt" in ck}), flush=True)
     log = open(out / "log.jsonl", "a")
     t0, run = time.time(), 0.0
 
-    for step in range(1, a.steps + 1):
+    for step in range(start, a.steps + 1):
         model.train()
         b = sample(prior, a.batch, g, dev)
         logits = fwd(b)
@@ -131,7 +146,7 @@ def main():
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
         sched.step()
-        run = 0.98 * run + 0.02 * loss.item() if step > 1 else loss.item()
+        run = 0.98 * run + 0.02 * loss.item() if step > start else loss.item()
         if step % a.log_every == 0 or step == a.steps:
             model.eval()
             with torch.no_grad():
@@ -142,7 +157,8 @@ def main():
             log.write(json.dumps(rec) + "\n")
             log.flush()
             torch.save({"state": model.state_dict(), "arch": arch, "prior": asdict(prior), "step": step,
-                        "graph": a.graph},
+                        "graph": a.graph, "opt": opt.state_dict(), "sched": sched.state_dict(),
+                        "g": g.get_state()},
                        out / "model.pt")
     print(f"done in {time.time() - t0:.0f}s -> {out / 'model.pt'}")
 
