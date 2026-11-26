@@ -48,6 +48,8 @@ class PriorConfig:
     community_is_industry_range: tuple[float, float] = (0.3, 1.0)
     smoothness_range: tuple[float, float] = (1.0, 10.0)
     w_graph_range: tuple[float, float] = (0.0, 0.8)   # graph share of the non-segment variance
+    smoothness_log: bool = False   # v0g2: sample gamma log-uniformly
+    graph_prop: bool = False       # v0g2: add multi-hop propagated label features (prop_features)
 
 
 @dataclass
@@ -108,6 +110,32 @@ def graph_features(A: torch.Tensor, context: torch.Tensor, outcome: torch.Tensor
     return torch.stack([torch.log1p(deg) / 3, torch.log1p(ny), torch.log1p(nn_), (ny + 0.1) / (ny + nn_ + 1.0)], -1)
 
 
+N_PFEAT = 4
+PROP_ALPHAS = (0.5, 0.9)
+
+
+def prop_features(A: torch.Tensor, context: torch.Tensor, outcome: torch.Tensor, K: int = 20) -> torch.Tensor:
+    """Multi-hop label features: personalised PageRank (restart 1 - alpha, K power steps on D^-1/2 A D^-1/2) of the
+    centred visible labels, divided by the PageRank of the visible mask (a local buy-rate estimate), plus the
+    log PageRank mass of visible labels (how much evidence is nearby). Two alphas -> 4 features."""
+    ctx = context.float()
+    ybar = (outcome * ctx).sum(1, keepdim=True) / ctx.sum(1, keepdim=True).clamp_min(1.0)
+    yc = (outcome - ybar) * ctx
+    d = A.sum(-1)
+    dm = torch.where(d > 0, d.clamp_min(1e-12).rsqrt(), torch.zeros_like(d))
+    S = dm[:, :, None] * A * dm[:, None, :]
+    out = []
+    for a in PROP_ALPHAS:
+        v = torch.stack([yc, ctx], -1)                     # (B, N, 2)
+        acc, z = (1 - a) * v, (1 - a) * v
+        for _ in range(K):
+            z = a * torch.bmm(S, z)
+            acc = acc + z
+        share = (acc[..., 0] / (acc[..., 1] + 1e-3)).clamp(-1, 1)
+        out += [share, torch.log1p(20 * acc[..., 1])]
+    return torch.stack(out, -1)
+
+
 def sample_graph(cfg, industry, g, dev):
     """Degree-corrected SBM (as in sim._dcsbm, but Bernoulli per pair) and a graph-smooth unit-sd field
     r = (I + gamma L)^-1 eps, standardized per task. Returns dense A (B, N, N) and r (B, N)."""
@@ -129,7 +157,11 @@ def sample_graph(cfg, industry, g, dev):
     d = A.sum(-1)
     dm = torch.where(d > 0, d.clamp_min(1e-12).rsqrt(), torch.zeros_like(d))
     L = torch.eye(N, device=dev)[None] - dm[:, :, None] * A * dm[:, None, :]
-    gam = _u(*cfg.smoothness_range, (B, 1, 1), g, dev)
+    if cfg.smoothness_log:
+        lo, hi = cfg.smoothness_range
+        gam = torch.exp(_u(math.log(lo), math.log(hi), (B, 1, 1), g, dev))
+    else:
+        gam = _u(*cfg.smoothness_range, (B, 1, 1), g, dev)
     eps = torch.randn(B, N, 1, generator=g, device=dev)
     r = torch.linalg.solve(torch.eye(N, device=dev)[None] + gam * L, eps).squeeze(-1)
     r = (r - r.mean(1, keepdim=True)) / r.std(1, keepdim=True).clamp_min(1e-6)
@@ -264,6 +296,8 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
         x = make_tokens(industry, size, f_acc, has_founder, context, y)
     if cfg.graph:
         x = torch.cat([x, graph_features(A, context, y)], -1)
+        if cfg.graph_prop:
+            x = torch.cat([x, prop_features(A, context, y)], -1)
         finfo["w_graph"] = wg.squeeze(1)
     info = dict(w_seg=w_seg, base=base, **finfo)
     return Batch(x, context, p, y, info)

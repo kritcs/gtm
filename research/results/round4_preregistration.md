@@ -134,3 +134,17 @@ Implication for any later graph round (not pre-registered here):
   match that gain.
 
 Whether real B2B graphs are in the strong regime is the empirical question.
+
+**Addendum 3: would multi-hop features fix it?** (exploratory, prior only, `scripts/diag/diag_prop2.py`). A candidate
+v0g2 prior (γ log-uniform on [1, 100], w_graph ≤ 0.9) with personalised-PageRank label features
+(`fprior.pfn.data.prop_features`, off by default). Correlation of each feature with the true logit, by the
+graph's share of the logit variance:
+
+| graph share | 1-hop | PPR α = 0.5 | PPR α = 0.9 |
+|---|---|---|---|
+| < 0.2 | +0.03 | +0.03 | +0.04 |
+| 0.2–0.5 | +0.05 | +0.07 | +0.09 |
+| ≥ 0.5 | +0.07 | +0.07 | +0.07 |
+
+Multi-hop roughly doubles the signal but it stays weak. A round 5 is therefore not launched automatically; whether
+to pursue the graph in simulation at all is a direction decision (see status.md).
