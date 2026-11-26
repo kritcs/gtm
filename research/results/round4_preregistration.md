@@ -57,3 +57,10 @@ Rule unless stated: paired mean over market seeds, predicted sign, beyond 2 SE.
   numerical library, not the prior. Colab models are trained at the commit that adds this line; the local MPS
   model (`runs/local_v0g`, seed 1) at `b99ddd1`. If both seed-1 runs finish, the Colab one is used and the local
   one is reported as a replicate.
+- 2026-11-26 ~02:30: Colab session `pfn-4d` (T4, `pfn_v0g_nf` and `pfn_v0g_s2`) was reclaimed at step 8,500 of
+  20,000 while the Mac slept. Checkpoints then held weights only, so both runs were **resumed from the step-8,500
+  weights** (`train_pfn.py --resume`, commit `dbf5a1d`) on a new T4 session: fresh AdamW moments, LR schedule
+  fast-forwarded to step 8,500, and a different batch stream from that point. The models are therefore not
+  bit-identical to an uninterrupted run. This is reported with every result that uses them (G1, G2, G5, G7).
+  Checkpoints now also store optimizer, scheduler and RNG state, so later resumes are exact. Colab is not training
+  a seed-1 founder model in this round, so `runs/local_v0g` (MPS, `b99ddd1`) is the main v0g model.
