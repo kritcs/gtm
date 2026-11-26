@@ -99,3 +99,23 @@ PC-RFM needs multi-hop information, for example:
   input;
 - or graph-masked attention.
 That would be a new, separately pre-registered round; v0g is not adopted.
+
+**Addendum: CPR-LP's graph term does not help either** (exploratory, `scripts/diag/diag_cprlp_graph.py`; the same 20
+seeds, markets, founders and outreach as `eval_v0g.py`). Lift@100, seed-level mean ± SE:
+
+| shift | n | CPR-LP − CPR-LP without graph (graph_sd ≈ 0) | CPR-LP − CPR-LP with node-permuted graph |
+|---|---|---|---|
+| S0 | 0 | −0.015 ± 0.014 | −0.011 ± 0.019 |
+| S0 | 5–20 | −0.007 ± 0.009 | +0.008 ± 0.017 |
+| S2 | 0 | −0.006 ± 0.014 | −0.015 ± 0.015 |
+| S2 | 5–20 | +0.000 ± 0.014 | +0.007 ± 0.011 |
+
+In the simulator's default regime (n ≤ 20 labels, w_graph = 0.3), the graph is worth nothing even to the exact
+Bayesian model that knows the true graph covariance. So:
+- (a) Round 4's premise, that the S2 gap between PC-RFM and CPR-LP comes from PC-RFM lacking the graph, was
+  wrong before the run. The gap is in the segment-level inference.
+- (b) "CPR-LP" in all simulation results so far is in effect a segment-level Bayesian model with a founder prior.
+  The paper must not credit any simulated result to the graph.
+- (c) With 5–20 labels, a graph can help only if neighbourhoods are very predictive, or if the founder's knowledge
+  is itself relational (e.g. "customers of X buy"). In this simulator neither holds. Whether real B2B graphs do
+  is an empirical question for the RDL tier, not something the simulator can show.
