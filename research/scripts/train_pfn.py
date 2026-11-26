@@ -24,7 +24,7 @@ import torch.nn.functional as F
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from fprior.pfn.data import N_FEAT, PriorConfig, sample_batch  # noqa: E402
+from fprior.pfn.data import N_FEAT, N_GFEAT, PriorConfig, sample_batch  # noqa: E402
 from fprior.pfn.data_rel import N_FEAT_REL, RelPriorConfig, sample_rel_batch  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
 from fprior.pfn.model_rel import PCRFMRel, product_features  # noqa: E402
@@ -63,6 +63,7 @@ def main():
     ap.add_argument("--relational", action="store_true", help="v1: relational simulator + features")
     ap.add_argument("--encoder", action="store_true", help="v2: learned account-product encoder (implies --relational)")
     ap.add_argument("--seg-cross", action="store_true", help="v0.3: explicit industry x size segment embedding (v0 prior only)")
+    ap.add_argument("--graph", action="store_true", help="v0g: account graph in the prior + neighbour-label features (v0 prior only)")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=250)
@@ -82,8 +83,10 @@ def main():
         raise SystemExit("--tokens is implemented for the v0 prior only")
     prior = PC(n_accounts=a.n_accounts, p_no_founder=1.0 if a.no_founder else 0.0,
                random_seg_structure=a.random_seg, founder_tokens=a.tokens,
-               rho_range=(a.rho_min, 1.0))
-    arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT)
+               rho_range=(a.rho_min, 1.0), **({"graph": True} if a.graph else {}))
+    if a.graph and (a.tokens or a.relational):
+        raise SystemExit("--graph is implemented for the plain v0 model only")
+    arch = dict(d=a.d, layers=a.layers, heads=4, ff=2 * a.d, n_feat=N_FEAT_REL if a.relational else N_FEAT + (N_GFEAT if a.graph else 0))
     if a.encoder:
         arch["encoder"] = True
     if a.tokens:
@@ -136,7 +139,8 @@ def main():
             print(json.dumps(rec), flush=True)
             log.write(json.dumps(rec) + "\n")
             log.flush()
-            torch.save({"state": model.state_dict(), "arch": arch, "prior": asdict(prior), "step": step},
+            torch.save({"state": model.state_dict(), "arch": arch, "prior": asdict(prior), "step": step,
+                        "graph": a.graph},
                        out / "model.pt")
     print(f"done in {time.time() - t0:.0f}s -> {out / 'model.pt'}")
 

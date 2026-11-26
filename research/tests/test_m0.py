@@ -191,3 +191,18 @@ def test_pcrfm_seg_cross_default_off_and_segment_id():
     m1 = PCRFM(d=32, layers=1, heads=2, ff=64, seg_cross=True)
     ctx = torch.tensor([[True, True, False, False, False]])
     assert m1(x, ctx).shape == (1, 5)
+
+
+def test_pcrfm_graph_prior_and_features():
+    import torch
+    from fprior.pfn.data import N_FEAT, N_GFEAT, PriorConfig, graph_features, sample_batch
+    g = torch.Generator().manual_seed(0)
+    b = sample_batch(PriorConfig(graph=True, n_accounts=256), 3, g)
+    assert b.x.shape == (3, 256, N_FEAT + N_GFEAT) and torch.isfinite(b.x).all()
+    # default prior unchanged in shape
+    assert sample_batch(PriorConfig(n_accounts=256), 3, torch.Generator().manual_seed(0)).x.shape[-1] == N_FEAT
+    # features only see visible labels
+    A = torch.ones(1, 3, 3) - torch.eye(3)[None]
+    ctx = torch.tensor([[True, False, False]])
+    f = graph_features(A, ctx, torch.tensor([[1.0, 1.0, 0.0]]))
+    assert f[0, 1, 1] > 0 and f[0, 1, 2] == 0 and f[0, 0, 1] == 0

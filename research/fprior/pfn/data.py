@@ -42,6 +42,12 @@ class PriorConfig:
     founder_tokens: bool = False       # True: founder as per-segment tokens with stated confidence / "no idea"
     stated_calib_range: tuple[float, float] = (0.3, 3.0)  # log-uniform: stated sd / actual error scale
     p_noidea_max: float = 0.3          # per task, share of segments answered "no idea" ~ U(0, max)
+    graph: bool = False                # v0g: account graph with a graph-smooth logit part + neighbour-label features
+    avg_degree_range: tuple[float, float] = (4.0, 16.0)
+    p_within_range: tuple[float, float] = (0.5, 0.95)
+    community_is_industry_range: tuple[float, float] = (0.3, 1.0)
+    smoothness_range: tuple[float, float] = (1.0, 10.0)
+    w_graph_range: tuple[float, float] = (0.0, 0.8)   # graph share of the non-segment variance
 
 
 @dataclass
@@ -85,6 +91,49 @@ def make_tokens(industry, size, founder_logit_acc, has_founder, context, outcome
     state[..., 1] = (context & (outcome < 0.5)).float()
     state[..., 2] = (context & (outcome > 0.5)).float()
     return torch.cat([ind, siz, founder_features(founder_logit_acc, has_founder), state], -1)
+
+
+N_GFEAT = 4
+
+
+def graph_features(A: torch.Tensor, context: torch.Tensor, outcome: torch.Tensor) -> torch.Tensor:
+    """Per-account neighbour-label features from a dense adjacency A (B, N, N):
+    log(1 + degree) / 3, log(1 + #neighbours contacted & bought), log(1 + #contacted & not bought),
+    smoothed share bought among contacted neighbours. Only visible labels (context) are used."""
+    yes = (context & (outcome > 0.5)).float()
+    no = (context & (outcome < 0.5)).float()
+    deg = A.sum(-1)
+    ny = torch.einsum("bij,bj->bi", A, yes)
+    nn_ = torch.einsum("bij,bj->bi", A, no)
+    return torch.stack([torch.log1p(deg) / 3, torch.log1p(ny), torch.log1p(nn_), (ny + 0.1) / (ny + nn_ + 1.0)], -1)
+
+
+def sample_graph(cfg, industry, g, dev):
+    """Degree-corrected SBM (as in sim._dcsbm, but Bernoulli per pair) and a graph-smooth unit-sd field
+    r = (I + gamma L)^-1 eps, standardized per task. Returns dense A (B, N, N) and r (B, N)."""
+    B, N = industry.shape
+    q = _u(*cfg.community_is_industry_range, (B, 1), g, dev)
+    comm = torch.where(torch.rand(B, N, generator=g, device=dev) < q, industry,
+                       torch.randint(0, N_IND, (B, N), generator=g, device=dev))
+    theta = torch.exp(_u(0.3, 1.2, (B, 1), g, dev) * torch.randn(B, N, generator=g, device=dev))
+    pw = _u(*cfg.p_within_range, (B, 1, 1), g, dev)
+    same = (comm[:, :, None] == comm[:, None, :]).float()
+    frac_same = same.mean((1, 2), keepdim=True).clamp_min(1e-3)
+    W = same * pw / frac_same + (1 - same) * (1 - pw) / (1 - frac_same).clamp_min(1e-3)
+    M = theta[:, :, None] * theta[:, None, :] * W
+    deg = _u(*cfg.avg_degree_range, (B, 1, 1), g, dev)
+    P = (M * deg * N / M.sum((1, 2), keepdim=True)).clamp(max=1.0)
+    U = torch.rand(B, N, N, generator=g, device=dev)
+    A = torch.triu((U < P).float(), 1)
+    A = A + A.transpose(1, 2)
+    d = A.sum(-1)
+    dm = torch.where(d > 0, d.clamp_min(1e-12).rsqrt(), torch.zeros_like(d))
+    L = torch.eye(N, device=dev)[None] - dm[:, :, None] * A * dm[:, None, :]
+    gam = _u(*cfg.smoothness_range, (B, 1, 1), g, dev)
+    eps = torch.randn(B, N, 1, generator=g, device=dev)
+    r = torch.linalg.solve(torch.eye(N, device=dev)[None] + gam * L, eps).squeeze(-1)
+    r = (r - r.mean(1, keepdim=True)) / r.std(1, keepdim=True).clamp_min(1e-6)
+    return A, r
 
 
 def segment_effects(cfg, B, I, S, g, dev):
@@ -192,7 +241,12 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
     logit_sd = _u(*cfg.logit_sd_range, (B,), g, dev)
     w_seg = _u(*cfg.w_seg_range, (B,), g, dev)
     seg_part = (logit_sd * w_seg.sqrt())[:, None] * seg_std                       # (B, K)
-    latent = (logit_sd * (1 - w_seg).sqrt())[:, None] * torch.randn(B, N, generator=g, device=dev)
+    eps = torch.randn(B, N, generator=g, device=dev)
+    if cfg.graph:   # non-segment variance split into a graph-smooth part and unobservable need
+        A, r = sample_graph(cfg, industry, g, dev)
+        wg = _u(*cfg.w_graph_range, (B, 1), g, dev)
+        eps = wg.sqrt() * r + (1 - wg).sqrt() * eps
+    latent = (logit_sd * (1 - w_seg).sqrt())[:, None] * eps
     z = seg_part.gather(1, segment) + latent
     lb = torch.tensor(cfg.base_rate_range, device=dev).log()
     base = _u(lb[0].item(), lb[1].item(), (B,), g, dev).exp()
@@ -208,5 +262,8 @@ def sample_batch(cfg: PriorConfig, B: int, g: torch.Generator, dev="cpu") -> Bat
                                                                  finfo["noidea"], has_founder)
     else:
         x = make_tokens(industry, size, f_acc, has_founder, context, y)
+    if cfg.graph:
+        x = torch.cat([x, graph_features(A, context, y)], -1)
+        finfo["w_graph"] = wg.squeeze(1)
     info = dict(w_seg=w_seg, base=base, **finfo)
     return Batch(x, context, p, y, info)

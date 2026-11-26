@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 
 from fprior.cprlp import CPRConfig, fit_predict  # noqa: E402
 from fprior.metrics import expected_auc, lift_at_k  # noqa: E402
-from fprior.pfn.data import make_tokens  # noqa: E402
+from fprior.pfn.data import graph_features, make_tokens  # noqa: E402
 from fprior.pfn.model import PCRFM  # noqa: E402
 from fprior.pfn.model_tok import PCRFMTok  # noqa: E402
 from fprior.pfn.data import founder_token_features  # noqa: E402
@@ -40,6 +40,7 @@ def load(path, dev):
     ck = torch.load(path, map_location=dev)
     m = (PCRFMTok if ck["arch"].get("tokens") else PCRFM)(**ck["arch"]).to(dev).eval()
     m.load_state_dict(ck["state"])
+    m.graph = bool(ck.get("graph", False))
     return m
 
 
@@ -62,6 +63,10 @@ def pfn_scores(model, market, founder, out, use_founder, dev):
                     t(founder.segment_logit[market.segment], torch.float32),
                     torch.tensor([1.0 if use_founder else 0.0], device=dev),
                     t(ctx, torch.bool), t(outcome, torch.float32))
+    if getattr(model, "graph", False):   # v0g: neighbour-label features; markets without a graph get degree 0
+        A = getattr(market, "A", None)
+        A = torch.zeros(market.n, market.n) if A is None else torch.as_tensor(A.toarray(), dtype=torch.float32)
+        x = torch.cat([x, graph_features(A.to(dev)[None], t(ctx, torch.bool), t(outcome, torch.float32))], -1)
     return model.predict(x, t(ctx, torch.bool)).cpu().numpy()
 
 
