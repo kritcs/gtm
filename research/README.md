@@ -1,6 +1,6 @@
 # Founder priors for low-label customer discovery
 
-Research project (work in progress) by Peem Puangmaha, Stanford CS. It grew out of *Intuition in a bottle*, a
+Research project (work in progress) by Peem Puangmaha and Krit Phaisamran, Stanford CS. It grew out of *Intuition in a bottle*, a
 hackathon go-to-market engine built with Krittat Phaisamran ([demo](https://kritcs.github.io/gtm/)).
 
 **Problem.** A startup looking for its first customers has 5–50 labelled outcomes; commercial lead scoring needs
