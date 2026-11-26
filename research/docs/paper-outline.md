@@ -58,7 +58,7 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
 - Learned encoder v2: little gain where predicted (P5 fails) but fixes v1's zero-label new-category weak spot
   (+0.7–0.8), and with v2 founder value *is* larger in new categories (+0.50 vs +0.32). ✅ `m2_pfn_v2*.md`, round 2 Q4
 
-### C4. Benchmarks measure memorization, not finding new customers (audit)
+### C4. Benchmarks measure memorization (section draft: `paper/sec-audit.md`), not finding new customers (audit)
 - A no-learning repeat + popularity heuristic reaches 93% / 88% of the best published RelBench MAP. ✅ `audit_relbench.md`
 - 82–93% of test positives are novel pairs; heuristics and learned recommenders score ≈ popularity or below there. ✅ `audit_relbench.md`, `audit_models_subsample.md`
 - Published ID-GNN (reproduced exactly, 2.81) gets 99.8% of its hits from repeat purchases; novel-pair MAP 0.00 (popularity 0.58), cold users 0.00. Its whole edge over the heuristic is better ordering of repeats. ✅ `idgnn_slices.md`
@@ -69,6 +69,8 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
 ### C5. An evaluation protocol for settings without public outreach data
 Ladder: simulation → sim-to-sim stress → real outcomes + simulated founder → real B2B backtest → prospective cohort.
 - Real outcomes (UCI Bank Marketing), all three pre-registered predictions hold. ✅ `real_bank.md`
+- Second real tier (Hillstrom e-mail test, randomized, weak segments): sim-trained PC-RFM within 0.10 lift of CPR-LP in 24/24 cells (H3 holds); founder gains at ρ = 1 are smaller and noisier (H1 3–4/5 cells), inverted-founder cost ≈ 0.2 at n = 5 (H2 fails narrowly). ✅ `real_hillstrom_v01.md`
+- Prospective founder cohort: power simulation says the randomized-slice design and 40–50 companies are needed. 🟡 `cohort/analysis-plan.md`, `cohort_power.md`
 - Placebo priors as a standard control. ✅
 - SBIR → USAspending first customers (real B2B, beliefs from firms' own pre-award text). ✅ `sbir_eval.md`: negative for keyword priors (SB1 fails, SB2 partly, SB3 point estimate only); on new-agency purchases (56%) popularity is best. Labels hand-checked (0/50 R&D). Base rate ~9× below the sim range (`sim_calibration.md`).
 - Prospective founder cohort. ⬜ drafts in `docs/cohort/`; needs sponsor + IRB

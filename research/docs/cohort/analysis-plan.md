@@ -57,6 +57,8 @@ over companies (10,000 resamples).
   them with log-loss instead.
 - **Ordering:** the first k outcomes are the first k contacts by date, including randomized-slice contacts made
   in that window, which are then dropped from the evaluation slice.
+- **Skipped slice accounts:** founders may skip randomized-slice accounts. Skips and stated reasons are recorded; if
+  more than 20% of a company's slice is skipped, that company is reported separately (the slice is no longer random).
 - **Segments** come only from the attributes declared on the form. No attribute is added after outcomes are seen.
 
 ## Simulation assumptions behind the power numbers
