@@ -49,3 +49,43 @@ computed with `scripts/compare_real.py`. "Overall" = mean over all (ρ, n) cells
 - F1/F2 hold but F3 fails → fine-tuning specialises to one business; it must use the target company's own
   (or a closely matched) data, which a startup does not have.
 - F1/F2 fail → the simulator prior is already as good as these real tasks can teach (consistent with R3 on Bank).
+
+## Scoring (written after the run, 2026-11-25 ~21:30)
+
+Fine-tuned 2,000 steps each on CPU at commit `9bd70d7` (runs/pfn_v01{,_nf}_ft{bank,hill}). Evaluations:
+`real_bank_v01_ft{bank,hill}.{md,json}`, `real_hillstrom_v01_ft{bank,hill}.{md,json}`, `stress_sim_v01_ft{bank,hill}.*`;
+paired comparisons with `compare_real.py` (30 seeds, identical markets verified).
+
+| prediction | result | detail (seed-level mean ± SE of lift difference) |
+|---|---|---|
+| F1 Bank in-domain gain | **HOLDS (very large)** | ftbank − v01 on Bank +0.610 ± 0.045; ftbank − CPR-LP +0.697 ± 0.036 |
+| F2 Hillstrom in-domain gain | **HOLDS** | fthill − v01 on Hillstrom +0.041 ± 0.011 |
+| F3 cross-domain no harm (> −2 SE) | **HOLDS** | ftbank on Hillstrom +0.013 ± 0.014; fthill on Bank −0.025 ± 0.020 |
+| F4 cross-domain gain (expected to fail) | **FAILS, as expected** | same two numbers; neither > 2 SE |
+| F5 no forgetting on simulator S0 (≥ −0.10) | **HOLDS** | ftbank +0.037 ± 0.016; fthill −0.019 ± 0.019 |
+| F6 Bank R1 still holds for ftbank | **HOLDS** | ρ = 1: +2.46, +1.21, +0.78, +0.94, +0.72 at n = 0, 1, 5, 10, 20 (all > 4 SE) |
+
+### What the in-domain gain is (exploratory diagnosis, not pre-registered)
+
+The Bank gain is concentrated where the founder is useless: at ρ ∈ {0, −0.5} with n ≥ 5, fine-tuned PC-RFM reaches
+lift ≈ 2.8–3.2, versus 1.1–2.3 before fine-tuning and 1.0–1.8 for CPR-LP. The fine-tuned **no-founder** model
+jumps the same way (e.g. ρ = 0, n = 5: 2.47 vs 1.15). So the gain is not about the founder. The model has learned a
+regularity of this population that it can use even though category labels are shuffled per market:
+- **Bank:** smaller segments buy more (students, retirees, the 60+ band); across segments in split B,
+  Spearman(size, rate) = −0.36 (p = 0.04).
+- **Hillstrom:** the sign is reversed (+0.37, p = 0.05).
+
+That is why fine-tuning helps in-domain (same population in A and B) and does nothing across datasets (F3/F4).
+No evaluation outcomes leaked (split B is never used in fine-tuning). Note that the base v0.1 no-founder model
+already reaches lift 1.77 at n = 0 on Bank without labels, a smaller version of the same effect learned in simulation.
+
+### Reading
+
+Per the reading rules: F1/F2 and F3 hold, so a real-outcome fine-tuning stage is safe (no forgetting, no
+cross-domain harm). But its gain comes from **population-specific structure that does not transfer between
+businesses**: Bank and Hillstrom disagree on the sign. A startup has no such in-domain data. The honest claim is:
+- PC-RFM can absorb a company's own historical outcomes when they exist, with large gains;
+- fine-tuning on *other* companies' outcomes buys nothing on these two datasets.
+
+The headline sim-to-real result stays the simulator-only model's (within 0.10–0.2 lift of CPR-LP on both real
+tiers). The in-domain Bank number must not be presented as a founder-prior result.
