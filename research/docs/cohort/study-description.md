@@ -1,4 +1,4 @@
-# Study description (draft v0.1): Do founders' beliefs about customers predict who buys?
+# Study description (draft v0.2, 2026-11-25): Do founders' beliefs about customers predict who buys?
 
 **Investigator:** Peem Puangmaha, Stanford University (Computer Science). *Faculty sponsor: TBD.*
 **Status:** draft for discussion with a faculty sponsor and the Stanford IRB. Not yet approved; do not recruit.
@@ -15,7 +15,7 @@ recording founders' beliefs **before** outcomes are known and comparing them wit
 
 Founders of early-stage companies (pre-revenue to ~50 customers) who will do outbound or targeted outreach
 in the next 3–6 months, for example through Stanford programs (StartX, Lean LaunchPad / ENGR 245, NSF
-I-Corps teams). Target: 15–30 companies.
+I-Corps teams). Target: 40–50 B2B companies (15–30 would be exploratory; see `analysis-plan.md`).
 
 ## What participants do
 
@@ -23,9 +23,12 @@ I-Corps teams). Target: 15–30 companies.
    `elicitation-form.md`). Answers are timestamped and frozen.
 2. **Over 3–6 months:** share an outreach log export (account attributes such as industry and size, contact
    date, stage reached), with names, emails and other personal data removed by a provided script.
-3. **At the end:** receive a private report on their own beliefs and outcomes.
+3. **Randomized slice (new in v0.2):** include about 40 accounts, drawn at random by our script from the
+   founder's own target list, in their normal outreach. Without this, the study cannot tell methods apart
+   (see `analysis-plan.md`: power ≈ 15% → 56–76%).
+4. **At the end:** receive a private report on their own beliefs and outcomes.
 
-No outreach is changed or directed by the study (observational). An optional later arm may compare a
+Apart from the randomized slice, no outreach is changed or directed by the study. An optional later arm may compare a
 model-suggested list with the founder's own list on a blinded basis; that would be a separate protocol.
 
 ## Data and privacy
@@ -41,7 +44,7 @@ Risks are minimal: time (~25 min plus exports) and the confidentiality of commer
 as above. Participants benefit from a structured review of their go-to-market assumptions and a personal
 calibration report.
 
-## Analysis (pre-registered before any outcome data is seen)
+## Analysis (pre-registered before any outcome data is seen; details in `analysis-plan.md`)
 
 - Primary: does a model that combines founder beliefs with early outcomes rank later outcomes better than
   (a) outcomes alone and (b) the founder's beliefs alone? Metrics: ranking quality on accounts contacted

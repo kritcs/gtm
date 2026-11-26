@@ -1,4 +1,4 @@
-# Founder belief elicitation form (draft v0.1)
+# Founder belief elicitation form (draft v0.2, 2026-11-25)
 
 *For the prospective founder cohort. Completed once, before outreach outcomes are known; timestamped and
 frozen. About 25 minutes. Answers are confidential and analysed only in aggregate.*
@@ -40,6 +40,16 @@ For each segment, answer in this order (SHELF order — limits first, then the m
 Rules shown to the founder: answer about **observable counts**, not percentages; "no idea" is fine and useful;
 don't consult anyone or any data while answering.
 
+### Part D2 — Contact plan (2 min)
+
+| Segment | Share of next quarter's outreach you plan to spend here (%) |
+|---|---|
+| … | |
+
+Why we ask: the founder decides whom to contact, so outcomes are only observed where the founder looks. The plan
+lets the analysis model that selection (it is the outreach-steering strength α in our simulator) instead of
+mistaking it for a property of the market.
+
 ## Part E — Calibration questions with known answers (3 min)
 
 10. 5–8 questions whose answers the research team knows but the founder does not see yet, e.g. your own reply
@@ -55,6 +65,31 @@ don't consult anyone or any data while answering.
 
 13. Where do these beliefs come from? ☐ customer interviews (how many?) ☐ prior job in the industry ☐ advisors ☐ competitors ☐ intuition
 14. Have you already contacted accounts in any of these segments? Which, and roughly how many?
+
+---
+
+### How answers become model inputs (for the research team; not shown to the founder)
+
+| Form answer | Model input |
+|---|---|
+| Part D "most likely" count m out of 20 | belief logit = logit((m + 0.5) / 21), per segment |
+| Part D lowest / highest plausible (and 25/75 if given) | stated sd on the logit scale: (logit(hi) − logit(lo)) / 3.29 for a 90% range, or the 25/75 range / 1.35 |
+| Part D confidence "no idea" | "no idea" flag; belief set to the founder's overall level (PC-RFM-tok input) |
+| Part C combinations (Q9) | interaction segments; all other segments are built from main effects |
+| Part D2 plan | outreach steering strength, fitted to the plan (sensitivity analysis only) |
+| Part E calibration questions | per-founder calibration: stated-sd scale vs observed error (secondary analysis) |
+| Part F repeats | answer noise; Part F pairwise choices: ordinal consistency check |
+
+Evidence behind this design (simulation, `results/m2_pfn_tok.md`): stated confidence is used in the right direction
+(reversing it costs up to 1.9 lift), it matters most for mediocre founders with ≤ 1 label, and "no idea" answers did
+*not* help. So the most likely value and the plausible range are the essential questions; "no idea" stays
+allowed but is not a priority.
+
+### Outreach log format (what the founder shares; produced by `scripts/cohort_scrub.py`)
+
+One row per contacted account: `account_key` (salted hash; the salt stays with the founder), the segment
+attributes named in Part C, `contacted_on` (date), `stage_reached` (none / reply / meeting / opportunity /
+pilot / contract), `stage_date`. No names, e-mails, phone numbers, URLs or free text leave the founder's machine.
 
 ---
 
