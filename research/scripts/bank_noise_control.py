@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from eval_pfn import load, pfn_scores  # noqa: E402
 from fprior.metrics import lift_at_k  # noqa: E402
-from fprior.real_bank import load_bank, make_bank_market, split_pool  # noqa: E402
+from fprior.real_bank import load_pool, make_bank_market, split_pool  # noqa: E402
 from fprior.sim import Founder, FounderConfig, OutreachConfig, make_founder, run_outreach  # noqa: E402
 
 RHOS = [1.0, 0.5, 0.0, -0.5]
@@ -41,7 +41,7 @@ NOISE = sys.argv[4] if len(sys.argv) > 4 else "account"
 
 
 def main():
-    pool = load_bank()
+    pool = load_pool(sys.argv[5] if len(sys.argv) > 5 else "bank")
     A, B = split_pool(pool)
     pfn = load(CKPT, "cpu")
     rows = []

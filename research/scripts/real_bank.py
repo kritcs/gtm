@@ -35,7 +35,7 @@ sys.path.insert(0, str(ROOT))
 
 from fprior.cprlp import CPRConfig, fit_predict  # noqa: E402
 from fprior.metrics import expected_auc, lift_at_k  # noqa: E402
-from fprior.real_bank import load_bank, make_bank_market, split_pool  # noqa: E402
+from fprior.real_bank import load_pool, make_bank_market, split_pool  # noqa: E402
 from fprior.sim import FounderConfig, OutreachConfig, make_founder, run_outreach  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -53,8 +53,9 @@ def main():
     ap.add_argument("--seeds", type=int, default=30)
     ap.add_argument("--n-accounts", type=int, default=3000)
     ap.add_argument("--out", default="results/real_bank.md")
+    ap.add_argument("--dataset", default="bank", choices=["bank", "hillstrom"])
     a = ap.parse_args()
-    pool = load_bank()
+    pool = load_pool(a.dataset)
     A, B = split_pool(pool)
     models = {"pcrfm": (load(a.ckpt, "cpu"), True), "pcrfm_nofounder": (load(a.ckpt_nf, "cpu"), False)}
     cpr = replace(CPRConfig(), graph_sd=0.0)          # no graph in this tier

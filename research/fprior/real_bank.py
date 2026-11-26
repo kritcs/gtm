@@ -57,6 +57,31 @@ def load_bank(path: Path = DEFAULT_CSV) -> BankPool:
     return BankPool(np.array(g), np.array(b), np.array(y))
 
 
+HILLSTROM_CSV = ROOT / "data/raw/hillstrom/hillstrom.csv"
+
+
+def load_hillstrom(path: Path = HILLSTROM_CSV) -> BankPool:
+    """Real-outcome tier 2: Hillstrom MineThatData e-mail test (2008; public, no licence stated — do not
+    redistribute the raw file). Customers who were randomly e-mailed (two thirds); outcome = website visit
+    within two weeks (16.7%). Segments in the same 8 x 4 shape as Bank: "group" = recency quartile (1-3,
+    4-6, 7-9, 10-12 months) x newbie flag; "band" = past-year spend (<100, 100-200, 200-500, 500+ USD).
+    Channel, product line and zip code are not used."""
+    g, b, y = [], [], []
+    with open(path, newline="") as fh:
+        for row in csv.DictReader(fh):
+            if row["segment"] == "No E-Mail":
+                continue
+            rec, hist = int(row["recency"]), float(row["history"])
+            g.append(min((rec - 1) // 3, 3) * 2 + int(row["newbie"]))
+            b.append(0 if hist < 100 else 1 if hist < 200 else 2 if hist < 500 else 3)
+            y.append(float(row["visit"]))
+    return BankPool(np.array(g), np.array(b), np.array(y))
+
+
+def load_pool(name: str = "bank") -> BankPool:
+    return {"bank": load_bank, "hillstrom": load_hillstrom}[name]()
+
+
 @dataclass
 class BankMarket:
     """Duck-types fprior.sim.Market for make_founder / run_outreach / CPR-LP / PC-RFM."""
