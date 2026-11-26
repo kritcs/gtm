@@ -148,3 +148,30 @@ graph's share of the logit variance:
 
 Multi-hop roughly doubles the signal but it stays weak. A round 5 is therefore not launched automatically; whether
 to pursue the graph in simulation at all is a direction decision (see status.md).
+
+## Scoring, part 2 (written after the run, 2026-11-26 ~06:45)
+
+Models: main `runs/local_v0g` (seed 1); `runs/pfn_v0g_nf` and `runs/pfn_v0g_s2` (Colab T4, resumed from step 8,500,
+see Deviations; final val excess 0.067 and 0.064). Runs: `stress_sim_v0g.{md,json}` (v0g + v0g_nf),
+`stress_sim_v0g_s2.{md,json}` (seed 2), `real_bank_v0g.{md,json}`. Scored by `scripts/score_round4.py`: seed-level
+paired means over identical markets; thresholds on the point estimate, as in rounds 2–3.
+
+| prediction | result | detail |
+|---|---|---|
+| G1 S2: v0g − CPR-LP > −0.05 (ρ ∈ {1, 0.5}, n ≥ 5) | **FAILS** | −0.119 ± 0.046 (v0.1: −0.14; seed 2: −0.13) |
+| G2 S0: v0g − CPR-LP ≥ −0.02 | **FAILS** | −0.080 ± 0.059 (v0.1: −0.07) |
+| G5 founder value kept: v0g − v0g_nf > 2 SE at S0, ρ = 1, n = 0 and 5 | **FAILS** (1 of 2 cells) | n = 0: +2.12 ± 0.33; n = 5: +0.21 ± 0.15 (1.4 SE) |
+| G6 Bank R1–R3 hold for v0g | **HOLDS** | R1 all 10 cells > 2 SE; R2 no cell below −0.2; R3 23/24 cells (worst −0.22 at ρ = 0.5, n = 0) |
+| G7 seed replicate within 0.05 on the G1 metric | **HOLDS** | seed 2: −0.119 ± 0.032; difference 0.001 |
+
+Exploratory, Bank, identical markets:
+- v0g − v0.1 overall: +0.044 ± 0.017.
+- The no-founder model at n = 0 reaches lift 1.62 ± 0.09, vs 1.77 ± 0.09 for v0.1-nf, so the unexplained
+  no-label Bank lift persists across training runs.
+
+**Round 4 reading.** 2 of 7 predictions hold, and both are robustness checks: real-tier safety (G6) and seed
+stability (G7). Every prediction about the graph's benefit fails (G1–G4). With part 1 and its addenda, the cause
+is established: in this simulator's default regime the graph carries almost no learnable signal, even for the
+exact Bayesian model. The S2 gap (about −0.12, stable across v0.1, v0g and seeds) is therefore not the graph.
+G5's n = 5 cell is weaker than in v0.1, which is within noise but noted. Per "What would change the plan", v0g is
+not adopted; v0.1 stays the headline PC-RFM. The graph question moves to the real relational tier.
