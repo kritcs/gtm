@@ -1,4 +1,4 @@
-# Research status and handoff (updated 2026-11-24, ~21:00)
+# Research status and handoff (updated 2026-11-26, ~03:45)
 
 Read this first when picking up in a new session. Background: `../CLAUDE.md`, `../PLAN.md`, `research-map.md`.
 
@@ -17,15 +17,17 @@ Read this first when picking up in a new session. Background: `../CLAUDE.md`, `.
 | Sim-to-sim stress | `stress_sim.md` | PC-RFM robust to most shifts; weak when segments are pure interactions (fix: `--random-seg`) |
 | **RelBench audit** | `audit_relbench.md`, `docs/benchmark-audit.md` | No-learning repeat+popularity heuristic = 93% / 88% of best published MAP; novel pairs (82–93% of positives) scored ≈ 0 by everything |
 | Novelty check | `docs/novelty-check.md` | A partly anticipated (EXNEX etc.), B novel, C defensible vs PFNs4BO, D a proposition |
+| **Round 4 graph PC-RFM (v0g)** | `round4_preregistration.md`, `eval_v0g.md` | G3/G4 fail: v0g ignores its graph features; one-hop and PPR label features correlate only ~0.05 with the truth, and **CPR-LP gains nothing from its graph in the simulator either** → no simulated result may be credited to the graph |
 | Pre-registrations | `m2_preregistration.md`, script docstrings | M2 (v1/v2), H4, real_bank, placebo, stress, audit, SBIR |
 
-## Running now (as of ~21:00)
+## Running now (as of 2026-11-26 ~03:45)
 
-- **Colab `pfn-f` (L4)**: v1, v1-nf, v2, v2-nf (commit `dda1d0e`), 20k steps each, done ~23:15–23:35.
-  A local background job polls the VM, downloads all four to `runs/`, and runs `colab stop -s pfn-f`
-  only if every checkpoint is at step 20000. If the session ended before that, check `colab sessions`.
-- **SBIR outcome pull** (local, ~3 h): `scripts/data_sbir_outcomes.py --n 100000` → details → stats,
-  writes `data/interim/`. Then run `scripts/sbir_eval.py` (pre-registered SB1–SB3).
+- **Colab `pfn-4e` (T4)**: round-4 `pfn_v0g_nf` and `pfn_v0g_s2`, resumed from step-8500 weights after `pfn-4d`
+  was reclaimed (deviation in `results/round4_preregistration.md`); done around 07:00. Watcher
+  (scratchpad `watch4.sh`, log `watch4e.log`) keeps the session alive, syncs to `runs/<name>.sync`, copies to
+  `runs/<name>` at step 20000 and stops the session. Then run stress_sim / real_bank for G1, G2, G5–G7
+  (main v0g = `runs/local_v0g/model.pt`) and write "Scoring, part 2".
+- The Mac must stay awake, with the lid open and on power; sleep killed `pfn-4d`.
 
 ## Next steps (in order)
 
@@ -72,3 +74,9 @@ $C stop -s pfn-f
 - 2026-11-25 16:40 — Claude: ID-GNN extension (pre-reg 276f94e; results/idgnn_ext_scoring.md). rel-stack reproduced (13.38, 10.89; J1 holds, J3 holds, J4 1/2); exploratory: 91% of ID-GNN hits on user-post-comment are the user's own threads, own-thread heuristic = 78% of ID-GNN (scripts/audit_stack_ownthread.py). rel-trial: NaN loss from epoch 1 twice (second time fresh cache) — J1 fails as 'could not reproduce', J2/J4 not scored; not pursued. Colab sessions all stopped. Gotcha: running 4 RelBench ID-GNN jobs at once on L4 high-mem (52 GB) OOM-kills the rel-trial ones.
 - 2026-11-25 18:15 — Claude: doing all four next steps. (1) Paper section draft `docs/paper/sec-audit.md`. (2) Founder cohort v0.2 (`docs/cohort/`: analysis-plan, irb-packet, updated form/description; `scripts/cohort_scrub.py` + tests; `scripts/cohort_power.py` → results/cohort_power.md): evaluating on founder-chosen later contacts has ~15% power even at 50 companies; a 40-account randomized slice gives 56% / 76% at 30 / 50 companies → target 40–50 companies. (3) Round 4 graph-aware PC-RFM v0g (`--graph`; pre-reg results/round4_preregistration.md, commit b99ddd1) training on Colab L4 session pfn-4 (A100 unavailable), synced every 20 min by scratchpad sync_any.sh, which stops the session at step 20000. (4) Second real tier Hillstrom (`load_hillstrom`, `real_bank.py --dataset`): H1 fails (3–4/5 cells), H2 fails narrowly (−0.21 at ρ = −0.5, n = 5), H3 holds 24/24 — sim-to-real replicates. Real-outcome fine-tuning (`scripts/finetune_pfn.py`, pre-reg results/finetune_preregistration.md F1–F6) running locally on CPU (4 models).
 - 2026-11-25 21:50 — Claude: fine-tuning scored (results/finetune_preregistration.md): F1/F2/F3/F5/F6 hold, F4 fails as expected. In-domain Bank gain (+0.61 lift) is population-specific: fine-tuned models learn the segment size–rate relation, which flips sign between Bank (−0.36) and Hillstrom (+0.37); cross-dataset fine-tuning gives nothing. Round 4 (v0g) lost three Colab sessions (Mac sleep re-enabled → no keepalive → runtime reclaimed after ~15–20 min; DNS outage; CLI auth expiry); now training locally on MPS (runs/pfn_v0g, _nf, _s2; caffeinate keeps the Mac awake while they run; logs in the session scratchpad). Colab balance ~141.
+- 2026-11-26 03:45 — Claude: round 4 part 1 scored. Main v0g (local MPS) done; G3 (+0.024 ± 0.015) and G4
+  (+0.004 ± 0.014) fail. Diagnostics (`scripts/diag/`): v0g ignores its graph on its own prior; neighbour-label
+  signal corr ≈ 0.045 (PPR up to α = 0.95: ≈ 0.05); CPR-LP with graph vs no graph/permuted graph: ≈ 0 on S0 and S2.
+  The graph is unlearnable at n ≤ 20 in this simulator, and the round-4 premise was wrong. Colab nf/s2 resumed on
+  `pfn-4e` (`train_pfn.py --resume`, now with exact-resume checkpoints).
+
