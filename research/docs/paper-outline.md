@@ -45,8 +45,13 @@ prior, learn how far to trust them from few outcomes, and explore enough to catc
   `round2_preregistration.md` (Q3)
 - Robust to most simulator shifts; a stable ~−0.13 gap to CPR-LP when segments are pure interactions. Random
   segment structure in training closes ~35% of it; an explicit segment embedding closes none; it does not depend
-  on training seed. Likely cause: CPR-LP sees the account graph, PC-RFM v0.x does not. ✅ `stress_sim*.md`,
-  `round2/3_preregistration.md`
+  on training seed. ~~Likely cause: the graph~~ **Not the graph** (round 4): CPR-LP gains nothing from its graph
+  term in the default simulator (graph on vs off or permuted: within ±0.015), and a graph-aware PC-RFM (v0g)
+  ignores its graph features, which carry ~0.05 correlation with the truth. The gap is in segment-level
+  inference. ✅ `stress_sim*.md`, `round2/3/4_preregistration.md`, `eval_v0g.md`
+- **The graph helps only when it is strong and smooth** (exploratory): CPR-LP's oracle graph adds +0.43 lift at
+  graph share 0.7, γ = 50, and nothing in 23/24 cells of a regime sweep (`diag_graph_regime.md`). No simulated
+  result in the paper may be credited to the graph. Whether real B2B graphs are strong is an RDL-tier question.
 - Founder-statement tokens: stated confidence is used in the right direction (reversing it costs up to 1.9 lift)
   and matters most for mediocre founders with ≤ 1 label; "no idea" answers did not help (T1, T3 failed as
   pre-registered). With neutral statements it matches v0. Its extra bank lift with bad founders is learner
@@ -86,6 +91,6 @@ Ladder: simulation → sim-to-sim stress → real outcomes + simulated founder �
 1. Real founders (archival SBIR text is a proxy; the cohort is the real thing).
 2. PC-RFM's founder-specific advantage over CPR-LP is unproven after the placebo correction (confirmed again for
    the token model). The defensible PC-RFM claims are: adaptive pooling, relational transfer, and use of stated confidence.
-3. ID-GNN per-slice on rel-trial / rel-stack (where its gap over memorisation is large); a graph-aware v0 to test the S2 explanation.
+3. ID-GNN on rel-trial not reproduced (NaN loss). The graph-aware v0 is done: the S2 gap is not the graph (round 4), so its cause is open.
 4. EXNEX original not read; several theory references cited but not read in full.
 5. All CPR-LP hyperparameters were set by hand on simulations; need a principled selection protocol.
