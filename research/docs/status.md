@@ -20,14 +20,12 @@ Read this first when picking up in a new session. Background: `../CLAUDE.md`, `.
 | **Round 4 graph PC-RFM (v0g)** | `round4_preregistration.md`, `eval_v0g.md` | G3/G4 fail: v0g ignores its graph features; one-hop and PPR label features correlate only ~0.05 with the truth, and **CPR-LP gains nothing from its graph in the simulator either** → no simulated result may be credited to the graph |
 | Pre-registrations | `m2_preregistration.md`, script docstrings | M2 (v1/v2), H4, real_bank, placebo, stress, audit, SBIR |
 
-## Running now (as of 2026-11-26 ~03:45)
+## Running now (as of 2026-11-26 ~06:45)
 
-- **Colab `pfn-4e` (T4)**: round-4 `pfn_v0g_nf` and `pfn_v0g_s2`, resumed from step-8500 weights after `pfn-4d`
-  was reclaimed (deviation in `results/round4_preregistration.md`); done around 07:00. Watcher
-  (scratchpad `watch4.sh`, log `watch4e.log`) keeps the session alive, syncs to `runs/<name>.sync`, copies to
-  `runs/<name>` at step 20000 and stops the session. Then run stress_sim / real_bank for G1, G2, G5–G7
-  (main v0g = `runs/local_v0g/model.pt`) and write "Scoring, part 2".
-- The Mac must stay awake, with the lid open and on power; sleep killed `pfn-4d`.
+- Nothing. Round 4 is fully scored (`results/round4_preregistration.md`); Colab session stopped.
+- Public mirror of `research/` (history only for this folder): https://github.com/PeemCS/founder-priors-RDL.
+  To sync: from the repo root, `git subtree split --prefix=research -b research-public`, then merge into the
+  mirror's `main` (it carries one extra merge commit) and push without force.
 
 ## Next steps (in order)
 
@@ -79,4 +77,7 @@ $C stop -s pfn-f
   signal corr ≈ 0.045 (PPR up to α = 0.95: ≈ 0.05); CPR-LP with graph vs no graph/permuted graph: ≈ 0 on S0 and S2.
   The graph is unlearnable at n ≤ 20 in this simulator, and the round-4 premise was wrong. Colab nf/s2 resumed on
   `pfn-4e` (`train_pfn.py --resume`, now with exact-resume checkpoints).
+- 2026-11-26 06:45 — Claude: round 4 part 2 scored. G1 (−0.119) and G2 (−0.080) fail; G5 fails at n = 5 (1.4 SE);
+  G6 (Bank R1–R3) and G7 (seed 2 within 0.001) hold. v0g not adopted. Research folder mirrored publicly to
+  PeemCS/founder-priors-RDL; README rewritten as a project overview.
 
