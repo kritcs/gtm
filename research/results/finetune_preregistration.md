@@ -50,7 +50,7 @@ computed with `scripts/compare_real.py`. "Overall" = mean over all (ρ, n) cells
   (or a closely matched) data, which a startup does not have.
 - F1/F2 fail → the simulator prior is already as good as these real tasks can teach (consistent with R3 on Bank).
 
-## Scoring (written after the run, 2026-11-25 ~21:30)
+## Scoring (written after the run, 2026-11-25 ~20:35)
 
 Fine-tuned 2,000 steps each on CPU at commit `9bd70d7` (runs/pfn_v01{,_nf}_ft{bank,hill}). Evaluations:
 `real_bank_v01_ft{bank,hill}.{md,json}`, `real_hillstrom_v01_ft{bank,hill}.{md,json}`, `stress_sim_v01_ft{bank,hill}.*`;
@@ -76,8 +76,9 @@ regularity of this population that it can use even though category labels are sh
 - **Hillstrom:** the sign is reversed (+0.37, p = 0.05).
 
 That is why fine-tuning helps in-domain (same population in A and B) and does nothing across datasets (F3/F4).
-No evaluation outcomes leaked (split B is never used in fine-tuning). Note that the base v0.1 no-founder model
-already reaches lift 1.77 at n = 0 on Bank without labels, a smaller version of the same effect learned in simulation.
+No evaluation outcomes leaked (split B is never used in fine-tuning). Open question: the base v0.1 no-founder
+model already reaches lift 1.77 at n = 0 on Bank with no labels and no founder. The simulator draws segment sizes
+independently of segment rates, so this is not explained by the same mechanism; unresolved.
 
 ### Reading
 
