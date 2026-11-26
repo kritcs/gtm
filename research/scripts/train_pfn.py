@@ -74,6 +74,8 @@ def main():
     a.relational = a.relational or a.encoder
     torch.backends.cuda.matmul.allow_tf32 = True  # A100/L4/H100: TF32 matmuls
     torch.backends.cudnn.allow_tf32 = True
+    if dev == "cuda":   # MAGMA's batched getrf crashes (illegal memory access) on T4 for the --graph solve
+        torch.backends.cuda.preferred_linalg_library("cusolver")
     torch.manual_seed(a.seed)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)

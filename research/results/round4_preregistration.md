@@ -49,3 +49,11 @@ Rule unless stated: paired mean over market seeds, predicted sign, beyond 2 SE.
 - G1 fails, G4 holds → the graph is used but the S2 gap has another cause (e.g. CPR-LP's exact per-segment
   posterior); stop chasing it and report the gap.
 - G4 fails → the neighbour features are ignored; check feature scaling before any further claim.
+
+## Deviations (written before any round-4 model finished)
+
+- 2026-11-25 ~23:00: on a Colab T4, `torch.linalg.solve` in the `--graph` sampler crashed inside MAGMA's batched LU
+  ("illegal memory access"). `train_pfn.py` now selects the cuSOLVER backend on CUDA. This changes only the
+  numerical library, not the prior. Colab models are trained at the commit that adds this line; the local MPS
+  model (`runs/local_v0g`, seed 1) at `b99ddd1`. If both seed-1 runs finish, the Colab one is used and the local
+  one is reported as a replicate.
