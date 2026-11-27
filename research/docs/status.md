@@ -23,9 +23,11 @@ Read this first when picking up in a new session. Background: `../CLAUDE.md`, `.
 ## Running now (as of 2026-11-26 ~06:45)
 
 - Nothing. Round 4 is fully scored (`results/round4_preregistration.md`); Colab session stopped.
-- Public mirror of `research/` (history only for this folder): https://github.com/PeemCS/founder-priors-RDL.
-  To sync: from the repo root, `git subtree split --prefix=research -b research-public`, then merge into the
-  mirror's `main` (it carries one extra merge commit) and push without force.
+- Public mirror of `research/`: https://github.com/PeemCS/founder-priors-RDL. Its history was rewritten on
+  2026-11-26 to drop Claude co-author trailers, so it no longer shares commit IDs with `git subtree split`. To
+  sync: clone the mirror, then for each new commit touching `research/`, apply
+  `git format-patch --relative=research -1 <sha>` with `git am` (no Claude trailers), and push without force.
+  Do not add Co-Authored-By: Claude to any commit.
 
 ## Next steps (in order)
 
